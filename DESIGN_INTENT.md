@@ -276,10 +276,6 @@ Brief output must not be:
 *Last updated by operator. Version controlled in repo root.*  
 *Agents: read this first. Always.*
 
-<<<<<<< HEAD
-
-=======
->>>>>>> origin/develop
 ---
 
 ## 11. Product Naming

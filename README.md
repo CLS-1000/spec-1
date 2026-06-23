@@ -63,10 +63,7 @@ Tier 3: Deterministic rules (always works)
 - High-confidence leads (ranked by priority)
 - Narrative anomaly reports (campaign detection)
 - Drift alerts (threshold deviations)
-<<<<<<< HEAD
-=======
 - Research Mode (analyst-defined topic dossiers with automated expansion)
->>>>>>> origin/develop
 
 **Operational Interfaces**
 - REST API (15+ endpoints)
