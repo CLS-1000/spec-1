@@ -1,0 +1,5 @@
+[
+  {"canonical_name": "Example PAC", "kind": "pac", "aliases": ["EX PAC"]},
+  {"canonical_name": "Federal Strategies LLC", "kind": "lobbying_firm", "aliases": ["Federal Strategies"]},
+  {"canonical_name": "Regional Health Network", "kind": "industry", "aliases": ["RHN"]}
+]
