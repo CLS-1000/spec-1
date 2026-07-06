@@ -12,7 +12,6 @@ import threading
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Annotated
-import re
 
 import json
 
@@ -27,7 +26,6 @@ router = APIRouter()
 
 STORE_PATH = Path("spec1_intelligence.jsonl")
 VERSION = "0.2"
-_CASE_ID_RE = re.compile(r"^case-[0-9a-f]{12}$")
 
 
 def _now_iso() -> str:
@@ -238,8 +236,6 @@ def list_cases_endpoint(status: str = None) -> dict:
 @router.get("/workspace/cases/{case_id}")
 def get_case_endpoint(case_id: str) -> dict:
     """Get details for a specific case."""
-    if not _CASE_ID_RE.match(case_id):
-        raise HTTPException(status_code=400, detail="Invalid case_id format")
     try:
         from spec1_core.workspace.case import get_case
         case = get_case(case_id)

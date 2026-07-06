@@ -1,7 +1,7 @@
 name: Python package
 
 on:
-  push:h
+  push:
     branches: [ "main", "develop" ]
   pull_request:
     branches: [ "main", "develop" ]
@@ -9,7 +9,6 @@ on:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   OLLAMA_AUTO_SPAWN: "false"
-
 
 permissions:
   contents: read
@@ -20,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.12"]
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
 
     steps:
     - uses: actions/checkout@v4

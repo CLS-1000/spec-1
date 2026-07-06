@@ -377,6 +377,60 @@ def tool_get_calibration(args: dict) -> dict:
     return out
 
 
+def tool_score_signal(args: dict) -> dict:
+    """Score a signal through the 3-pass operator evaluation framework.
+
+    Pass 1 — evidence quality (credibility + volume)
+    Pass 2 — deviation strength (velocity + novelty)
+    Pass 3 — beneficiary analysis (only when gate_score > 0.40)
+
+    Returns a fully structured OperatorOutput with a queryable ESCALATE/ARCHIVE/HOLD verdict.
+    """
+    from datetime import datetime, timezone
+
+    from spec1_core.schemas.models import Signal, ParsedSignal
+    from spec1_core.signal.parser import parse_signal
+    from spec1_core.signal.operator_evaluator import evaluate
+
+    signal_text = str(args.get("signal_text", "")).strip()
+    if not signal_text:
+        return {"error": "signal_text is required"}
+
+    source = str(args.get("source", "unknown")).strip() or "unknown"
+    run_id = str(args.get("run_id", "")).strip()
+
+    # Parse timestamp
+    ts_raw = args.get("timestamp")
+    try:
+        published_at = (
+            datetime.fromisoformat(str(ts_raw).replace("Z", "+00:00"))
+            if ts_raw
+            else datetime.now(timezone.utc)
+        )
+    except ValueError:
+        published_at = datetime.now(timezone.utc)
+    if published_at.tzinfo is None:
+        published_at = published_at.replace(tzinfo=timezone.utc)
+
+    sig = Signal(
+        signal_id=f"sig-mcp-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}",
+        source=source,
+        source_type="mcp",
+        text=signal_text,
+        url="",
+        author="",
+        published_at=published_at,
+        velocity=0.0,
+        engagement=0.0,
+        run_id=run_id,
+        environment="mcp",
+        metadata={},
+    )
+    parsed = parse_signal(sig)
+    output = evaluate(sig, parsed, run_id=run_id)
+    return output.to_dict()
+
+
 def tool_run_research(args: dict) -> dict:
     """Run analyst-defined topic research dossier expansion."""
     from spec1_core.tools.run_research import run_research
@@ -605,6 +659,40 @@ TOOLS: dict[str, dict] = {
             },
         },
         "fn": tool_run_research,
+    },
+    "score_signal": {
+        "description": (
+            "Score a signal through the 3-pass operator evaluation framework and return a "
+            "structured OperatorOutput with a queryable ESCALATE / ARCHIVE / HOLD verdict. "
+            "Pass 1 = evidence quality (credibility + volume). "
+            "Pass 2 = deviation strength (velocity + novelty). "
+            "Pass 3 = beneficiary analysis — runs only when gate_score > 0.40. "
+            "HOLD is a first-class verdict, not an error state."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "signal_text": {
+                    "type": "string",
+                    "description": "Full text of the signal to evaluate",
+                },
+                "source": {
+                    "type": "string",
+                    "description": "Source identifier (e.g. 'reuters_world', 'propublica')",
+                    "default": "unknown",
+                },
+                "timestamp": {
+                    "type": "string",
+                    "description": "ISO8601 publication timestamp (defaults to now if omitted)",
+                },
+                "run_id": {
+                    "type": "string",
+                    "description": "Cycle run_id to associate with this evaluation",
+                },
+            },
+            "required": ["signal_text"],
+        },
+        "fn": tool_score_signal,
     },
 }
 

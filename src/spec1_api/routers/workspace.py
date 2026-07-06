@@ -9,7 +9,6 @@
 from __future__ import annotations
 
 import logging
-import re
 from typing import Annotated, Optional
 
 from fastapi import APIRouter, HTTPException, Query
@@ -19,7 +18,6 @@ from pydantic import StringConstraints
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/workspace", tags=["workspace"])
-_CASE_ID_RE = re.compile(r"^case-[0-9a-f]{12}$")
 
 _Title = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=500)]
 _Tag   = Annotated[str, StringConstraints(strip_whitespace=True, max_length=100)]
@@ -67,8 +65,6 @@ def open_case(req: OpenCaseRequest) -> dict:
 @router.get("/cases/{case_id}")
 def get_case(case_id: str) -> dict:
     """Get a specific case by ID."""
-    if not _CASE_ID_RE.match(case_id):
-        raise HTTPException(status_code=400, detail="Invalid case_id format")
     try:
         from spec1_core.workspace.case import get_case as _get
         return _get(case_id).to_dict()
@@ -79,8 +75,6 @@ def get_case(case_id: str) -> dict:
 @router.post("/cases/{case_id}/findings")
 def add_finding(case_id: str, req: AddFindingRequest) -> dict:
     """Manually append a finding to an open investigation case."""
-    if not _CASE_ID_RE.match(case_id):
-        raise HTTPException(status_code=400, detail="Invalid case_id format")
     try:
         from spec1_core.workspace.case import update_case as _update
         case = _update(case_id, new_signals=[], new_finding=req.finding)
@@ -94,8 +88,6 @@ def add_finding(case_id: str, req: AddFindingRequest) -> dict:
 @router.post("/cases/{case_id}/close")
 def close_case(case_id: str) -> dict:
     """Close an investigation case and generate its final report."""
-    if not _CASE_ID_RE.match(case_id):
-        raise HTTPException(status_code=400, detail="Invalid case_id format")
     try:
         from spec1_core.workspace.case import close_case as _close
         return _close(case_id).to_dict()

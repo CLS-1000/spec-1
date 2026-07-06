@@ -4,15 +4,19 @@
 # @status:   testing
 # @depends:  NONE
 
-"""Tests for cls_db and PostgreSQL persistence.
-
-Tests database persistence and dual-write functionality.
-Uses SQLite (via SQLAlchemy) as a drop-in replacement so tests run without
-a real PostgreSQL instance.
-"""
+"""Tests for cls_db — database persistence and dual-write."""
 
 from __future__ import annotations
 
+
+# ---------------------------------------------------------------------------
+# PostgreSQL persistence tests (spec1_engine.persistence.postgres)
+# ---------------------------------------------------------------------------
+"""Tests for the PostgreSQL persistence module.
+
+Uses SQLite (via SQLAlchemy) as a drop-in replacement so tests run without
+a real PostgreSQL instance.
+"""
 
 import pytest
 
