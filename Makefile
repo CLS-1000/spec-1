@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-.PHONY: install test test-fast test-cov lint run mcp cycle backfill calibration workspace clean help brief leads psyop
-=======
 .PHONY: install test test-fast test-cov lint run mcp cycle backfill calibration workspace clean help brief leads psyop research
->>>>>>> origin/develop
 
 PYTHONPATH := src
 PYTHON     := PYTHONPATH=$(PYTHONPATH) python
