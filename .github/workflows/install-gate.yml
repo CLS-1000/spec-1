@@ -1,0 +1,26 @@
+name: install-gate
+# Gate: a pristine clone must install and pass tests the way a stranger would.
+# Exists because CI's editable-install path stayed green while requirements.txt
+# carried a committed merge conflict (July 2026).
+on:
+  push:
+    branches: [develop, Main]
+  pull_request:
+jobs:
+  fresh-clone-install:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Reject committed merge-conflict markers
+        run: |
+          ! git grep -nE '^(<<<<<<< |=======$|>>>>>>> )' -- . ':!*.lock' \
+            || { echo '::error::Merge conflict markers committed'; exit 1; }
+      - name: Install exactly as documented
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Full test suite on the fresh install
+        run: python -m pytest tests/ -q
