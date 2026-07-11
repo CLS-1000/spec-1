@@ -13,9 +13,9 @@ Usage:
 from __future__ import annotations
 
 from dotenv import load_dotenv
-load_dotenv(encoding="utf-8-sig")  # utf-8-sig strips PowerShell BOM if present
-
 import uvicorn
+
+load_dotenv(encoding="utf-8-sig")  # utf-8-sig strips PowerShell BOM if present
 
 
 def main() -> None:

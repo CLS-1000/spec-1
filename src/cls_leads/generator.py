@@ -122,7 +122,7 @@ def generate_leads(
         )
 
     # Sort by priority
-    leads.sort(key=lambda l: priority_order.get(l.priority, 99))
+    leads.sort(key=lambda lead: priority_order.get(lead.priority, 99))
     return leads[:max_leads]
 
 

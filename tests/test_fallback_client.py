@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -155,7 +156,7 @@ class TestTier1Claude:
     def test_no_api_key_falls_to_tier3(self, tmp_path):
         client = make_client(tmp_path)
         with patch.dict("os.environ", {}, clear=True):
-            import os; os.environ.pop("ANTHROPIC_API_KEY", None)
+            os.environ.pop("ANTHROPIC_API_KEY", None)
             with patch("spec1_core.llm.ollama_manager.is_running", return_value=False):
                 result = client.complete(ANOMALY_SIGNAL, system="")
 
@@ -266,7 +267,7 @@ class TestTier3MockFallback:
         client = make_client(tmp_path)
 
         with patch.dict("os.environ", {}, clear=True):
-            import os; os.environ.pop("ANTHROPIC_API_KEY", None)
+            os.environ.pop("ANTHROPIC_API_KEY", None)
             with patch("spec1_core.llm.ollama_manager.is_running", return_value=False):
                 with patch("spec1_core.llm.ollama_manager.spawn", return_value=False):
                     try:
@@ -278,7 +279,7 @@ class TestTier3MockFallback:
         client = make_client(tmp_path)
 
         with patch.dict("os.environ", {}, clear=True):
-            import os; os.environ.pop("ANTHROPIC_API_KEY", None)
+            os.environ.pop("ANTHROPIC_API_KEY", None)
             with patch("spec1_core.llm.ollama_manager.is_running", return_value=False):
                 with patch("spec1_core.llm.ollama_manager.spawn", return_value=False):
                     try:
@@ -317,7 +318,7 @@ class TestOutputSchemaConsistency:
     def _analyze_via_tier3(self, tmp_path, signal):
         client = make_client(tmp_path)
         with patch.dict("os.environ", {}, clear=True):
-            import os; os.environ.pop("ANTHROPIC_API_KEY", None)
+            os.environ.pop("ANTHROPIC_API_KEY", None)
             with patch("spec1_core.llm.ollama_manager.is_running", return_value=False):
                 with patch("spec1_core.llm.ollama_manager.spawn", return_value=False):
                     return client.analyze(signal)
@@ -380,7 +381,7 @@ class TestLatencyLogging:
         client = make_client(tmp_path)
 
         with patch.dict("os.environ", {}, clear=True):
-            import os; os.environ.pop("ANTHROPIC_API_KEY", None)
+            os.environ.pop("ANTHROPIC_API_KEY", None)
             with patch("spec1_core.llm.ollama_manager.is_running", return_value=False):
                 with patch("spec1_core.llm.ollama_manager.spawn", return_value=False):
                     client.analyze(THREAT_SIGNAL)
@@ -404,14 +405,14 @@ class TestLatencyLogging:
         client = make_client(tmp_path)
 
         with patch.dict("os.environ", {}, clear=True):
-            import os; os.environ.pop("ANTHROPIC_API_KEY", None)
+            os.environ.pop("ANTHROPIC_API_KEY", None)
             with patch("spec1_core.llm.ollama_manager.is_running", return_value=False):
                 with patch("spec1_core.llm.ollama_manager.spawn", return_value=False):
                     client.analyze(THREAT_SIGNAL)
                     client.analyze(CLEAR_SIGNAL)
 
         log_file = tmp_path / "llm_fallback.jsonl"
-        lines = [l for l in log_file.read_text().splitlines() if l.strip()]
+        lines = [line for line in log_file.read_text().splitlines() if line.strip()]
         assert len(lines) == 2
 
 
@@ -422,7 +423,7 @@ class TestInvestigate:
         client = make_client(tmp_path)
 
         with patch.dict("os.environ", {}, clear=True):
-            import os; os.environ.pop("ANTHROPIC_API_KEY", None)
+            os.environ.pop("ANTHROPIC_API_KEY", None)
             with patch("spec1_core.llm.ollama_manager.is_running", return_value=False):
                 with patch("spec1_core.llm.ollama_manager.spawn", return_value=False):
                     result = client.investigate("What is the threat level in eastern Ukraine?")
@@ -434,7 +435,7 @@ class TestInvestigate:
         client = make_client(tmp_path)
 
         with patch.dict("os.environ", {}, clear=True):
-            import os; os.environ.pop("ANTHROPIC_API_KEY", None)
+            os.environ.pop("ANTHROPIC_API_KEY", None)
             with patch("spec1_core.llm.ollama_manager.is_running", return_value=False):
                 with patch("spec1_core.llm.ollama_manager.spawn", return_value=False):
                     try:

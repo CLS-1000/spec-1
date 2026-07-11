@@ -1,0 +1,22 @@
+[
+  {"name":"Ron Wyden","chamber":"SENATE","state":"OR","district":null,"committees":["Finance"],"party":"D","term_start":"2023-01-03"},
+  {"name":"Mike Crapo","chamber":"SENATE","state":"ID","district":null,"committees":["Finance"],"party":"R","term_start":"2023-01-03"},
+  {"name":"Jack Reed","chamber":"SENATE","state":"RI","district":null,"committees":["Armed Services"],"party":"D","term_start":"2023-01-03"},
+  {"name":"Roger Wicker","chamber":"SENATE","state":"MS","district":null,"committees":["Armed Services"],"party":"R","term_start":"2023-01-03"},
+  {"name":"Mark Warner","chamber":"SENATE","state":"VA","district":null,"committees":["Intelligence"],"party":"D","term_start":"2023-01-03"},
+  {"name":"Marco Rubio","chamber":"SENATE","state":"FL","district":null,"committees":["Intelligence"],"party":"R","term_start":"2023-01-03"},
+  {"name":"Dick Durbin","chamber":"SENATE","state":"IL","district":null,"committees":["Judiciary"],"party":"D","term_start":"2023-01-03"},
+  {"name":"Lindsey Graham","chamber":"SENATE","state":"SC","district":null,"committees":["Judiciary"],"party":"R","term_start":"2023-01-03"},
+  {"name":"Jim Risch","chamber":"SENATE","state":"ID","district":null,"committees":["Foreign Relations"],"party":"R","term_start":"2023-01-03"},
+  {"name":"Jeanne Shaheen","chamber":"SENATE","state":"NH","district":null,"committees":["Foreign Relations"],"party":"D","term_start":"2023-01-03"},
+  {"name":"Jason Smith","chamber":"HOUSE","state":"MO","district":"8","committees":["Ways and Means"],"party":"R","term_start":"2023-01-03"},
+  {"name":"Richard Neal","chamber":"HOUSE","state":"MA","district":"1","committees":["Ways and Means"],"party":"D","term_start":"2023-01-03"},
+  {"name":"Mike Rogers","chamber":"HOUSE","state":"AL","district":"3","committees":["Armed Services"],"party":"R","term_start":"2023-01-03"},
+  {"name":"Adam Smith","chamber":"HOUSE","state":"WA","district":"9","committees":["Armed Services"],"party":"D","term_start":"2023-01-03"},
+  {"name":"Jim Jordan","chamber":"HOUSE","state":"OH","district":"4","committees":["Judiciary"],"party":"R","term_start":"2023-01-03"},
+  {"name":"Jamie Raskin","chamber":"HOUSE","state":"MD","district":"8","committees":["Judiciary"],"party":"D","term_start":"2023-01-03"},
+  {"name":"Michael McCaul","chamber":"HOUSE","state":"TX","district":"10","committees":["Foreign Affairs"],"party":"R","term_start":"2023-01-03"},
+  {"name":"Gregory Meeks","chamber":"HOUSE","state":"NY","district":"5","committees":["Foreign Affairs"],"party":"D","term_start":"2023-01-03"},
+  {"name":"Brett Guthrie","chamber":"HOUSE","state":"KY","district":"2","committees":["Energy and Commerce"],"party":"R","term_start":"2023-01-03"},
+  {"name":"Frank Pallone","chamber":"HOUSE","state":"NJ","district":"6","committees":["Energy and Commerce"],"party":"D","term_start":"2023-01-03"}
+]

@@ -23,10 +23,10 @@ try:
 except ModuleNotFoundError:
     pass
 
+from spec1_labels import VERIF_CORROBORATED
+
 JSONL_PATH = Path("spec1_intelligence.jsonl")
 BRIEFS_DIR = Path("briefs")
-
-from spec1_labels import VERIF_CORROBORATED
 ELEVATED_CLASSIFICATIONS = {VERIF_CORROBORATED, "ESCALATE", "Corroborated", "Escalate"}
 
 

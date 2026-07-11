@@ -329,7 +329,7 @@ def test_result_written_to_jsonl(base_signal, store_path):
     assert not store_path.exists()
     score_psyop(base_signal, store_path=store_path)
     assert store_path.exists()
-    lines = [l for l in store_path.read_text().splitlines() if l.strip()]
+    lines = [line for line in store_path.read_text().splitlines() if line.strip()]
     assert len(lines) == 1
 
 
@@ -354,9 +354,9 @@ def test_jsonl_append_does_not_overwrite(base_signal, store_path):
     """Multiple calls append; previous records are not overwritten."""
     score_psyop({**base_signal, "topic": "first"}, store_path=store_path)
     score_psyop({**base_signal, "topic": "second"}, store_path=store_path)
-    lines = [l for l in store_path.read_text().splitlines() if l.strip()]
+    lines = [line for line in store_path.read_text().splitlines() if line.strip()]
     assert len(lines) == 2
-    topics = [json.loads(l)["topic"] for l in lines]
+    topics = [json.loads(line)["topic"] for line in lines]
     assert "first" in topics
     assert "second" in topics
 

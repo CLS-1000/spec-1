@@ -115,6 +115,7 @@ cp .env.example .env
 make cycle        # Run a full research cycle
 make run          # Start the API server
 make test         # Run the test suite
+python -m cls_congress.api.main   # Run standalone Congress Brief API surface
 ```
 
 See [docs/runbook.md](docs/runbook.md) for production deployment and [docs/quickstart.md](docs/quickstart.md) for a guided first run.
