@@ -350,7 +350,7 @@ def test_write_brief_appends_index(tmp_path):
         writer.write_brief(SAMPLE_BRIEF, "run-001", "2026-04-11T06:00:00+00:00")
         writer.write_brief(SAMPLE_BRIEF, "run-002", "2026-04-12T06:00:00+00:00")
         index = writer.BRIEFS_DIR / "brief_index.jsonl"
-        lines = [line for line in index.read_text().splitlines() if line.strip()]
+        lines = [l for l in index.read_text().splitlines() if l.strip()]
         assert len(lines) == 2
     finally:
         writer.BRIEFS_DIR = original_dir

@@ -53,8 +53,8 @@ def run_migrations(db=None, migrations_dir=None):
             for stmt in statements:
                 stmt = stmt.strip()
                 lines = [
-                    line for line in stmt.splitlines()
-                    if line.strip() and not line.strip().startswith("--")
+                    l for l in stmt.splitlines()
+                    if l.strip() and not l.strip().startswith("--")
                 ]
                 if lines:
                     db.execute(stmt)

@@ -21,6 +21,9 @@ from pathlib import Path
 from typing import Optional
 
 from dotenv import load_dotenv
+load_dotenv(encoding="utf-8-sig")  # utf-8-sig strips PowerShell BOM if present
+
+
 from spec1_core.core.ids import run_id as new_run_id
 from spec1_core.core.logging_utils import configure_root, get_logger
 from spec1_core.schemas.models import (
@@ -40,8 +43,6 @@ try:
     _DUAL_WRITE_AVAILABLE = True
 except ImportError:
     _DUAL_WRITE_AVAILABLE = False
-
-load_dotenv(encoding="utf-8-sig")  # utf-8-sig strips PowerShell BOM if present
 
 configure_root()
 logger = get_logger(__name__)

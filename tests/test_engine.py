@@ -33,7 +33,7 @@ from spec1_core.schemas.models import (
     IntelligenceRecord,
 )
 from unittest.mock import patch
-from spec1_core.signal.parser import parse_signal, parse_batch, _clean_html, _extract_keywords, _extract_entities, _truncate
+from spec1_core.signal.parser import parse_signal, parse_batch, _clean_html, _extract_keywords, _extract_entities
 from spec1_core.signal.scorer import (
     score_signal,
     score_batch,
@@ -43,7 +43,6 @@ from spec1_core.signal.scorer import (
     _score_novelty,
     _priority,
     SOURCE_CREDIBILITY,
-    _score_velocity as _sv,
 )
 from spec1_core.investigation.generator import generate_investigation
 from spec1_core.investigation import verifier
@@ -700,6 +699,8 @@ def test_engine_run_pipeline_loop_runs(tmp_path):
 
 # ─── Signal scorer age-based velocity tests ──────────────────────────────────
 
+from spec1_core.signal.scorer import _score_velocity as _sv
+
 
 def _make_aged_signal(hours_ago: float, source: str = "rand") -> Signal:
     from datetime import timedelta
@@ -800,6 +801,8 @@ def test_velocity_score_novelty_many_hits():
 
 
 # ─── Signal parser additional tests ──────────────────────────────────────────
+
+from spec1_core.signal.parser import _truncate
 
 
 def test_truncate_long_text():

@@ -98,7 +98,7 @@ def brief_latest() -> dict:
     index_path = briefs_dir / "brief_index.jsonl"
     run_id_val, generated_at = None, None
     if index_path.exists():
-        lines = [line.strip() for line in index_path.read_text(encoding="utf-8").splitlines() if line.strip()]
+        lines = [l.strip() for l in index_path.read_text(encoding="utf-8").splitlines() if l.strip()]
         if lines:
             last = json.loads(lines[-1])
             run_id_val = last.get("run_id")
