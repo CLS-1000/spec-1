@@ -51,7 +51,7 @@ def leads_to_text(leads: list[Lead]) -> str:
     if not leads:
         return "No actionable leads generated.\n"
     header = f"SPEC-1 INTELLIGENCE LEADS — {len(leads)} item(s)\n" + "=" * 60 + "\n"
-    body = "\n".join(lead_to_text(l) for l in leads)
+    body = "\n".join(lead_to_text(lead) for lead in leads)
     return header + body
 
 
@@ -96,4 +96,4 @@ def leads_to_markdown(leads: list[Lead]) -> str:
 
 def leads_to_json(leads: list[Lead]) -> list[dict]:
     """Return list of lead dicts suitable for JSON serialisation."""
-    return [l.to_dict() for l in leads]
+    return [lead.to_dict() for lead in leads]
