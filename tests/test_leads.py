@@ -129,7 +129,7 @@ class TestGenerateLeads:
         ]
         leads = generate_leads(records)
         assert len(leads) >= 1
-        assert all(isinstance(lead, Lead) for lead in leads)
+        assert all(isinstance(l, Lead) for l in leads)
 
     def test_sorted_by_priority(self):
         records = [
@@ -137,7 +137,7 @@ class TestGenerateLeads:
             _make_intel_record("Nuclear threat WMD detected", confidence=0.9),
         ]
         leads = generate_leads(records)
-        priorities = [lead.priority for lead in leads]
+        priorities = [l.priority for l in leads]
         priority_order = {
             PRIORITY_CRITICAL: 0,
             PRIORITY_HIGH: 1,
@@ -153,7 +153,7 @@ class TestGenerateLeads:
             _make_intel_record("Minor report", confidence=0.1),
         ]
         leads = generate_leads(records, min_confidence=0.5)
-        assert all(lead.confidence >= 0.5 for lead in leads)
+        assert all(l.confidence >= 0.5 for l in leads)
 
     def test_respects_max_leads(self):
         records = [_make_intel_record(f"Content {i}") for i in range(20)]

@@ -8,13 +8,17 @@
 
 from __future__ import annotations
 
-import pytest
 
-from cls_db.database import Database
-from cls_db.models import ALL_DDL
-from cls_db.repository import Repository, _serialize, _row_to_dict
-from cls_db.migrate import ensure_schema, run_migrations, drop_all, reset_schema
-from cls_db.dual_write import make_dual_writer
+# ---------------------------------------------------------------------------
+# PostgreSQL persistence tests (spec1_engine.persistence.postgres)
+# ---------------------------------------------------------------------------
+"""Tests for the PostgreSQL persistence module.
+
+Uses SQLite (via SQLAlchemy) as a drop-in replacement so tests run without
+a real PostgreSQL instance.
+"""
+
+import pytest
 
 
 # ─── Module import / configure ────────────────────────────────────────────────
@@ -224,17 +228,13 @@ def test_reset_engine_clears_cache(sqlite_url):
 
 
 # ---------------------------------------------------------------------------
-# PostgreSQL persistence tests (spec1_engine.persistence.postgres)
-# ---------------------------------------------------------------------------
-"""Tests for the PostgreSQL persistence module.
-
-Uses SQLite (via SQLAlchemy) as a drop-in replacement so tests run without
-a real PostgreSQL instance.
-"""
-
-# ---------------------------------------------------------------------------
 # cls_db persistence tests
 # ---------------------------------------------------------------------------
+from cls_db.database import Database
+from cls_db.models import ALL_DDL
+from cls_db.repository import Repository, _serialize, _row_to_dict
+from cls_db.migrate import ensure_schema, run_migrations, drop_all, reset_schema
+from cls_db.dual_write import make_dual_writer
 
 
 class TestDatabase:

@@ -207,7 +207,7 @@ class TestScorePsyop:
         score_psyop(sig, run_id="run-ev-001", evidence_store_path=store_path)
 
         assert store_path.exists()
-        lines = [line for line in store_path.read_text().splitlines() if line.strip()]
+        lines = [l for l in store_path.read_text().splitlines() if l.strip()]
         assert len(lines) >= 1
         entry = json.loads(lines[0])
         assert "pattern_name" in entry
@@ -221,7 +221,7 @@ class TestScorePsyop:
         score_psyop(sig, run_id="run-1", evidence_store_path=store_path)
         score_psyop(sig, run_id="run-2", evidence_store_path=store_path)
 
-        lines = [line for line in store_path.read_text().splitlines() if line.strip()]
+        lines = [l for l in store_path.read_text().splitlines() if l.strip()]
         assert len(lines) >= 2
         for line in lines:
             obj = json.loads(line)

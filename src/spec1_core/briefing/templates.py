@@ -10,8 +10,6 @@ from __future__ import annotations
 
 import pathlib
 
-from spec1_labels import VERIF_CORROBORATED, VERIF_CONFLICTED
-
 
 def _load(filename: str, fallback: str) -> str:
     """Load a prompt file from core/prompts/, returning *fallback* on error."""
@@ -180,6 +178,8 @@ LEG_USER_PROMPT_TEMPLATE: str = _load("legislative_user_prompt_template.md", _LE
 # ── Verifier Prompt ───────────────────────────────────────────────────────────
 # Used by spec1_core/investigation/verifier.py
 # Returns structured JSON classification of investigation hypothesis.
+
+from spec1_labels import VERIF_CORROBORATED, VERIF_CONFLICTED
 
 VERIFIER_SYSTEM_PROMPT = (
     "You are an intelligence analyst verifying a hypothesis. "

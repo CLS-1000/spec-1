@@ -4,9 +4,31 @@
 # @status:   stable
 # @depends:  spec1_core, cls_db
 
+from __future__ import annotations
+
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+
+app = FastAPI()
+
+origins = [
+    "http://127.0.0.1:8080",
+    "http://localhost:8080",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
 """spec1_api — FastAPI application factory."""
 
-from __future__ import annotations
 
 import logging
 import os
@@ -14,8 +36,9 @@ import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi import HTTPException
 from fastapi.responses import FileResponse
 
 from spec1_api import __version__
@@ -25,7 +48,6 @@ from spec1_api.routers import (
     adapters,
     brief,
     calibration,
-    congress_brief,
     cycle,
     fara,
     health,
@@ -158,7 +180,6 @@ def create_app() -> FastAPI:
     app.include_router(workspace.router, prefix=_V1)
     app.include_router(leg_jud.router, prefix=_V1)
     app.include_router(adapters.router, prefix=_V1)
-    app.include_router(congress_brief.router, prefix=_V1)
 
     @app.get("/verdicts/", include_in_schema=False)
     async def verdicts_ui() -> FileResponse:
