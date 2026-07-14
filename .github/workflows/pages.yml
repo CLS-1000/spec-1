@@ -9,9 +9,6 @@ on:
       - .github/workflows/pages.yml
   workflow_dispatch:
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 permissions:
   contents: read
   pages: write
@@ -22,7 +19,25 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate required files exist
+        run: |
+          if [ ! -f "spec1_portfolio.html" ]; then
+            echo "❌ spec1_portfolio.html not found"
+            exit 1
+          fi
+          if [ ! -f "spec1_ui.html" ]; then
+            echo "❌ spec1_ui.html not found"
+            exit 1
+          fi
+          echo "✓ All required files present"
+
   build:
+    needs: validate
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -32,6 +47,7 @@ jobs:
           mkdir -p _site/ui
           cp spec1_portfolio.html _site/index.html
           cp spec1_ui.html _site/ui/index.html
+          echo "✓ Site assembled to _site/"
 
       - uses: actions/configure-pages@v5
 
