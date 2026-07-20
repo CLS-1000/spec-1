@@ -104,8 +104,8 @@ File verdicts on any report — correct, incorrect, partial, unclear. The calibr
 ## Getting Started
 
 ```bash
-git clone https://github.com/CLS-1000/spec-1V0.7.git
-cd spec-1V0.7
+git clone https://github.com/mjlak1000/spec-1.git
+cd spec-1
 pip install -e ".[dev]"
 cp .env.example .env
 # Add ANTHROPIC_API_KEY to .env (optional — system works without it via Tier 3)
