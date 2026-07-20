@@ -3,291 +3,732 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SPEC-1 :: TERMINAL OSINT ENGINE</title>
+    <title>SPEC-1 :: OSINT RESEARCH ENGINE</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --black: #000;
+            --surface: rgba(10,10,10,.94);
+            --white: #fff;
+            --w70: rgba(255,255,255,.70);
+            --w50: rgba(255,255,255,.50);
+            --w30: rgba(255,255,255,.30);
+            --w20: rgba(255,255,255,.20);
+            --w12: rgba(255,255,255,.12);
+            --w06: rgba(255,255,255,.06);
+            --pass: #00ff00;
+            --alert: #ff0000;
+            --fm: 'IBM Plex Mono', 'Courier New', monospace;
+            --fd: 'Courier Prime', 'Courier New', monospace;
         }
+
+        html { scroll-behavior: smooth; }
+
         body {
-            background: #000000;
-            color: #ffffff;
-            font-family: 'Courier New', 'IBM Plex Mono', monospace;
-            font-size: 14px;
-            line-height: 1.5;
-            padding: 2rem;
+            background: var(--black);
+            color: var(--white);
+            font-family: var(--fm);
+            font-size: 13px;
+            line-height: 1.6;
+            position: relative;
         }
-        .container {
-            max-width: 1200px;
+
+        /* CRT scan lines */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 9999;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 3px,
+                rgba(0,0,0,.04) 3px,
+                rgba(0,0,0,.04) 4px
+            );
+        }
+
+        /* Flower of Life background */
+        #fol-bg {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            opacity: .05;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* ── LAYOUT ─────────────────────────────────────────── */
+        .wrap {
+            position: relative;
+            z-index: 1;
+            max-width: 1080px;
             margin: 0 auto;
+            padding: 2rem 1.5rem 4rem;
         }
-        .term-box {
-            border: 1px solid #ffffff;
-            background: #000000;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
+
+        /* ── PANEL ──────────────────────────────────────────── */
+        .panel {
+            border: 1px solid var(--w30);
+            background: var(--surface);
+            margin-bottom: 1.25rem;
         }
-        .term-header {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            border-bottom: 1px solid #ffffff;
-            padding-bottom: 0.5rem;
-            margin-bottom: 1rem;
+
+        .ph {
             display: flex;
             justify-content: space-between;
+            align-items: center;
+            padding: 5px 12px;
+            border-bottom: 1px solid var(--w20);
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: .14em;
+            color: var(--w50);
+            background: rgba(255,255,255,.025);
             flex-wrap: wrap;
+            gap: 4px;
         }
-        h1, h2, h3 {
-            font-weight: bold;
-        }
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 0.5rem;
-        }
-        h2 {
-            font-size: 1.25rem;
-            border-left: 3px solid #ffffff;
-            padding-left: 0.75rem;
-            margin: 1.5rem 0 1rem 0;
-        }
-        pre {
-            background: #000000;
-            border: 1px solid #ffffff;
-            padding: 1rem;
-            overflow-x: auto;
-            margin: 1rem 0;
-            font-size: 0.8rem;
-            color: #ffffff;
-        }
-        a {
-            color: #ffffff;
-            text-decoration: none;
-            border-bottom: 1px dotted #ffffff;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
-        .feature-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1rem;
-            margin-top: 1rem;
-        }
-        .feature-card {
-            border: 1px solid #ffffff;
-            padding: 1rem;
-            background: #000000;
-        }
-        .feature-card-title {
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            border-bottom: 1px solid rgba(255,255,255,0.3);
-            padding-bottom: 0.4rem;
-            margin-bottom: 0.6rem;
-        }
-        .feature-card-body {
-            font-size: 0.8rem;
-            color: rgba(255,255,255,0.75);
-            line-height: 1.6;
-        }
-        .pipeline-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-        }
-        .pipeline-card {
-            border: 1px solid #ffffff;
-            padding: 1rem;
-            background: #000000;
-        }
-        .pipeline-step {
-            font-size: 0.65rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: rgba(255,255,255,0.5);
-            margin-bottom: 0.3rem;
-        }
-        .pipeline-name {
-            font-size: 0.9rem;
-            font-weight: bold;
-        }
-        .pipeline-desc {
-            font-size: 0.75rem;
-            margin-top: 0.4rem;
-            color: rgba(255,255,255,0.7);
-        }
-        .button {
-            background: transparent;
-            border: 1px solid #ffffff;
-            color: #ffffff;
-            padding: 0.5rem 1rem;
-            font-family: inherit;
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            cursor: pointer;
-            display: inline-block;
-            text-decoration: none;
-        }
-        .button:hover {
-            background: #ffffff;
-            color: #000000;
-        }
-        footer {
-            margin-top: 3rem;
+
+        .pb { padding: 16px 14px; }
+
+        /* ── HERO ───────────────────────────────────────────── */
+        .logo-ascii {
+            font-family: var(--fd);
+            font-size: 12px;
+            line-height: 1.15;
+            white-space: pre;
             text-align: center;
-            font-size: 0.7rem;
-            border-top: 1px solid #ffffff;
-            padding-top: 1.5rem;
-            color: rgba(255,255,255,0.5);
+            color: var(--white);
+            margin-bottom: 16px;
+            display: block;
         }
+
+        .hero-sub {
+            text-align: center;
+            font-size: 10px;
+            letter-spacing: .16em;
+            text-transform: uppercase;
+            color: var(--w50);
+            margin-bottom: 10px;
+        }
+
+        .hero-status {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            font-size: 11px;
+            color: var(--w50);
+            margin-bottom: 10px;
+        }
+
+        .hero-cmd {
+            text-align: center;
+            font-family: var(--fd);
+            font-size: 11px;
+            color: var(--w30);
+        }
+
+        /* ── STATUS BAR ─────────────────────────────────────── */
+        .stat-bar {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            background: var(--w12);
+            gap: 1px;
+        }
+
+        .stat-cell {
+            background: var(--surface);
+            padding: 11px 14px;
+        }
+
+        .stat-lbl { font-size: 9px; text-transform: uppercase; letter-spacing: .14em; color: var(--w30); margin-bottom: 3px; }
+        .stat-val { font-size: 15px; font-weight: 700; }
+        .stat-sub { font-size: 10px; color: var(--w50); margin-top: 2px; }
+
+        .tag-row {
+            padding: 7px 14px;
+            border-top: 1px solid var(--w12);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0;
+            font-size: 10px;
+        }
+
+        .tag-item {
+            padding: 2px 14px 2px 0;
+            margin-right: 14px;
+            border-right: 1px solid var(--w12);
+        }
+
+        .tag-item:last-child { border-right: none; margin-right: 0; }
+
+        /* ── SECTION COPY ───────────────────────────────────── */
+        .sec-title { font-size: 14px; font-weight: 700; letter-spacing: .06em; margin-bottom: 10px; }
+        .sec-body { font-size: 12px; color: var(--w70); line-height: 1.75; }
+        .sec-body + .sec-body { margin-top: 10px; }
+
+        .thesis {
+            border-left: 2px solid var(--white);
+            padding: 10px 16px;
+            margin: 14px 0;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: .04em;
+        }
+
+        .callout {
+            padding: 10px 14px;
+            border: 1px solid var(--w20);
+            background: rgba(255,255,255,.02);
+            font-size: 12px;
+            font-style: italic;
+            color: var(--w70);
+            margin-top: 14px;
+        }
+
+        /* ── PIPELINE ───────────────────────────────────────── */
+        .pipe-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background: var(--w12);
+        }
+
+        .pipe-card {
+            background: var(--surface);
+            padding: 14px 10px;
+            text-align: center;
+        }
+
+        .pipe-num { font-size: 9px; color: var(--w30); letter-spacing: .12em; margin-bottom: 5px; }
+        .pipe-name { font-size: 11px; font-weight: 700; letter-spacing: .06em; }
+
+        .pipe-footer {
+            padding: 8px 14px;
+            border-top: 1px solid var(--w12);
+            font-size: 10px;
+            color: var(--w30);
+            font-family: var(--fd);
+            letter-spacing: .03em;
+        }
+
+        /* ── GATE GRID ──────────────────────────────────────── */
+        .gate-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1px;
+            background: var(--w12);
+        }
+
+        .gate-card {
+            background: var(--surface);
+            padding: 14px;
+        }
+
+        .gate-num { font-size: 9px; color: var(--w30); letter-spacing: .14em; text-transform: uppercase; margin-bottom: 4px; }
+        .gate-name { font-size: 13px; font-weight: 700; margin-bottom: 9px; }
+
+        .gate-criteria { font-size: 11px; color: var(--w50); line-height: 1.7; }
+        .gate-criteria span { display: block; }
+        .gate-criteria span::before { content: '▸ '; color: var(--w30); }
+
+        /* ── VERDICT GRID ───────────────────────────────────── */
+        .verdict-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1px;
+            background: var(--w12);
+        }
+
+        .verdict-card { background: var(--surface); padding: 13px 14px; }
+        .verdict-name { font-size: 11px; font-weight: 700; letter-spacing: .10em; margin-bottom: 4px; text-transform: uppercase; }
+        .verdict-desc { font-size: 11px; color: var(--w50); line-height: 1.5; }
+
+        /* ── ADAPTER GRID ───────────────────────────────────── */
+        .adapter-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1px;
+            background: var(--w12);
+        }
+
+        .adapter-card { background: var(--surface); padding: 14px; }
+        .adapter-name { font-size: 11px; font-weight: 700; letter-spacing: .10em; text-transform: uppercase; margin-bottom: 2px; }
+        .adapter-module { font-family: var(--fd); font-size: 10px; color: var(--w30); margin-bottom: 8px; letter-spacing: .04em; }
+        .adapter-desc { font-size: 11px; color: var(--w70); line-height: 1.6; }
+
+        /* ── BRIEF LIST ─────────────────────────────────────── */
+        .brief-list { list-style: none; }
+        .brief-list li {
+            padding: 6px 14px;
+            border-bottom: 1px solid var(--w06);
+            font-size: 12px;
+            color: var(--w70);
+        }
+        .brief-list li::before { content: '▸ '; color: var(--w30); }
+        .brief-list li:last-child { border-bottom: none; }
+
+        /* ── MCP ROW ────────────────────────────────────────── */
+        .mcp-row {
+            padding: 8px 14px;
+            border-top: 1px solid var(--w12);
+            font-size: 10px;
+            color: var(--w30);
+            font-family: var(--fd);
+            line-height: 1.7;
+        }
+
+        /* ── TECH TABLE ─────────────────────────────────────── */
+        .tech-table { width: 100%; border-collapse: collapse; }
+        .tech-table tr { border-bottom: 1px solid var(--w12); }
+        .tech-table tr:last-child { border-bottom: none; }
+        .tech-table td { padding: 8px 14px; vertical-align: top; }
+        .tech-table td:first-child {
+            color: var(--w30);
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: .12em;
+            white-space: nowrap;
+            width: 200px;
+            padding-right: 20px;
+        }
+        .tech-table td:last-child { color: var(--w70); font-family: var(--fd); font-size: 11px; }
+
+        /* ── TERMINAL BLOCKS ────────────────────────────────── */
+        pre {
+            font-family: var(--fd);
+            font-size: 11px;
+            line-height: 1.75;
+            color: var(--w70);
+            padding: 14px;
+            overflow-x: auto;
+        }
+
+        /* ── CTA ────────────────────────────────────────────── */
+        .cta-box { text-align: center; padding: 28px 20px; }
+        .cta-eyebrow { font-size: 9px; letter-spacing: .18em; text-transform: uppercase; color: var(--w30); margin-bottom: 10px; }
+        .cta-line { font-size: 13px; color: var(--w70); margin-bottom: 20px; }
+
+        .btn-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+        .btn {
+            display: inline-block;
+            padding: 8px 20px;
+            border: 1px solid var(--white);
+            color: var(--white);
+            font-family: var(--fm);
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: .12em;
+            text-decoration: none;
+            transition: background .12s cubic-bezier(.4,0,.2,1), color .12s;
+        }
+        .btn:hover { background: var(--white); color: var(--black); }
+
+        /* ── FOOTER ─────────────────────────────────────────── */
+        footer {
+            border-top: 1px solid var(--w12);
+            padding-top: 20px;
+            text-align: center;
+            font-size: 10px;
+            color: var(--w30);
+            letter-spacing: .10em;
+            text-transform: uppercase;
+            line-height: 1.9;
+        }
+
+        /* ── UTILS ──────────────────────────────────────────── */
+        .pass { color: var(--pass); }
+        .caution { color: var(--alert); }
+        .muted { color: var(--w50); }
+        .dim { color: var(--w30); }
+        .mono { font-family: var(--fd); }
+        .divider { height: 1px; background: var(--w12); }
+
         .cursor {
             display: inline-block;
-            width: 8px;
-            height: 14px;
-            background-color: #ffffff;
+            width: 7px;
+            height: 13px;
+            background: var(--white);
             vertical-align: middle;
             animation: blink 1s step-end infinite;
-            margin-left: 4px;
         }
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0; }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+        /* ── RESPONSIVE ─────────────────────────────────────── */
+        @media (max-width: 860px) {
+            .stat-bar { grid-template-columns: repeat(2,1fr); }
+            .pipe-grid { grid-template-columns: repeat(4,1fr); }
+            .gate-grid { grid-template-columns: repeat(2,1fr); }
+            .verdict-grid { grid-template-columns: repeat(2,1fr); }
         }
-        .signal-pass {
-            color: #00ff00;
-        }
-        .signal-caution {
-            color: #ff4444;
-        }
-        .stat-row {
-            display: flex;
-            gap: 2rem;
-            flex-wrap: wrap;
-            margin-top: 0.5rem;
-            font-size: 0.75rem;
-        }
-        .stat-item span:first-child {
-            color: rgba(255,255,255,0.5);
+        @media (max-width: 560px) {
+            .stat-bar, .gate-grid, .verdict-grid, .adapter-grid { grid-template-columns: 1fr; }
+            .pipe-grid { grid-template-columns: repeat(2,1fr); }
+            .logo-ascii { font-size: 7px; }
+            .tech-table td:first-child { width: auto; white-space: normal; }
         }
     </style>
+<meta property="og:image" content="https://cls-1000.github.io/spec-1V0.7/docs/open-graph.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:image" content="https://cls-1000.github.io/spec-1V0.7/docs/open-graph.png" />
 </head>
 <body>
-<div class="container">
 
-    <div class="term-box">
-        <div class="term-header">
-            <span>SPEC-1 :: OSINT SIGNAL ENGINE</span>
-            <span>v0.6.0 <span class="signal-pass">[STABLE]</span></span>
+<!-- FLOWER OF LIFE -->
+<svg id="fol-bg" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <pattern id="fol" x="0" y="0" width="69.28" height="60" patternUnits="userSpaceOnUse">
+            <circle cx="34.64" cy="30" r="20" fill="none" stroke="#fff" stroke-width="0.5"></circle>
+            <circle cx="34.64" cy="10" r="20" fill="none" stroke="#fff" stroke-width="0.5"></circle>
+            <circle cx="34.64" cy="50" r="20" fill="none" stroke="#fff" stroke-width="0.5"></circle>
+            <circle cx="17.32" cy="20" r="20" fill="none" stroke="#fff" stroke-width="0.5"></circle>
+            <circle cx="51.96" cy="20" r="20" fill="none" stroke="#fff" stroke-width="0.5"></circle>
+            <circle cx="17.32" cy="40" r="20" fill="none" stroke="#fff" stroke-width="0.5"></circle>
+            <circle cx="51.96" cy="40" r="20" fill="none" stroke="#fff" stroke-width="0.5"></circle>
+        </pattern>
+    </defs>
+    <rect width="100%" height="100%" fill="url(#fol)"></rect>
+</svg>
+
+<div class="wrap">
+
+    <!-- ══ HERO ══════════════════════════════════════════════════════ -->
+    <div class="panel">
+        <div class="ph">
+            <span>[ SPEC-1 RESEARCH ENGINE ]</span>
+            <span>V0.7.0  ● STABLE</span>
         </div>
-        <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
-            <div>
-                ● PIPELINE ACTIVE<br>
-                ● SOURCES: RSS · FARA · CONGRESSIONAL · NARRATIVE
+        <div class="pb" style="padding: 24px 14px 16px;">
+            <pre class="logo-ascii"> ███████╗██████╗ ███████╗ ██████╗ ██╗
+ ██╔════╝██╔══██╗██╔════╝██╔════╝ ██║
+ ███████╗██████╔╝█████╗  ██║      ██║
+ ╚════██║██╔═══╝ ██╔══╝  ██║      ██║
+ ███████║██║     ███████╗╚██████╗ ██║
+ ╚══════╝╚═╝     ╚══════╝ ╚═════╝ ╚═╝</pre>
+            <div class="hero-sub">OSINT RESEARCH COMMAND CENTER &nbsp;·&nbsp; PORTLAND OR &nbsp;·&nbsp; EVASTARARCANA</div>
+            <div class="hero-status">
+                <span><span class="pass">●</span> PIPELINE ACTIVE</span>
+                <span class="dim">·</span>
+                <span>SOURCES: RSS &nbsp;·&nbsp; FARA &nbsp;·&nbsp; CONGRESSIONAL &nbsp;·&nbsp; NARRATIVE</span>
+                <span class="dim">·</span>
+                <span><span class="pass">PASS</span> :: CREDIBILITY GATE</span>
             </div>
-            <div>
-                <span class="signal-pass">PASS</span> :: CREDIBILITY GATE<br>
-                <span class="signal-pass">PASS</span> :: 4-GATE SIGNAL FILTER
+            <div class="hero-cmd">$ python -m spec1_api.main <span class="cursor"></span></div>
+        </div>
+    </div>
+
+    <!-- ══ SYSTEM STATUS ══════════════════════════════════════════════ -->
+    <div class="panel">
+        <div class="ph">
+            <span>SYSTEM STATUS</span>
+            <span class="dim">// runtime telemetry</span>
+        </div>
+        <div class="stat-bar">
+            <div class="stat-cell">
+                <div class="stat-lbl">System</div>
+                <div class="stat-val"><span class="pass">ONLINE</span></div>
+                <div class="stat-sub">● Pipeline active</div>
+            </div>
+            <div class="stat-cell">
+                <div class="stat-lbl">Tests Passing</div>
+                <div class="stat-val">621</div>
+                <div class="stat-sub">61 files covered</div>
+            </div>
+            <div class="stat-cell">
+                <div class="stat-lbl">Pipeline</div>
+                <div class="stat-val">7-STAGE</div>
+                <div class="stat-sub">Harvest → Store</div>
+            </div>
+            <div class="stat-cell">
+                <div class="stat-lbl">AI Layer</div>
+                <div class="stat-val">CLAUDE</div>
+                <div class="stat-sub">Haiku + Sonnet</div>
             </div>
         </div>
-        <div style="margin-top: 0.75rem; font-size: 0.75rem;">
-            $ python -m spec1_api.main <span class="cursor"></span>
+        <div class="tag-row">
+            <span class="tag-item"><span class="dim">CREDIBILITY GATE </span><span class="pass">PASS</span></span>
+            <span class="tag-item"><span class="dim">4-GATE FILTER </span><span class="pass">PASS</span></span>
+            <span class="tag-item"><span class="dim">LICENSE </span><span>OPEN SOURCE</span></span>
+            <span class="tag-item"><span class="dim">PYTHON </span><span>3.9+</span></span>
+            <span class="tag-item" style="border-right:none;margin-right:0;"><span class="dim">API </span><span>FastAPI + MCP</span></span>
         </div>
     </div>
 
-    <h1>SPEC-1 // MODULAR OSINT PIPELINE</h1>
-    <p style="margin-bottom: 0.5rem;">Real-time open-source intelligence: harvest → score → investigate → analyze. AI-powered by Claude Sonnet.</p>
-    <div class="stat-row" style="margin-bottom: 1.5rem;">
-        <div class="stat-item"><span>Tests: </span><span class="signal-pass">~780 passing</span></div>
-        <div class="stat-item"><span>Persistence: </span><span>JSONL + SQLite dual-write</span></div>
-        <div class="stat-item"><span>API: </span><span>FastAPI + MCP server</span></div>
-        <div class="stat-item"><span>License: </span><span>Open Source</span></div>
-    </div>
-
-    <h2>$ pipeline::stages</h2>
-    <div class="pipeline-grid">
-        <div class="pipeline-card">
-            <div class="pipeline-step">Stage 1</div>
-            <div class="pipeline-name">HARVEST</div>
-            <div class="pipeline-desc">RSS feeds, FARA filings, congressional records, and narrative sources ingested via cls_osint adapters.</div>
+    <!-- ══ 01 WHAT THIS IS ════════════════════════════════════════════ -->
+    <div class="panel">
+        <div class="ph">
+            <span>01 — WHAT THIS IS</span>
+            <span class="dim">// product overview</span>
         </div>
-        <div class="pipeline-card">
-            <div class="pipeline-step">Stage 2</div>
-            <div class="pipeline-name">SCORE</div>
-            <div class="pipeline-desc">4-gate filter: credibility · volume · velocity · novelty. Only signals passing all gates become Opportunities.</div>
-        </div>
-        <div class="pipeline-card">
-            <div class="pipeline-step">Stage 3</div>
-            <div class="pipeline-name">INVESTIGATE</div>
-            <div class="pipeline-desc">Claude Sonnet generates hypotheses and verifies outcomes: Corroborated · Escalate · Investigate · Monitor · Archive.</div>
-        </div>
-        <div class="pipeline-card">
-            <div class="pipeline-step">Stage 4</div>
-            <div class="pipeline-name">ANALYZE</div>
-            <div class="pipeline-desc">IntelligenceRecords with confidence scoring. Psyop detection, FARA tracking, and daily world briefs generated.</div>
+        <div class="pb">
+            <div class="sec-title">Real-time signal monitoring for national security and geopolitical risk</div>
+            <p class="sec-body">SPEC-1 is an automated open-source research engine. It harvests signals from authoritative sources, filters them through a deterministic four-gate framework, and surfaces what matters — producing structured research records and daily written briefs without manual intervention.</p>
+            <div class="thesis">The bottleneck is attention, not access.</div>
+            <p class="sec-body">One purpose: separate signal from noise in a high-volume information environment, and deliver what actually requires human attention.</p>
         </div>
     </div>
 
-    <h2>$ modules::overview</h2>
-    <div class="feature-grid">
-        <div class="feature-card">
-            <div class="feature-card-title">cls_world_brief</div>
-            <div class="feature-card-body">Daily AI-generated world intelligence brief with sections, sources, and confidence scores.</div>
+    <!-- ══ 02 THE PROBLEM ═════════════════════════════════════════════ -->
+    <div class="panel">
+        <div class="ph">
+            <span>02 — THE PROBLEM IT SOLVES</span>
+            <span class="dim">// operational thesis</span>
         </div>
-        <div class="feature-card">
-            <div class="feature-card-title">cls_leads</div>
-            <div class="feature-card-body">Actionable intelligence leads prioritized from verified records: CRITICAL → HIGH → MEDIUM → LOW.</div>
-        </div>
-        <div class="feature-card">
-            <div class="feature-card-title">cls_psyop</div>
-            <div class="feature-card-body">Psychological-operation pattern detection with evidence chains and risk classification.</div>
-        </div>
-        <div class="feature-card">
-            <div class="feature-card-title">cls_verdicts + cls_calibration</div>
-            <div class="feature-card-body">Human feedback loop: file verdicts on records and surface accuracy drift descriptively — never auto-tuned.</div>
-        </div>
-        <div class="feature-card">
-            <div class="feature-card-title">spec1_api</div>
-            <div class="feature-card-body">FastAPI application with routers for signals, intel, leads, briefs, psyop, FARA, verdicts, calibration, and cycle.</div>
-        </div>
-        <div class="feature-card">
-            <div class="feature-card-title">MCP Server</div>
-            <div class="feature-card-body">Full Claude integration via MCP: run_cycle, get_intel, file_verdict, get_calibration, and more.</div>
+        <div class="pb">
+            <p class="sec-body">Anyone working in national security, geopolitical risk, or threat analysis faces the same daily reality: there is far more credible reporting than any human can process. Feeds from think tanks, investigative journalists, and defense research organizations produce dozens of new pieces every day. Most are not actionable. A small fraction are. The challenge is not access to information — it is triage.</p>
+            <p class="sec-body">SPEC-1 automates that triage. It monitors a curated set of high-credibility sources continuously, evaluates each new signal through a structured scoring framework, and surfaces only those that clear every threshold. Signals that pass are handed to an investigation and verification workflow powered by Claude. The result is a compressed, high-confidence set of research records and a daily written brief — ready for human review without the noise.</p>
+            <div class="callout">"The system handles the volume. The analyst handles the judgment."</div>
         </div>
     </div>
 
-    <h2>$ deploy::local</h2>
-    <pre>
-$ git clone https://github.com/mjlak1000/spec-1.git
-$ cd spec-1
+    <!-- ══ 03 PIPELINE ════════════════════════════════════════════════ -->
+    <div class="panel">
+        <div class="ph">
+            <span>03 — PIPELINE</span>
+            <span class="dim">// 7 stages · fault-tolerant · daily cron 06:00 PT</span>
+        </div>
+        <div class="pb" style="padding-bottom: 10px;">
+            <p class="sec-body">Seven sequential stages. Each transforms the data and gates what moves forward. Any single failure is logged and skipped — the cycle never halts on a single error.</p>
+        </div>
+        <div class="pipe-grid">
+            <div class="pipe-card"><div class="pipe-num">[01]</div><div class="pipe-name">HARVEST</div></div>
+            <div class="pipe-card"><div class="pipe-num">[02]</div><div class="pipe-name">PARSE</div></div>
+            <div class="pipe-card"><div class="pipe-num">[03]</div><div class="pipe-name">SCORE</div></div>
+            <div class="pipe-card"><div class="pipe-num">[04]</div><div class="pipe-name">INVESTIGATE</div></div>
+            <div class="pipe-card"><div class="pipe-num">[05]</div><div class="pipe-name">VERIFY</div></div>
+            <div class="pipe-card"><div class="pipe-num">[06]</div><div class="pipe-name">ANALYZE</div></div>
+            <div class="pipe-card"><div class="pipe-num">[07]</div><div class="pipe-name">STORE</div></div>
+        </div>
+        <div class="pipe-footer">
+            [01 HARVEST] &gt; [02 PARSE] &gt; [03 SCORE] &gt; [04 INVESTIGATE] &gt; [05 VERIFY] &gt; [06 ANALYZE] &gt; [07 STORE]
+        </div>
+        <div style="padding: 10px 14px; border-top: 1px solid var(--w12); font-size: 11px; color: var(--w50);">
+            Signals clearing all four gates become <span class="mono">Opportunity</span> objects, investigated by Claude, synthesized into <span class="mono">ResearchRecord</span> objects, dual-written to JSONL + SQLite.
+        </div>
+    </div>
+
+    <!-- ══ FOUR-GATE FRAMEWORK ════════════════════════════════════════ -->
+    <div class="panel">
+        <div class="ph">
+            <span>STAGE 03 — FOUR-GATE SCORING FRAMEWORK</span>
+            <span class="dim">// any single failure → signal dropped</span>
+        </div>
+        <div class="gate-grid">
+            <div class="gate-card">
+                <div class="gate-num">Gate 1</div>
+                <div class="gate-name">CREDIBILITY</div>
+                <div class="gate-criteria">
+                    <span>Source rating</span>
+                    <span>Editorial standard</span>
+                    <span>Domain track record</span>
+                </div>
+            </div>
+            <div class="gate-card">
+                <div class="gate-num">Gate 2</div>
+                <div class="gate-name">VOLUME</div>
+                <div class="gate-criteria">
+                    <span>Content depth</span>
+                    <span>Word threshold</span>
+                    <span>Substance filter</span>
+                </div>
+            </div>
+            <div class="gate-card">
+                <div class="gate-num">Gate 3</div>
+                <div class="gate-name">VELOCITY</div>
+                <div class="gate-criteria">
+                    <span>Recency score</span>
+                    <span>Time-window decay</span>
+                    <span>Sliding scale</span>
+                </div>
+            </div>
+            <div class="gate-card">
+                <div class="gate-num">Gate 4</div>
+                <div class="gate-name">NOVELTY</div>
+                <div class="gate-criteria">
+                    <span>Keyword taxonomy</span>
+                    <span>Domain relevance</span>
+                    <span>Subject filter</span>
+                </div>
+            </div>
+        </div>
+        <div style="padding: 7px 14px; border-top: 1px solid var(--w12); font-size: 10px; color: var(--w30); font-style: italic;">
+            Gate weights remain unpublished. They represent the accumulated operational judgment of the system.
+        </div>
+    </div>
+
+    <!-- ══ VERIFICATION OUTCOMES ══════════════════════════════════════ -->
+    <div class="panel">
+        <div class="ph">
+            <span>STAGE 05 — VERIFICATION OUTCOMES</span>
+            <span class="dim">// Claude Haiku · + confidence score</span>
+        </div>
+        <div class="verdict-grid">
+            <div class="verdict-card">
+                <div class="verdict-name pass">CORROBORATED</div>
+                <div class="verdict-desc">Evidence supports the hypothesis.</div>
+            </div>
+            <div class="verdict-card">
+                <div class="verdict-name caution">ESCALATE</div>
+                <div class="verdict-desc">High-confidence, high-urgency finding.</div>
+            </div>
+            <div class="verdict-card">
+                <div class="verdict-name" style="color: var(--white);">INVESTIGATE</div>
+                <div class="verdict-desc">Hypothesis plausible, more research needed.</div>
+            </div>
+            <div class="verdict-card">
+                <div class="verdict-name muted">MONITOR</div>
+                <div class="verdict-desc">Signal is real but not yet actionable.</div>
+            </div>
+            <div class="verdict-card">
+                <div class="verdict-name muted">CONFLICTED</div>
+                <div class="verdict-desc">Evidence is contradictory.</div>
+            </div>
+            <div class="verdict-card">
+                <div class="verdict-name dim">ARCHIVE</div>
+                <div class="verdict-desc">Signal does not warrant further attention.</div>
+            </div>
+        </div>
+        <div style="padding: 7px 14px; border-top: 1px solid var(--w12); font-size: 10px; color: var(--w30); font-style: italic;">
+            API failure → graceful fallback &nbsp;·&nbsp; cycle never crashes on verification error
+        </div>
+    </div>
+
+    <!-- ══ DOMAIN ADAPTERS ════════════════════════════════════════════ -->
+    <div class="panel">
+        <div class="ph">
+            <span>04 — DOMAIN ADAPTERS</span>
+            <span class="dim">// cls_osint/adapters/</span>
+        </div>
+        <div class="pb" style="padding-bottom: 10px;">
+            <p class="sec-body">The core pipeline is domain-agnostic. Domain-specific analysis is handled by adapter modules that feed into the same scoring and persistence infrastructure.</p>
+        </div>
+        <div class="adapter-grid">
+            <div class="adapter-card">
+                <div class="adapter-name">FARA</div>
+                <div class="adapter-module">cls_osint/adapters/fara &nbsp;·&nbsp; 22 tests</div>
+                <div class="adapter-desc">DOJ public database filings. Cross-references foreign agent registrations against congressional activity and known influence networks. Surfaces registrant-principal relationships as scored signals.</div>
+            </div>
+            <div class="adapter-card">
+                <div class="adapter-name">CONGRESSIONAL</div>
+                <div class="adapter-module">cls_osint/adapters/congressional &nbsp;·&nbsp; 35 tests</div>
+                <div class="adapter-desc">Member financial disclosures via fallback chain: Quiver Quantitative → Capitol Trades → House eFD. Flags trades in defense, cybersecurity, and energy sectors for conflict-of-interest analysis.</div>
+            </div>
+            <div class="adapter-card">
+                <div class="adapter-name">NARRATIVE</div>
+                <div class="adapter-module">cls_osint/adapters/narrative</div>
+                <div class="adapter-desc">Psychological operations detection. TF-IDF cosine similarity clustering, entity anomalies, publication silence patterns. Surfaces narrative seeding, astroturfing, and information suppression as scored signals.</div>
+            </div>
+            <div class="adapter-card">
+                <div class="adapter-name">PERSISTENCE</div>
+                <div class="adapter-module">cls_db.dual_write</div>
+                <div class="adapter-desc">Atomic dual-write layer. Every store write keeps JSONL and SQLite in sync. JSONL is the immutable ground truth; SQLite is the query layer for historical analysis and downstream access.</div>
+            </div>
+        </div>
+        <div style="height: 1px; background: var(--w12);"></div>
+    </div>
+
+    <!-- ══ DAILY BRIEF ════════════════════════════════════════════════ -->
+    <div class="panel">
+        <div class="ph">
+            <span>06 — DAILY RESEARCH BRIEF</span>
+            <span class="dim">// Claude Sonnet &nbsp;·&nbsp; rule-based fallback if API unavailable</span>
+        </div>
+        <div class="pb" style="padding-bottom: 10px;">
+            <p class="sec-body">After each cycle, a briefing generator submits scored research records to Claude Sonnet with a professional editor prompt — precise, sourced, no speculation beyond the evidence. Every claim traces back to a scored signal. If the API call fails, a structured fallback brief is generated from raw record data. The cycle never produces nothing.</p>
+        </div>
+        <ul class="brief-list">
+            <li>Executive summary of cycle findings</li>
+            <li>Elevated signals requiring immediate attention</li>
+            <li>Domain briefings — cyber and geopolitical separately</li>
+            <li>Story leads for further investigation</li>
+            <li>Watch list items for ongoing monitoring</li>
+        </ul>
+        <div style="height: 1px; background: var(--w12);"></div>
+    </div>
+
+    <!-- ══ API + DEPLOY ═══════════════════════════════════════════════ -->
+    <div class="panel">
+        <div class="ph">
+            <span>07 — API AND SCHEDULING</span>
+            <span class="dim">// FastAPI &nbsp;·&nbsp; APScheduler &nbsp;·&nbsp; 06:00 PT daily</span>
+        </div>
+        <pre>$ git clone https://github.com/CLS-1000/spec-1V0.7.git
+$ cd spec-1V0.7
 $ pip install -e ".[dev]"
-$ cp .env.example .env            # add ANTHROPIC_API_KEY
+$ cp .env.example .env          # add ANTHROPIC_API_KEY
 $ PYTHONPATH=src python -m spec1_api.main
-<span class="signal-pass">[OK] SPEC-1 API running on http://0.0.0.0:8000</span></pre>
+<span class="pass">[OK] SPEC-1 API running on http://0.0.0.0:8000</span>
 
-    <h2>$ run::cycle</h2>
-    <pre>
 $ PYTHONPATH=src python -m spec1_engine.app.cycle
-<span class="signal-pass">[OK] Harvest complete</span>
-<span class="signal-pass">[OK] 4-gate scoring: N signals → M opportunities</span>
-<span class="signal-pass">[OK] Investigations generated and verified</span>
-<span class="signal-pass">[OK] Daily brief written to generated/briefs/</span></pre>
-
-    <div style="border: 1px solid #ffffff; padding: 1.5rem; text-align: center; margin: 2rem 0;">
-        <div style="font-size: 0.7rem; letter-spacing: 2px; margin-bottom: 0.75rem;">OPEN SOURCE · AI-POWERED · TERMINAL-NATIVE</div>
-        <div style="margin-bottom: 1rem; font-size: 0.85rem;">Real-time OSINT. Human-in-the-loop calibration. Built for analysts.</div>
-        <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-            <a href="https://github.com/mjlak1000/spec-1" class="button" target="_blank" rel="noopener noreferrer">View on GitHub</a>
-            <a href="https://github.com/mjlak1000/spec-1/blob/main/README.md" class="button" target="_blank" rel="noopener noreferrer">Documentation</a>
+<span class="pass">[OK] Harvest complete</span>
+<span class="pass">[OK] 4-gate scoring: N signals → M opportunities</span>
+<span class="pass">[OK] Investigations generated and verified</span>
+<span class="pass">[OK] Daily brief written to generated/briefs/</span></pre>
+        <div class="mcp-row">
+            MCP :: run_cycle &nbsp;·&nbsp; get_signals &nbsp;·&nbsp; get_intel &nbsp;·&nbsp; get_leads &nbsp;·&nbsp; get_brief &nbsp;·&nbsp; get_psyop &nbsp;·&nbsp; get_fara &nbsp;·&nbsp; analyse_psyop &nbsp;·&nbsp; get_stats &nbsp;·&nbsp; file_verdict &nbsp;·&nbsp; get_verdicts &nbsp;·&nbsp; get_calibration
         </div>
     </div>
 
+    <!-- ══ TECHNICAL SUMMARY ══════════════════════════════════════════ -->
+    <div class="panel">
+        <div class="ph">
+            <span>10 — TECHNICAL SUMMARY</span>
+            <span class="dim">// stack at a glance</span>
+        </div>
+        <table class="tech-table">
+            <tr><td>Language</td><td>Python 3.9+</td></tr>
+            <tr><td>Pipeline stages</td><td>7 (Harvest → Store)</td></tr>
+            <tr><td>Signal sources</td><td>RSS feeds from curated authoritative publishers</td></tr>
+            <tr><td>Scoring framework</td><td>4-gate deterministic filtering</td></tr>
+            <tr><td>AI integration</td><td>Claude Haiku (verification) &nbsp;·&nbsp; Claude Sonnet (briefing)</td></tr>
+            <tr><td>Persistence</td><td>Append-only JSONL + SQLite (cls_db dual-write)</td></tr>
+            <tr><td>Domain adapters</td><td>cls_osint/adapters: fara &nbsp;·&nbsp; congressional &nbsp;·&nbsp; narrative</td></tr>
+            <tr><td>API</td><td>FastAPI &nbsp;·&nbsp; APScheduler &nbsp;·&nbsp; 06:00 AM PT daily cron</td></tr>
+            <tr><td>MCP server</td><td>mcp_server.py &nbsp;·&nbsp; 12 tools exposed to Claude</td></tr>
+            <tr><td>Tests</td><td>621 across 61 files</td></tr>
+            <tr><td>Architecture</td><td>v0.7.0</td></tr>
+        </table>
+    </div>
+
+    <!-- ══ WHY THIS MATTERS ═══════════════════════════════════════════ -->
+    <div class="panel">
+        <div class="ph">
+            <span>11 — WHY THIS MATTERS</span>
+        </div>
+        <div class="pb">
+            <div class="thesis">The system handles the volume. The analyst handles the judgment.</div>
+            <p class="sec-body">The bottleneck in analysis work is not information — it is attention. SPEC-1 is designed to protect analyst attention by doing the triage work that does not require human judgment: fetching, cleaning, filtering, and structuring.</p>
+            <p class="sec-body">What reaches the human is already scored, investigated, verified, and written up. The human role is then what it should be: evaluating the findings, directing follow-on research, and making decisions.</p>
+            <p class="sec-body">That division of labor is the point.</p>
+        </div>
+    </div>
+
+    <!-- ══ CTA ════════════════════════════════════════════════════════ -->
+    <div class="panel">
+        <div class="cta-box">
+            <div class="cta-eyebrow">OPEN SOURCE &nbsp;·&nbsp; AI-POWERED &nbsp;·&nbsp; TERMINAL-NATIVE</div>
+            <div class="cta-line">Real-time OSINT. Human-in-the-loop calibration. Built for analysts.</div>
+            <div class="btn-row">
+                <a href="https://github.com/CLS-1000/spec-1V0.7" class="btn" target="_blank" rel="noopener noreferrer">View on GitHub</a>
+                <a href="https://github.com/CLS-1000/spec-1V0.7/blob/develop/README.md" class="btn" target="_blank" rel="noopener noreferrer">Documentation</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ FOOTER ═════════════════════════════════════════════════════ -->
     <footer>
-        SPEC-1 // OPEN SOURCE OSINT ENGINE — EVASTARARCANA LLC<br>
-        CLASSIFICATION: UNCLASSIFIED · DATA_STREAM_SECURE
+        SPEC-1 // OPEN SOURCE OSINT RESEARCH ENGINE — EVASTARARCANA LLC &nbsp;·&nbsp; PORTLAND OR<br>
+        CLASSIFICATION: UNCLASSIFIED &nbsp;·&nbsp; DATA_STREAM_SECURE &nbsp;·&nbsp; v0.7.0
     </footer>
+
 </div>
 </body>
 </html>

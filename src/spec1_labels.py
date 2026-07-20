@@ -44,6 +44,11 @@ SENTIMENT_NEGATIVE = "NEGATIVE"
 SENTIMENT_NEUTRAL  = "NEUTRAL"
 SENTIMENT_MIXED    = "MIXED"
 
+# ── Operator structured-output verdict ───────────────────────────────────────
+OPERATOR_VERDICT_ESCALATE = "ESCALATE"
+OPERATOR_VERDICT_ARCHIVE  = "ARCHIVE"
+OPERATOR_VERDICT_HOLD     = "HOLD"
+
 # ── Investigation outcome classification ──────────────────────────────────────
 OUTCOME_CORROBORATED = "CORROBORATED"
 OUTCOME_ESCALATE     = "ESCALATE"
@@ -121,6 +126,23 @@ EXPANSION_RULE_KEYWORD_X_ENTITY   = "keyword_x_entity"
 EXPANSION_RULE_KEYWORD_X_GEO      = "keyword_x_geography"
 EXPANSION_RULE_ENTITY_X_GEO       = "entity_x_geography"
 
+# ── Founder Brain — pattern categories ────────────────────────────────────────
+FOUNDER_PATTERN_FAILURE      = "FAILURE"
+FOUNDER_PATTERN_SUCCESS      = "SUCCESS"
+FOUNDER_PATTERN_PIVOT        = "PIVOT"
+FOUNDER_PATTERN_EXIT_SIGNAL  = "EXIT_SIGNAL"
+
+# ── Founder Brain — conviction levels ─────────────────────────────────────────
+FOUNDER_CONVICTION_HIGH   = "HIGH"
+FOUNDER_CONVICTION_MEDIUM = "MEDIUM"
+FOUNDER_CONVICTION_LOW    = "LOW"
+FOUNDER_CONVICTION_NOISE  = "NOISE"
+
+# ── Founder Brain — fire triage classifications ───────────────────────────────
+FOUNDER_FIRE_IGNORE   = "IGNORE"
+FOUNDER_FIRE_DELEGATE = "DELEGATE"
+FOUNDER_FIRE_ATTACK   = "ATTACK"
+
 # ── Type aliases ──────────────────────────────────────────────────────────────
 from typing import Literal  # noqa: E402
 
@@ -129,6 +151,9 @@ ThreatLevelT   = Literal["HIGH", "MEDIUM", "LOW"]
 PsyopRiskT     = Literal["HIGH_RISK", "MEDIUM_RISK", "LOW_RISK", "CLEAN"]
 VerificationT  = Literal["CORROBORATED", "PARTIAL", "UNVERIFIED", "CONFLICTED"]
 ResearchStatusT = Literal["DRAFT", "FINAL"]
+FounderConvictionT = Literal["HIGH", "MEDIUM", "LOW", "NOISE"]
+FounderFireT       = Literal["IGNORE", "DELEGATE", "ATTACK"]
+FounderPatternT    = Literal["FAILURE", "SUCCESS", "PIVOT", "EXIT_SIGNAL"]
 
 
 def is_valid_priority(value: str) -> bool:

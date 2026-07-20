@@ -1,141 +1,173 @@
-# SPEC-1: Automated Intelligence Triage Engine
+# SPEC-1: Automated Research Engine
 
-**Version:** 0.6.2 | **Status:** Production-Ready  
+**Version:** 0.6.0 | **Status:** Production-Ready  
 **Organization:** EVASTARARCANA LLC • Portland, OR
 
 ---
 
-## The Problem Intelligence Operations Face
+## The Problem
 
-Intelligence analysts face a paradox: drowning in data but starving for insight.
+Public information is everywhere. Finding the signal inside it is the job.
 
-Every day, credible reporting flows from dozens of authoritative sources. The signal-to-noise ratio is brutal. By the time an analyst manually triages the week's feeds, actionable intelligence has grown cold. The bottleneck isn't information access. It's human attention.
+Every day, credible reporting flows from dozens of authoritative public sources — congressional records, FARA filings, think tank publications, newswires, civic databases. The problem isn't access. It's triage. By the time a journalist or researcher manually works through the week's feeds, the story has moved.
 
-SPEC-1 solves this differently.
-
----
-
-## What SPEC-1 Does
-
-SPEC-1 is a production-grade automated intelligence triage engine that ingests 40+ curated open-source feeds and transforms them into verified, analyst-ready briefs through a deterministic, zero-bypass filtration pipeline.
-
-**Result:** Analysts make high-stakes judgments about verified signals, not manually sort noise.
+SPEC-1 does the triage work automatically so you can focus on the reporting.
 
 ---
 
-## Why SPEC-1 Is Different
+## What SPEC-1 Is
 
-### Strict Filtration
+SPEC-1 is an automated open-source research engine. It monitors 40+ curated public sources, filters every signal through a deterministic four-gate pipeline, and produces structured research reports written to the standard of serious long-form journalism.
 
-SPEC-1 rejects black-box scoring. The pipeline enforces a zero-bypass policy:
+The engine writes the first draft. You filter length and tone. You decide what to publish.
 
-**All four gates must pass, or the signal is discarded.**
+**Built for:** journalists, investigative reporters, nonprofit researchers, policy analysts, students, and small organizations doing civic and public-interest work.
 
-Each gate is deterministic, fully logged, and defensible:
-- **Provenance Gate:** Source credibility baseline (≥0.75 required)
-- **Complexity Gate:** Signals must be novel or actionable
-- **Recency Gate:** Fresher intelligence outranks stale reporting
-- **Anomaly Gate:** Deep semantic validation for narrative inconsistencies
+---
 
-Analysts see exactly why each signal passed. No mystery. No hidden scoring.
+## How It Works
 
-### Enterprise Reliability
+### The Four-Gate Filter
 
-- **Immutable audit trail:** All intelligence is append-only. Complete provenance.
-- **Failure-first design:** Every stage is heavily logged. Pipeline never crashes.
-- **Human-in-the-loop:** Thresholds never auto-calibrate. Humans decide.
-- **SLA-ready:** 59 tests, 1,300+ assertions. 100% success rate. <100ms API latency.
+Every signal passes through four independent gates. All four must pass or the signal is discarded. Nothing reaches a report that hasn't cleared every gate.
 
-### Three-Tier LLM Fallback
+| Gate | What It Checks |
+|------|---------------|
+| **Source credibility** | Known source with a verified track record |
+| **Substance** | Enough content to be meaningful |
+| **Freshness** | Recent enough to act on |
+| **Novelty** | Contains indicators of something new or unusual |
 
-Semantic verification never blocks:
+Every gate decision is logged. You can see exactly why a signal passed or was discarded. No black box, no hidden scoring.
 
-Tier 1: Claude Haiku (optimized for speed)  
-Tier 2: Local Ollama (zero-cost fallback)  
-Tier 3: Deterministic rules (always works)
+### The Pipeline
+
+```
+Harvest → Filter (4 gates) → Investigate → Verify → Analyze → Report
+```
+
+Signals that pass are cross-referenced, scored with a confidence level, and passed to the report generator. The pipeline never crashes — if the language model is unavailable, it falls back to a local model, then to deterministic rules. A report always comes out.
+
+### Three-Tier Language Model Fallback
+
+| Tier | Backend | Notes |
+|------|---------|-------|
+| 1 | Anthropic Claude | Default; fastest |
+| 2 | Local Ollama | Zero-cost local fallback |
+| 3 | Deterministic rules | Always available; no API required |
 
 ---
 
 ## What You Get
 
-**Daily Intelligence Artifacts**
-- World State Brief (publication-ready, sourced)
-- High-confidence leads (ranked by priority)
-- Narrative anomaly reports (campaign detection)
-- Drift alerts (threshold deviations)
-- Research Mode (analyst-defined topic dossiers with automated expansion)
+### Daily Research Brief
+A structured first-draft report written to the standard of NYT, Washington Post, ProPublica. Every claim is sourced. Confidence is stated explicitly — not as adjectives, but as tier labels: *confirmed by two independent sources*, *single-source unconfirmed*, *insufficient signal*. The human edits length and tone before anything goes out.
 
-**Operational Interfaces**
-- REST API (15+ endpoints)
-- MCP Server (Claude Desktop integration)
-- CLI Workspace (case management)
-- PDF Export (stakeholder distribution)
+### Story Leads
+Not summaries. Each lead is a dispatch package: the specific anomaly, who has the answer, what documents to request (with FOIA language pre-written), and a Claude prompt pre-loaded with context for immediate use.
 
-**Data Coverage**  
-40+ sources: Reuters, AP, Bloomberg, RAND, CSIS, Defense One, Congressional records, FARA filings, regional monitors.
+### Influence Operation Detection
+Narrative anomaly scoring across harvested signals — coordinated framing detection, consensus velocity analysis, origin traceability checks.
 
----
+### Topic Dossiers (Research Mode)
+Define a research topic with keywords, entities, and sub-questions. Run it repeatedly. Each cycle adds to the dossier. Accumulates across runs without LLM calls or gate filtering — this mode is for deep research, not daily triage.
 
-## Performance
+### Portland Metro Civic Brief (PDX-1i)
+Local civic intelligence for the Portland bi-state metro: campaign finance anomalies, legislative bill tracking, infrastructure monitoring, entity relationship mapping. The architectural template for future regional modules.
 
-Harvest cycle: ~30 seconds
-Parse throughput: 1,000+ records/minute
-Filter latency: <100ms per gate
-Brief generation: <5s live / <2s cached
-API response: <100ms
-Success rate: 100% (never crashes)
+### Legislative & Judicial Desk
+Federal and state legislative tracking, FARA filing analysis, judicial record monitoring, stated-purpose vs. beneficiary analysis.
+
+### Feedback Loop
+File verdicts on any report — correct, incorrect, partial, unclear. The calibration system surfaces drift over time. You decide whether thresholds need adjustment. Nothing auto-tunes.
 
 ---
 
-## Use Cases
+## Interfaces
 
-**Intelligence Operations**  
-Reduce triage time 80%+. Surface verified signals with immutable compliance trails.
+| Interface | What It Does |
+|-----------|-------------|
+| **REST API** | 15+ endpoints under `/api/v1/` |
+| **MCP Server** | 16 tools exposed to Claude Desktop |
+| **CLI Workspace** | Case file management from the terminal |
+| **PDF Export** | Formatted reports for distribution |
+| **Verdict UI** | Browser form for filing feedback at `/verdicts/` |
 
-**Security Operations**  
-Monitor threat feeds, detect narrative anomalies, refine thresholds.
+---
 
-**Geopolitical Risk**  
-Track instability signals, correlate events, maintain archives.
+## Data Sources
 
-**Legal & Compliance**  
-Monitor FARA filings with immutable decision records.
+40+ public sources including: War on the Rocks, The Cipher Brief, Just Security, RAND, Atlantic Council, Defense One, 38 North, NK News, CSIS Korea Chair, Yonhap, Reuters, AP, ProPublica, congressional records, FARA filings, Oregon and Washington state legislative databases, Portland civic records.
 
 ---
 
 ## Getting Started
 
-Installation:
 ```bash
 git clone https://github.com/mjlak1000/spec-1.git
 cd spec-1
 pip install -e ".[dev]"
 cp .env.example .env
-# Add ANTHROPIC_API_KEY to .env
+# Add ANTHROPIC_API_KEY to .env (optional — system works without it via Tier 3)
 ```
 
-First Run:
 ```bash
-make cycle                # Complete pipeline
-make run                  # API server
-make test                 # Test suite
+make cycle        # Run a full research cycle
+make run          # Start the API server
+make test         # Run the test suite
+python -m cls_congress.api.main   # Run standalone Congress Brief API surface
 ```
 
-See [docs/runbook.md](docs/runbook.md) for production deployment.
+See [docs/runbook.md](docs/runbook.md) for production deployment and [docs/quickstart.md](docs/quickstart.md) for a guided first run.
 
 ---
 
-## Philosophy
+## Key Environment Variables
 
-SPEC-1 is engineered on one principle: the system does mechanical work; humans make judgments.
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `ANTHROPIC_API_KEY` | Enables Claude (Tier 1 LLM) | unset → Tier 3 |
+| `SPEC1_STORE_PATH` | JSONL output file | `spec1_intelligence.jsonl` |
+| `SPEC1_API_PORT` | API server port | `8000` |
+| `SPEC1_API_KEY` | API authentication (opt-in) | unset → open |
+| `SPEC1_DEV_MODE` | Skip Claude, use local Ollama | `false` |
 
-Analysts should never waste time in noise. The pipeline is strict, deterministic, and fully auditable because intelligence decisions require accountability. Every signal has been verified multiple times. Every threshold change is human-approved. Every decision is logged.
-
-The system's job: eliminate the 90% of noise so humans focus on the 10% that matters.
+Full variable reference in [.env.example](.env.example).
 
 ---
 
-**SPEC-1** — Automated Intelligence Triage  
+## Design Principles
+
+**The system does mechanical work. You make the judgment.**  
+SPEC-1 filters noise, scores signals, and writes the first draft of a research brief. What to publish, what to spike, how to frame — that's yours.
+
+**Every claim traces to a source.**  
+Confidence is explicit. The difference between *confirmed*, *assessed*, and *unverified* is stated in every report, not implied.
+
+**Thresholds never auto-change.**  
+The four gate thresholds are set by the operator. The calibration system surfaces drift. A human decides whether to act on it.
+
+**All data is append-only.**  
+Every signal, report, and verdict is written once, never overwritten. The full history is always available.
+
+**The pipeline never crashes.**  
+Every stage is failure-first — log the error, continue the cycle. A Tier 3 rule-based report is noted as such in the output.
+
+---
+
+## Performance
+
+| Metric | Value |
+|--------|-------|
+| Harvest cycle | ~30 seconds |
+| Filter latency | <100ms per gate |
+| Brief generation | <5s (Tier 1) |
+| API response | <100ms |
+| Test suite | 64 test files, Python 3.9–3.12 |
+
+---
+
+**SPEC-1** — Automated Research Engine  
 Built by EVASTARARCANA in Portland, OR
 
-Designed for humans who make judgments. Engineered for systems that don't.
+The system handles the triage. You do the reporting.

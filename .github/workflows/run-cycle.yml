@@ -1,0 +1,43 @@
+name: Run SPEC-1 cycle
+
+on:
+  schedule:
+    - cron: '0 13 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  run-cycle:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip wheel setuptools
+        pip install -e ".[dev]"
+
+    - name: Run SPEC-1 cycle
+      env:
+        PYTHONPATH: src
+        ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        SPEC1_STORE_PATH: spec1_intelligence.jsonl
+        SPEC1_ENVIRONMENT: production
+      run: python -m spec1_engine.app.cycle --store spec1_intelligence.jsonl --env production --timeout 15
+
+    - name: Upload cycle outputs
+      uses: actions/upload-artifact@v4
+      with:
+        name: spec1-cycle-output
+        path: |
+          spec1_intelligence.jsonl
+          briefs/
+        if-no-files-found: warn
