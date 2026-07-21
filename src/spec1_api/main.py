@@ -48,6 +48,7 @@ from spec1_api.routers import (
     adapters,
     brief,
     calibration,
+    congress_brief,
     cycle,
     fara,
     health,
@@ -180,6 +181,7 @@ def create_app() -> FastAPI:
     app.include_router(workspace.router, prefix=_V1)
     app.include_router(leg_jud.router, prefix=_V1)
     app.include_router(adapters.router, prefix=_V1)
+    app.include_router(congress_brief.router, prefix=_V1)
 
     @app.get("/verdicts/", include_in_schema=False)
     async def verdicts_ui() -> FileResponse:

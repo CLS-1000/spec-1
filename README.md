@@ -104,8 +104,8 @@ File verdicts on any report — correct, incorrect, partial, unclear. The calibr
 ## Getting Started
 
 ```bash
-git clone https://github.com/CLS-1000/spec-1V0.7.git
-cd spec-1V0.7
+git clone https://github.com/mjlak1000/spec-1.git
+cd spec-1
 pip install -e ".[dev]"
 cp .env.example .env
 # Add ANTHROPIC_API_KEY to .env (optional — system works without it via Tier 3)
@@ -115,6 +115,7 @@ cp .env.example .env
 make cycle        # Run a full research cycle
 make run          # Start the API server
 make test         # Run the test suite
+python -m cls_congress.api.main   # Run standalone Congress Brief API surface
 ```
 
 See [docs/runbook.md](docs/runbook.md) for production deployment and [docs/quickstart.md](docs/quickstart.md) for a guided first run.

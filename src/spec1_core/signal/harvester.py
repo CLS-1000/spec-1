@@ -141,7 +141,13 @@ def _parse_feed(name: str, url: str, timeout: int) -> feedparser.FeedParserDict:
         raw = _fetch_raw_sanitized(url, timeout)
         return feedparser.parse(raw)
 
-    return feedparser.parse(url, request_headers=_HEADERS)
+    # Default path: sanitize every feed proactively; fall back to
+    # feedparser's own fetch only if the sanitized fetch fails.
+    try:
+        raw = _fetch_raw_sanitized(url, timeout)
+        return feedparser.parse(raw)
+    except Exception:
+        return feedparser.parse(url, request_headers=_HEADERS)
 
 
 def fetch_feed(

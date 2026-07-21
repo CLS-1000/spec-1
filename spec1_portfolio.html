@@ -37,6 +37,7 @@
             position: relative;
         }
 
+        /* CRT scan lines */
         body::after {
             content: '';
             position: fixed;
@@ -52,6 +53,7 @@
             );
         }
 
+        /* Flower of Life background */
         #fol-bg {
             position: fixed;
             inset: 0;
@@ -62,6 +64,7 @@
             height: 100%;
         }
 
+        /* ── LAYOUT ─────────────────────────────────────────── */
         .wrap {
             position: relative;
             z-index: 1;
@@ -70,6 +73,7 @@
             padding: 2rem 1.5rem 4rem;
         }
 
+        /* ── PANEL ──────────────────────────────────────────── */
         .panel {
             border: 1px solid var(--w30);
             background: var(--surface);
@@ -93,6 +97,7 @@
 
         .pb { padding: 16px 14px; }
 
+        /* ── HERO ───────────────────────────────────────────── */
         .logo-ascii {
             font-family: var(--fd);
             font-size: 12px;
@@ -130,6 +135,7 @@
             color: var(--w30);
         }
 
+        /* ── STATUS BAR ─────────────────────────────────────── */
         .stat-bar {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -163,6 +169,7 @@
 
         .tag-item:last-child { border-right: none; margin-right: 0; }
 
+        /* ── SECTION COPY ───────────────────────────────────── */
         .sec-title { font-size: 14px; font-weight: 700; letter-spacing: .06em; margin-bottom: 10px; }
         .sec-body { font-size: 12px; color: var(--w70); line-height: 1.75; }
         .sec-body + .sec-body { margin-top: 10px; }
@@ -186,6 +193,7 @@
             margin-top: 14px;
         }
 
+        /* ── PIPELINE ───────────────────────────────────────── */
         .pipe-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
@@ -211,6 +219,7 @@
             letter-spacing: .03em;
         }
 
+        /* ── GATE GRID ──────────────────────────────────────── */
         .gate-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -230,6 +239,7 @@
         .gate-criteria span { display: block; }
         .gate-criteria span::before { content: '▸ '; color: var(--w30); }
 
+        /* ── VERDICT GRID ───────────────────────────────────── */
         .verdict-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -241,6 +251,7 @@
         .verdict-name { font-size: 11px; font-weight: 700; letter-spacing: .10em; margin-bottom: 4px; text-transform: uppercase; }
         .verdict-desc { font-size: 11px; color: var(--w50); line-height: 1.5; }
 
+        /* ── ADAPTER GRID ───────────────────────────────────── */
         .adapter-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -253,6 +264,7 @@
         .adapter-module { font-family: var(--fd); font-size: 10px; color: var(--w30); margin-bottom: 8px; letter-spacing: .04em; }
         .adapter-desc { font-size: 11px; color: var(--w70); line-height: 1.6; }
 
+        /* ── BRIEF LIST ─────────────────────────────────────── */
         .brief-list { list-style: none; }
         .brief-list li {
             padding: 6px 14px;
@@ -263,6 +275,7 @@
         .brief-list li::before { content: '▸ '; color: var(--w30); }
         .brief-list li:last-child { border-bottom: none; }
 
+        /* ── MCP ROW ────────────────────────────────────────── */
         .mcp-row {
             padding: 8px 14px;
             border-top: 1px solid var(--w12);
@@ -272,6 +285,7 @@
             line-height: 1.7;
         }
 
+        /* ── TECH TABLE ─────────────────────────────────────── */
         .tech-table { width: 100%; border-collapse: collapse; }
         .tech-table tr { border-bottom: 1px solid var(--w12); }
         .tech-table tr:last-child { border-bottom: none; }
@@ -287,6 +301,7 @@
         }
         .tech-table td:last-child { color: var(--w70); font-family: var(--fd); font-size: 11px; }
 
+        /* ── TERMINAL BLOCKS ────────────────────────────────── */
         pre {
             font-family: var(--fd);
             font-size: 11px;
@@ -296,6 +311,7 @@
             overflow-x: auto;
         }
 
+        /* ── CTA ────────────────────────────────────────────── */
         .cta-box { text-align: center; padding: 28px 20px; }
         .cta-eyebrow { font-size: 9px; letter-spacing: .18em; text-transform: uppercase; color: var(--w30); margin-bottom: 10px; }
         .cta-line { font-size: 13px; color: var(--w70); margin-bottom: 20px; }
@@ -315,6 +331,7 @@
         }
         .btn:hover { background: var(--white); color: var(--black); }
 
+        /* ── FOOTER ─────────────────────────────────────────── */
         footer {
             border-top: 1px solid var(--w12);
             padding-top: 20px;
@@ -326,6 +343,7 @@
             line-height: 1.9;
         }
 
+        /* ── UTILS ──────────────────────────────────────────── */
         .pass { color: var(--pass); }
         .caution { color: var(--alert); }
         .muted { color: var(--w50); }
@@ -343,6 +361,7 @@
         }
         @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
 
+        /* ── RESPONSIVE ─────────────────────────────────────── */
         @media (max-width: 860px) {
             .stat-bar { grid-template-columns: repeat(2,1fr); }
             .pipe-grid { grid-template-columns: repeat(4,1fr); }
@@ -359,6 +378,7 @@
 </head>
 <body>
 
+<!-- FLOWER OF LIFE -->
 <svg id="fol-bg" xmlns="http://www.w3.org/2000/svg">
     <defs>
         <pattern id="fol" x="0" y="0" width="69.28" height="60" patternUnits="userSpaceOnUse">
@@ -376,6 +396,7 @@
 
 <div class="wrap">
 
+    <!-- ══ HERO ══════════════════════════════════════════════════════ -->
     <div class="panel">
         <div class="ph">
             <span>[ SPEC-1 RESEARCH ENGINE ]</span>
@@ -400,6 +421,7 @@
         </div>
     </div>
 
+    <!-- ══ SYSTEM STATUS ══════════════════════════════════════════════ -->
     <div class="panel">
         <div class="ph">
             <span>SYSTEM STATUS</span>
@@ -436,6 +458,7 @@
         </div>
     </div>
 
+    <!-- ══ 01 WHAT THIS IS ════════════════════════════════════════════ -->
     <div class="panel">
         <div class="ph">
             <span>01 — WHAT THIS IS</span>
@@ -449,6 +472,7 @@
         </div>
     </div>
 
+    <!-- ══ 02 THE PROBLEM ═════════════════════════════════════════════ -->
     <div class="panel">
         <div class="ph">
             <span>02 — THE PROBLEM IT SOLVES</span>
@@ -461,6 +485,7 @@
         </div>
     </div>
 
+    <!-- ══ 03 PIPELINE ════════════════════════════════════════════════ -->
     <div class="panel">
         <div class="ph">
             <span>03 — PIPELINE</span>
@@ -486,6 +511,7 @@
         </div>
     </div>
 
+    <!-- ══ FOUR-GATE FRAMEWORK ════════════════════════════════════════ -->
     <div class="panel">
         <div class="ph">
             <span>STAGE 03 — FOUR-GATE SCORING FRAMEWORK</span>
@@ -534,6 +560,7 @@
         </div>
     </div>
 
+    <!-- ══ VERIFICATION OUTCOMES ══════════════════════════════════════ -->
     <div class="panel">
         <div class="ph">
             <span>STAGE 05 — VERIFICATION OUTCOMES</span>
@@ -570,6 +597,7 @@
         </div>
     </div>
 
+    <!-- ══ DOMAIN ADAPTERS ════════════════════════════════════════════ -->
     <div class="panel">
         <div class="ph">
             <span>04 — DOMAIN ADAPTERS</span>
@@ -603,6 +631,7 @@
         <div style="height: 1px; background: var(--w12);"></div>
     </div>
 
+    <!-- ══ DAILY BRIEF ════════════════════════════════════════════════ -->
     <div class="panel">
         <div class="ph">
             <span>06 — DAILY RESEARCH BRIEF</span>
@@ -621,6 +650,7 @@
         <div style="height: 1px; background: var(--w12);"></div>
     </div>
 
+    <!-- ══ API + DEPLOY ═══════════════════════════════════════════════ -->
     <div class="panel">
         <div class="ph">
             <span>07 — API AND SCHEDULING</span>
@@ -643,6 +673,7 @@ $ PYTHONPATH=src python -m spec1_engine.app.cycle
         </div>
     </div>
 
+    <!-- ══ TECHNICAL SUMMARY ══════════════════════════════════════════ -->
     <div class="panel">
         <div class="ph">
             <span>10 — TECHNICAL SUMMARY</span>
@@ -659,10 +690,11 @@ $ PYTHONPATH=src python -m spec1_engine.app.cycle
             <tr><td>API</td><td>FastAPI &nbsp;·&nbsp; APScheduler &nbsp;·&nbsp; 06:00 AM PT daily cron</td></tr>
             <tr><td>MCP server</td><td>mcp_server.py &nbsp;·&nbsp; 12 tools exposed to Claude</td></tr>
             <tr><td>Tests</td><td>621 across 61 files</td></tr>
-            <tr><td>Architecture</td><td>v0.6.0</td></tr>
+            <tr><td>Architecture</td><td>v0.7.0</td></tr>
         </table>
     </div>
 
+    <!-- ══ WHY THIS MATTERS ═══════════════════════════════════════════ -->
     <div class="panel">
         <div class="ph">
             <span>11 — WHY THIS MATTERS</span>
@@ -675,6 +707,7 @@ $ PYTHONPATH=src python -m spec1_engine.app.cycle
         </div>
     </div>
 
+    <!-- ══ CTA ════════════════════════════════════════════════════════ -->
     <div class="panel">
         <div class="cta-box">
             <div class="cta-eyebrow">OPEN SOURCE &nbsp;·&nbsp; AI-POWERED &nbsp;·&nbsp; TERMINAL-NATIVE</div>
@@ -686,11 +719,12 @@ $ PYTHONPATH=src python -m spec1_engine.app.cycle
         </div>
     </div>
 
+    <!-- ══ FOOTER ═════════════════════════════════════════════════════ -->
     <footer>
         SPEC-1 // OPEN SOURCE OSINT RESEARCH ENGINE — EVASTARARCANA LLC &nbsp;·&nbsp; PORTLAND OR<br>
-        CLASSIFICATION: UNCLASSIFIED &nbsp;·&nbsp; DATA_STREAM_SECURE &nbsp;·&nbsp; v0.6.0
+        CLASSIFICATION: UNCLASSIFIED &nbsp;·&nbsp; DATA_STREAM_SECURE &nbsp;·&nbsp; v0.7.0
     </footer>
 
 </div>
 </body>
-                 </html>
+</html>
