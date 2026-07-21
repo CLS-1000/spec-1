@@ -181,7 +181,7 @@ def synthesize_decision(
 
     # Add pattern-based wisdom to rationale
     if pattern_matches and not exit_patterns:
-        top_pattern = pattern_matches[0]
+        top_pattern = max(pattern_matches, key=lambda p: p.match_strength)
         action_rationale += (
             f" Pattern alert: '{top_pattern.pattern_name}' detected "
             f"(strength: {top_pattern.match_strength:.0%}). "
