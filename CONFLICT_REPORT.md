@@ -19,6 +19,12 @@ conflicts below are latent — they will surface the moment a branch is merged o
 
 **Working tree of `claude/conflict-errors-report-g4wzp2` is clean. `Main`'s tip contains zero conflict markers.**
 
+> **Note on quoted markers.** Where this report quotes real conflict markers, the marker lines
+> are indented by two spaces. The `install-gate` CI job rejects any file containing a marker at
+> column 0 (`.github/workflows/install-gate.yml`), and that gate is doing its job — this report
+> should not be the reason it is weakened. Read every indented `<<<<<<<` / `=======` / `>>>>>>>`
+> below as flush-left in the real file.
+
 ---
 
 ## 2. Summary
@@ -424,14 +430,14 @@ All three conflicts are **documentation prose**, no code. No CRLF involvement.
 ### 4.1 `requirements.txt` — 1 hunk
 
 ```
-<<<<<<< origin/Main
+  <<<<<<< origin/Main
 # Canonical dependencies live in pyproject.toml.
 # This file exists for CI/developer convenience.
-=======
+  =======
 # Install the package with dev extras.
 # This file is kept as a convenience for CI and developers; the canonical
 # dependency list lives in pyproject.toml.
->>>>>>> origin/claude/adoring-heisenberg-ooptqj
+  >>>>>>> origin/claude/adoring-heisenberg-ooptqj
 ```
 Comment wording only. **Resolution: take `Main`.**
 
@@ -463,11 +469,11 @@ Makefile:5: >>>>>>> origin/develop
 
 The conflicting content:
 ```make
-<<<<<<< HEAD
+  <<<<<<< HEAD
 .PHONY: install test test-fast test-cov lint run mcp cycle backfill calibration workspace clean help brief leads psyop
-=======
+  =======
 .PHONY: install test test-fast test-cov lint run mcp cycle backfill calibration workspace clean help brief leads psyop research
->>>>>>> origin/develop
+  >>>>>>> origin/develop
 ```
 
 **This Makefile does not parse.** Any `make` target on this branch fails. The correct
@@ -496,10 +502,10 @@ assignment, the branch retained it. Each is 1 hunk.
 ```python
 def _make_situation_id(description: str) -> str:
     """Generate a unique (time-based) situation ID from description."""
-<<<<<<< origin/Main
-=======
+  <<<<<<< origin/Main
+  =======
     ts = datetime.now(timezone.utc).strftime("%Y%m%d%H%M")
->>>>>>> origin/claude/repo-error-fixes-a7fkin
+  >>>>>>> origin/claude/repo-error-fixes-a7fkin
     ts = datetime.now(timezone.utc).isoformat(timespec="microseconds")
     raw = f"{description[:50]}_{ts}"
     return f"sit_{hashlib.sha256(raw.encode()).hexdigest()[:12]}"
@@ -511,10 +517,10 @@ The branch's `ts` is immediately overwritten by the next line — dead code.
 ### 5.2 `src/cls_founder_brain/synthesizer.py`
 
 ```python
-<<<<<<< origin/Main
-=======
+  <<<<<<< origin/Main
+  =======
         top_pattern = pattern_matches[0]
->>>>>>> origin/claude/repo-error-fixes-a7fkin
+  >>>>>>> origin/claude/repo-error-fixes-a7fkin
 ```
 
 Same pattern — a redundant assignment `Main` already removed.
@@ -543,17 +549,17 @@ The `copilot/fix-issue-with-data-import` branch is a **fully-merged ancestor of 
 
 Broken `requirements.txt` on that branch:
 ```
-<<<<<<< HEAD
+  <<<<<<< HEAD
 # Install the package with dev extras.
 # This file is kept as a convenience for CI and developers; the canonical
 # dependency list lives in pyproject.toml.
 -e .[dev]
-=======
+  =======
 feedparser>=6.0
 requests>=2.31
 ...
 pytest-asyncio>=0.23
->>>>>>> origin/copilot/spec-1-define-empty-stubs
+  >>>>>>> origin/copilot/spec-1-define-empty-stubs
 ```
 
 ---
