@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "spec1-engine"
-version = "0.6.0"
+version = "0.6.2"
 description = "SPEC-1 Intelligence Engine — signal intelligence, psyop detection, leads, briefs, API, and MCP"
 requires-python = ">=3.12"
 dependencies = [
