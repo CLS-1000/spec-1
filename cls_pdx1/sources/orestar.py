@@ -1,7 +1,7 @@
 # @domain:   citizens_source
 # @module:   orestar
-# @loc:      _SCRATCH
-# @status:   drafting
+# @loc:      gh_main
+# @status:   stable
 # @depends:  NONE
 
 full orestar.py

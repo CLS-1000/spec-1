@@ -1,7 +1,7 @@
 # @domain:   citizens_source
 # @module:   loader
-# @loc:      _SCRATCH
-# @status:   drafting
+# @loc:      gh_main
+# @status:   stable
 # @depends:  NONE
 
 full loader.py content
