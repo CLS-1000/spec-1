@@ -1,7 +1,7 @@
 # @domain:   spec-1
 # @module:   anthropic_smoke
-# @loc:      _SCRATCH
-# @status:   drafting
+# @loc:      gh_main
+# @status:   stable
 # @depends:  NONE
 
 from dotenv import load_dotenv

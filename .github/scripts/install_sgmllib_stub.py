@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # @domain:   spec-1
 # @module:   install_sgmllib_stub
-# @loc:      _SCRATCH
-# @status:   drafting
+# @loc:      gh_main
+# @status:   stable
 # @depends:  NONE
 
 """Install a minimal sgmllib stub so feedparser can be installed without sgmllib3k.
