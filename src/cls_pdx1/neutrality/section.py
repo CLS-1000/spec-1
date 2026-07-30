@@ -1,7 +1,7 @@
 # @domain:   citizens_source
 # @module:   neutrality_section
 # @loc:      gh_main
-# @status:   testing
+# @status:   stable
 # @depends:  NONE
 
 """Section-level composite neutrality gate."""

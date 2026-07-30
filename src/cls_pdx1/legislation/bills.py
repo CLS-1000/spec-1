@@ -1,7 +1,7 @@
 # @domain:   citizens_source
 # @module:   legislation_bills
 # @loc:      gh_main
-# @status:   testing
+# @status:   stable
 # @depends:  NONE
 
 """Bill state machine and tracker.

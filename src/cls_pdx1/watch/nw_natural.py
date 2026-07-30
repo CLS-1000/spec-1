@@ -1,7 +1,7 @@
 # @domain:   citizens_source
 # @module:   watch_nw_natural
 # @loc:      gh_main
-# @status:   testing
+# @status:   stable
 # @depends:  NONE
 
 """NW Natural watch module — Northwest Natural Gas Company.

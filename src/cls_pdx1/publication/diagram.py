@@ -1,7 +1,7 @@
 # @domain:   citizens_source
 # @module:   publication_diagram
 # @loc:      gh_main
-# @status:   testing
+# @status:   stable
 # @depends:  NONE
 
 """D3 force-directed graph exporter for Metro Citizens Brief.

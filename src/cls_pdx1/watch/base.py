@@ -1,7 +1,7 @@
 # @domain:   citizens_source
 # @module:   watch_base
 # @loc:      gh_main
-# @status:   testing
+# @status:   stable
 # @depends:  NONE
 
 """Watch module base — abstract interface for PDX-1i entity monitors.

@@ -1,7 +1,7 @@
 # @domain:   citizens_source
 # @module:   pipeline
 # @loc:      gh_main
-# @status:   testing
+# @status:   stable
 # @depends:  NONE
 
 """PDX-1i pipeline orchestrator.

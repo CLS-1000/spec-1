@@ -1,7 +1,7 @@
 # @domain:   citizens_source
 # @module:   gates
 # @loc:      gh_main
-# @status:   testing
+# @status:   stable
 # @depends:  NONE
 
 """Structural gates for cls_pdx1.

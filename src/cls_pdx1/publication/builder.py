@@ -1,7 +1,7 @@
 # @domain:   citizens_source
 # @module:   publication_builder
 # @loc:      gh_main
-# @status:   testing
+# @status:   stable
 # @depends:  NONE
 
 """IssueBuilder — assembles Metro Citizens Brief issues.

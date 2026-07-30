@@ -1,7 +1,7 @@
 # @domain:   citizens_source
 # @module:   demos_metro_president_vacancy
 # @loc:      gh_main
-# @status:   testing
+# @status:   stable
 # @depends:  NONE
 
 """Metro president vacancy scenario — demonstration pipeline run.
