@@ -1,2 +1,6 @@
 # Pin default eol to lf
 * text=auto eol=lf
+
+# Frozen-core prompt files — preserve existing line endings, do not normalize
+src/spec1_core/core/prompts/*.md -text
+src/spec1_engine/core/prompts/*.md -text
