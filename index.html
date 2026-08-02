@@ -375,10 +375,10 @@
             .tech-table td:first-child { width: auto; white-space: normal; }
         }
     </style>
-<meta property="og:image" content="https://cls-1000.github.io/spec-1V0.7/docs/open-graph.png" />
+<meta property="og:image" content="https://cls-1000.github.io/spec-1/docs/open-graph.png" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
-<meta name="twitter:image" content="https://cls-1000.github.io/spec-1V0.7/docs/open-graph.png" />
+<meta name="twitter:image" content="https://cls-1000.github.io/spec-1/docs/open-graph.png" />
 </head>
 <body>
 
@@ -404,7 +404,7 @@
     <div class="panel">
         <div class="ph">
             <span>[ SPEC-1 RESEARCH ENGINE ]</span>
-            <span>V0.7.0  ● STABLE</span>
+            <span>V0.6.2  ● STABLE</span>
         </div>
         <div class="pb" style="padding: 24px 14px 16px;">
             <pre class="logo-ascii"> ███████╗██████╗ ███████╗ ██████╗ ██╗
@@ -440,7 +440,7 @@
             <div class="stat-cell">
                 <div class="stat-lbl">Tests Passing</div>
                 <div class="stat-val">621</div>
-                <div class="stat-sub">61 files covered</div>
+                <div class="stat-sub">69 files covered</div>
             </div>
             <div class="stat-cell">
                 <div class="stat-lbl">Pipeline</div>
@@ -660,20 +660,20 @@
             <span>07 — API AND SCHEDULING</span>
             <span class="dim">// FastAPI &nbsp;·&nbsp; APScheduler &nbsp;·&nbsp; 06:00 PT daily</span>
         </div>
-        <pre>$ git clone https://github.com/CLS-1000/spec-1V0.7.git
-$ cd spec-1V0.7
+        <pre>$ git clone https://github.com/CLS-1000/spec-1.git
+$ cd spec-1
 $ pip install -e ".[dev]"
 $ cp .env.example .env          # add ANTHROPIC_API_KEY
 $ PYTHONPATH=src python -m spec1_api.main
 <span class="pass">[OK] SPEC-1 API running on http://0.0.0.0:8000</span>
 
-$ PYTHONPATH=src python -m spec1_engine.app.cycle
+$ PYTHONPATH=src python -m spec1_core.app.cycle
 <span class="pass">[OK] Harvest complete</span>
 <span class="pass">[OK] 4-gate scoring: N signals → M opportunities</span>
 <span class="pass">[OK] Investigations generated and verified</span>
 <span class="pass">[OK] Daily brief written to generated/briefs/</span></pre>
         <div class="mcp-row">
-            MCP :: run_cycle &nbsp;·&nbsp; get_signals &nbsp;·&nbsp; get_intel &nbsp;·&nbsp; get_leads &nbsp;·&nbsp; get_brief &nbsp;·&nbsp; get_psyop &nbsp;·&nbsp; get_fara &nbsp;·&nbsp; analyse_psyop &nbsp;·&nbsp; get_stats &nbsp;·&nbsp; file_verdict &nbsp;·&nbsp; get_verdicts &nbsp;·&nbsp; get_calibration
+            MCP :: run_cycle &nbsp;·&nbsp; get_signals &nbsp;·&nbsp; get_intel &nbsp;·&nbsp; get_leads &nbsp;·&nbsp; get_brief &nbsp;·&nbsp; get_psyop &nbsp;·&nbsp; get_fara &nbsp;·&nbsp; analyse_psyop &nbsp;·&nbsp; get_stats &nbsp;·&nbsp; file_verdict &nbsp;·&nbsp; get_verdicts &nbsp;·&nbsp; get_calibration &nbsp;·&nbsp; run_psyop &nbsp;·&nbsp; generate_brief &nbsp;·&nbsp; generate_leads &nbsp;·&nbsp; run_research
         </div>
     </div>
 
@@ -692,9 +692,9 @@ $ PYTHONPATH=src python -m spec1_engine.app.cycle
             <tr><td>Persistence</td><td>Append-only JSONL + SQLite (cls_db dual-write)</td></tr>
             <tr><td>Domain adapters</td><td>cls_osint/adapters: fara &nbsp;·&nbsp; congressional &nbsp;·&nbsp; narrative</td></tr>
             <tr><td>API</td><td>FastAPI &nbsp;·&nbsp; APScheduler &nbsp;·&nbsp; 06:00 AM PT daily cron</td></tr>
-            <tr><td>MCP server</td><td>mcp_server.py &nbsp;·&nbsp; 12 tools exposed to Claude</td></tr>
-            <tr><td>Tests</td><td>621 across 61 files</td></tr>
-            <tr><td>Architecture</td><td>v0.7.0</td></tr>
+            <tr><td>MCP server</td><td>mcp_server.py &nbsp;·&nbsp; 16 tools exposed to Claude</td></tr>
+            <tr><td>Tests</td><td>621 across 69 files</td></tr>
+            <tr><td>Architecture</td><td>v0.6.2</td></tr>
         </table>
     </div>
 
@@ -717,8 +717,8 @@ $ PYTHONPATH=src python -m spec1_engine.app.cycle
             <div class="cta-eyebrow">OPEN SOURCE &nbsp;·&nbsp; AI-POWERED &nbsp;·&nbsp; TERMINAL-NATIVE</div>
             <div class="cta-line">Real-time OSINT. Human-in-the-loop calibration. Built for analysts.</div>
             <div class="btn-row">
-                <a href="https://github.com/CLS-1000/spec-1V0.7" class="btn" target="_blank" rel="noopener noreferrer">View on GitHub</a>
-                <a href="https://github.com/CLS-1000/spec-1V0.7/blob/develop/README.md" class="btn" target="_blank" rel="noopener noreferrer">Documentation</a>
+                <a href="https://github.com/CLS-1000/spec-1" class="btn" target="_blank" rel="noopener noreferrer">View on GitHub</a>
+                <a href="https://github.com/CLS-1000/spec-1/blob/develop/README.md" class="btn" target="_blank" rel="noopener noreferrer">Documentation</a>
             </div>
         </div>
     </div>
@@ -726,7 +726,7 @@ $ PYTHONPATH=src python -m spec1_engine.app.cycle
     <!-- ══ FOOTER ═════════════════════════════════════════════════════ -->
     <footer>
         SPEC-1 // OPEN SOURCE OSINT RESEARCH ENGINE — EVASTARARCANA LLC &nbsp;·&nbsp; PORTLAND OR<br>
-        CLASSIFICATION: UNCLASSIFIED &nbsp;·&nbsp; DATA_STREAM_SECURE &nbsp;·&nbsp; v0.7.0
+        CLASSIFICATION: UNCLASSIFIED &nbsp;·&nbsp; DATA_STREAM_SECURE &nbsp;·&nbsp; v0.6.2
     </footer>
 
 </div>
