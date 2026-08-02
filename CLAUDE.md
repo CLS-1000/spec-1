@@ -138,6 +138,17 @@ spec-1/
 │   │   └── cli.py               # click CLI: new-case, submit-output, run-audit,
 │   │                            # file-verdict, list-cases, show
 │   │
+│   ├── cls_founder_brain/       # Exited-Founder Cognitive Engine — deterministic, $0 cost
+│   │   ├── schemas.py           # Situation, PatternMatch, ConvictionSignal,
+│   │   │                        # FireClassification, FounderDecision
+│   │   ├── patterns.py          # Canonical failure/success archetypes
+│   │   ├── recognizer.py        # Pattern recognition (Layer 1)
+│   │   ├── conviction.py        # Conviction scorer (Layer 2)
+│   │   ├── triage.py            # Fire triage: IGNORE / DELEGATE / ATTACK (Layer 3)
+│   │   ├── synthesizer.py       # Decision synthesizer (Layer 4)
+│   │   ├── pipeline.py          # run_founder_brain() — situation → FounderDecision
+│   │   └── store.py             # Append-only JSONL persistence
+│   │
 │   ├── spec1_api/               # FastAPI application (canonical HTTP surface)
 │   │   ├── main.py              # App factory + lifespan + CORS + auth middleware + metrics middleware
 │   │   ├── auth.py              # ApiKeyMiddleware (opt-in via SPEC1_API_KEY)
@@ -579,7 +590,7 @@ Every PR must include (use `.github/pull_request_template.md`):
 ## Session Safety Rules
 
 ### Shorthand glossary — confirm before acting on these
-- "spec-1" / "the repo" → CLS-1000/spec-1V0.7, develop branch
+- "spec-1" / "the repo" → CLS-1000/spec-1, develop branch
 - "pdx1-i" → PDX-1i / cls_pdx1 (Portland Metro Intelligence module)
 - "gh research" → push/pull Research Mode work to GitHub
 - "The Downlow" → [spell this one out once before acting on it — not yet defined]
@@ -595,8 +606,8 @@ confirmation before running anything.
 ### Repo/scope anchoring — required at the start of every session
 Before any write, commit, or push:
 1. Run `pwd` and `git remote -v` and `git branch --show-current`.
-2. Confirm aloud: working directory is inside spec-1V0.7, remote is
-   CLS-1000/spec-1V0.7, branch is the designated agent branch.
+2. Confirm aloud: working directory is inside spec-1, remote is
+   CLS-1000/spec-1, branch is the designated agent branch.
 3. If any of these don't match, STOP and ask — do not create a new
    branch, worktree, or remote to "fix" it yourself.
 
