@@ -33,7 +33,23 @@ jobs:
         SPEC1_ENVIRONMENT: production
       run: python -m spec1_engine.app.cycle --store spec1_intelligence.jsonl --env production --timeout 15
 
+    - name: Locate today's brief
+      id: brief
+      run: |
+        set -euo pipefail
+        path="$(ls -t briefs/spec1_brief_20*.md 2>/dev/null | head -1 || true)"
+        if [ -z "$path" ]; then
+          echo "::error::the cycle wrote no dated brief into briefs/"
+          exit 1
+        fi
+        echo "path=$path" >> "$GITHUB_OUTPUT"
+        echo "date=$(basename "$path" .md | sed 's/^spec1_brief_//')" >> "$GITHUB_OUTPUT"
+        echo "Found $path"
+
+    # Upload before the gate so a failed run's output is still recoverable —
+    # this is the only copy that survives the runner.
     - name: Upload cycle outputs
+      if: always()
       uses: actions/upload-artifact@v4
       with:
         name: spec1-cycle-output
@@ -41,3 +57,33 @@ jobs:
           spec1_intelligence.jsonl
           briefs/
         if-no-files-found: warn
+        retention-days: 90
+
+    # generate_brief() never raises: on a missing key or API error it returns a
+    # stub and the cycle still exits 0. Without this step a failed run is
+    # indistinguishable from a good one, which is how ANTHROPIC_API_KEY went
+    # missing for months of green runs.
+    - name: Gate — is the brief real?
+      id: gate
+      run: python .github/scripts/check_brief_publishable.py "${{ steps.brief.outputs.path }}"
+
+    - name: Check publish credentials
+      id: creds
+      if: success()
+      env:
+        NOTITIA_TOKEN: ${{ secrets.NOTITIA_PUBLISH_TOKEN }}
+      run: |
+        if [ -n "${NOTITIA_TOKEN}" ]; then
+          echo "configured=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "configured=false" >> "$GITHUB_OUTPUT"
+          echo "::warning::NOTITIA_PUBLISH_TOKEN is not set — brief passed the gate but will not be published. See docs/publishing.md."
+        fi
+
+    - name: Open publication PR against notitia-civica
+      if: steps.creds.outputs.configured == 'true'
+      env:
+        GH_TOKEN: ${{ secrets.NOTITIA_PUBLISH_TOKEN }}
+        BRIEF_PATH: ${{ steps.brief.outputs.path }}
+        BRIEF_DATE: ${{ steps.brief.outputs.date }}
+      run: bash .github/scripts/publish_brief.sh
