@@ -201,3 +201,29 @@ class TestGetUrls:
         from spec1_api import webhooks
         with patch.dict(os.environ, {"SPEC1_WEBHOOK_URLS": "  https://example.com  "}, clear=False):
             assert webhooks._get_urls() == ["https://example.com"]
+
+    def test_non_https_urls_filtered_out(self):
+        from spec1_api import webhooks
+        with patch.dict(
+            os.environ,
+            {"SPEC1_WEBHOOK_URLS": "http://insecure.example.com,https://secure.example.com"},
+            clear=False,
+        ):
+            assert webhooks._get_urls() == ["https://secure.example.com"]
+
+
+class TestGetTimeout:
+    def test_valid_timeout(self):
+        from spec1_api import webhooks
+        with patch.dict(os.environ, {"SPEC1_WEBHOOK_TIMEOUT": "15"}, clear=False):
+            assert webhooks._get_timeout() == 15
+
+    def test_invalid_timeout_uses_default(self):
+        from spec1_api import webhooks
+        with patch.dict(os.environ, {"SPEC1_WEBHOOK_TIMEOUT": "abc"}, clear=False):
+            assert webhooks._get_timeout() == 10
+
+    def test_non_positive_timeout_uses_default(self):
+        from spec1_api import webhooks
+        with patch.dict(os.environ, {"SPEC1_WEBHOOK_TIMEOUT": "0"}, clear=False):
+            assert webhooks._get_timeout() == 10

@@ -8,10 +8,12 @@
 
 from __future__ import annotations
 
+import logging
 import os
 from pathlib import Path
 
 from fastapi import APIRouter, BackgroundTasks
+from fastapi import HTTPException
 
 from spec1_api import metrics as _metrics
 from spec1_api import webhooks as _webhooks
@@ -19,6 +21,7 @@ from spec1_api.schemas import CycleRequest, CycleResponse
 from spec1_core.app.cycle import run_cycle as _execute_cycle
 
 router = APIRouter(prefix="/cycle", tags=["cycle"])
+logger = logging.getLogger(__name__)
 
 _last_run: dict = {}
 
@@ -27,12 +30,16 @@ _last_run: dict = {}
 def run_cycle(request: CycleRequest, background_tasks: BackgroundTasks) -> CycleResponse:
     """Trigger a full SPEC-1 intelligence cycle (all steps: psyop, brief, publication, workspace)."""
     store_path = Path(os.environ.get("SPEC1_STORE_PATH", "spec1_intelligence.jsonl"))
-    stats = _execute_cycle(
-        store_path=store_path,
-        environment=request.environment,
-        max_signals=request.max_signals,
-        verbose=False,
-    )
+    try:
+        stats = _execute_cycle(
+            store_path=store_path,
+            environment=request.environment,
+            max_signals=request.max_signals,
+            verbose=False,
+        )
+    except Exception as exc:
+        logger.exception("Cycle execution failed")
+        raise HTTPException(status_code=500, detail=f"Cycle execution failed: {exc}") from exc
     result = CycleResponse(
         run_id=stats["run_id"],
         started_at=stats["started_at"],

@@ -39,8 +39,9 @@ application with auto-generated OpenAPI docs at `http://localhost:8000/docs`.
 http://localhost:8000/api/v1
 ```
 
-All versioned API routes are under `/api/v1/`. Non-versioned paths serve static
-HTML and are not part of the programmatic API surface:
+Most programmatic API routes are under `/api/v1/`. The operational endpoints
+`/health`, `/metrics`, and `/metrics/json` are non-versioned. Additional
+non-versioned paths serve static HTML:
 
 | Path | Content |
 |------|---------|
@@ -54,9 +55,15 @@ HTML and are not part of the programmatic API surface:
 
 ## Authentication
 
-The API has no built-in authentication in the current release. In production,
-front it with a reverse proxy (nginx, Caddy, Cloudflare Tunnel) that enforces
-authentication.
+API-key authentication is optional and enabled only when `SPEC1_API_KEY` is set.
+
+- Disabled (`SPEC1_API_KEY` unset/empty): open access
+- Enabled: all non-public endpoints require one of:
+  - Header: `X-API-Key: <key>`
+  - Query parameter: `?api_key=<key>`
+
+Public paths that never require the key:
+`/`, `/health`, `/metrics`, `/metrics/json`, `/docs`, `/redoc`, `/openapi.json`
 
 ---
 
@@ -64,12 +71,12 @@ authentication.
 
 ### Health
 
-#### `GET /api/v1/health`
+#### `GET /health`
 
 Returns service health status.
 
 ```bash
-curl http://localhost:8000/api/v1/health
+curl http://localhost:8000/health
 ```
 
 ```json

@@ -14,7 +14,7 @@ class HealthResponse(BaseModel):
 
 
 class CycleRequest(BaseModel):
-    max_signals: Optional[int] = Field(None, description="Limit harvested signals")
+    max_signals: Optional[int] = Field(None, ge=1, description="Limit harvested signals")
     environment: str = Field("production", description="Run environment label")
     collect_fara: bool = Field(False, description="Include FARA collection")
     collect_congress: bool = Field(False, description="Include congressional collection")

@@ -7,26 +7,6 @@
 from __future__ import annotations
 
 
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-
-
-app = FastAPI()
-
-origins = [
-    "http://127.0.0.1:8080",
-    "http://localhost:8080",
-]
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-
 """spec1_api — FastAPI application factory."""
 
 
@@ -78,6 +58,14 @@ _DEV_ORIGINS = [
 _STATIC_DIR = Path(__file__).parent / "static"
 
 
+def _env_flag(*names: str) -> bool:
+    """Return True when any listed env var is set to 'true' (case-insensitive)."""
+    for name in names:
+        if os.environ.get(name, "").strip().lower() == "true":
+            return True
+    return False
+
+
 def _build_cors_origins() -> list[str]:
     env = os.environ.get("SPEC1_ENVIRONMENT", "production")
     if env in ("development", "dev", "local"):
@@ -89,11 +77,10 @@ def _build_cors_origins() -> list[str]:
 def _political_web_enabled() -> bool:
     """Whether to mount the Portland Political Web routes + viewer.
 
-    Off by default — opt in with SPEC1_POLITICAL_WEB_ENABLED=true. Keeps the
-    canonical API surface focused on the core intelligence cycle; the political
-    web is an experimental side feature with its own data store.
+    Off by default — opt in with SPEC1_POLITICAL_WEB=true.
+    Legacy alias SPEC1_POLITICAL_WEB_ENABLED=true is also accepted.
     """
-    return os.environ.get("SPEC1_POLITICAL_WEB_ENABLED", "").lower() == "true"
+    return _env_flag("SPEC1_POLITICAL_WEB", "SPEC1_POLITICAL_WEB_ENABLED")
 
 
 @asynccontextmanager

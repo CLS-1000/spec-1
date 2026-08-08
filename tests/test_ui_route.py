@@ -17,7 +17,11 @@ from fastapi.testclient import TestClient
 
 def _build_client(political_web_enabled: bool):
     """Build a TestClient with scheduler stubbed and political-web env set."""
-    env = {"SPEC1_POLITICAL_WEB_ENABLED": "true"} if political_web_enabled else {"SPEC1_POLITICAL_WEB_ENABLED": ""}
+    env = (
+        {"SPEC1_POLITICAL_WEB": "true", "SPEC1_POLITICAL_WEB_ENABLED": ""}
+        if political_web_enabled
+        else {"SPEC1_POLITICAL_WEB": "", "SPEC1_POLITICAL_WEB_ENABLED": ""}
+    )
     with patch.dict("os.environ", env, clear=False), \
          patch("spec1_api.scheduler.start_scheduler"), \
          patch("spec1_api.scheduler.stop_scheduler"):
@@ -84,6 +88,17 @@ def test_portland_web_contains_title_when_enabled(client_with_political_web):
 def test_portland_web_contains_d3_script_when_enabled(client_with_political_web):
     r = client_with_political_web.get("/portland-web")
     assert "d3" in r.text
+
+
+def test_portland_web_enabled_via_legacy_env_alias():
+    with patch.dict("os.environ", {"SPEC1_POLITICAL_WEB_ENABLED": "true", "SPEC1_POLITICAL_WEB": ""}, clear=False), \
+         patch("spec1_api.scheduler.start_scheduler"), \
+         patch("spec1_api.scheduler.stop_scheduler"):
+        import spec1_api.main as main_mod
+        importlib.reload(main_mod)
+        with TestClient(main_mod.app) as c:
+            r = c.get("/portland-web")
+    assert r.status_code == 200
 
 
 # ─── Political intel viewer (always available) ────────────────────────────────

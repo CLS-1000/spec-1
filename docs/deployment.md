@@ -126,6 +126,7 @@ sudo journalctl -u spec1 -f
 | `SPEC1_FEED_TIMEOUT` | `15` | RSS feed request timeout (seconds) |
 | `SPEC1_RUN_ON_START` | `false` | Run one cycle immediately on API startup |
 | `SPEC1_CORS_ORIGINS` | _(empty)_ | Comma-separated allowed origins (production) |
+| `SPEC1_POLITICAL_WEB` | _(unset)_ | Enable Portland Political Web routes/UI when `true` |
 
 ---
 
@@ -177,11 +178,11 @@ SPEC1_RUN_ON_START=true make run
 ## Health check and monitoring
 
 ```bash
-curl http://localhost:8000/api/v1/health
+curl http://localhost:8000/health
 # {"status":"ok","version":"...","environment":"production","timestamp":"..."}
 ```
 
-Prometheus / Uptime Robot / UptimeKuma: monitor `GET /api/v1/health` for HTTP 200.
+Prometheus / Uptime Robot / UptimeKuma: monitor `GET /health` for HTTP 200.
 
 Log output goes to stdout/stderr. In systemd environments, use `journalctl -u spec1`.
 
