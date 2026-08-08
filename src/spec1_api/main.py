@@ -115,9 +115,10 @@ def create_app() -> FastAPI:
     )
 
     # Starlette executes middleware in reverse registration order (last-registered
-    # runs outermost).  We register CORS first so it wraps everything, ensuring
-    # CORS headers are present even on 403 responses from ApiKeyMiddleware.
+    # runs outermost). Register ApiKey first, then CORS so CORS wraps everything
+    # and headers are present even on 403 responses from ApiKeyMiddleware.
     cors_origins = _build_cors_origins()
+    app.add_middleware(ApiKeyMiddleware)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=cors_origins,
@@ -125,7 +126,6 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    app.add_middleware(ApiKeyMiddleware)
     @app.get("/", include_in_schema=False)
     async def ui_root() -> FileResponse:
         """Serve the SPEC-1 UI."""
