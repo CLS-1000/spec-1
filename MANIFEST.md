@@ -1,6 +1,9 @@
 # Research Mode — file drop
 
-These files mirror their exact path in `CLS-1000/spec-1V0.7` (develop branch),
+> **Status: integrated.** All files listed below have been merged into `CLS-1000/spec-1`.
+> This document is kept as a reference for what was added in the Research Mode batch.
+
+These files mirror their exact path in `CLS-1000/spec-1` (develop branch),
 as of base commit `3d1d5f9`. Unzip this into your repo root and the folders
 land in the right place.
 

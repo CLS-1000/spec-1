@@ -1,692 +1,734 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<script src="./support.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPEC-1 :: OSINT RESEARCH ENGINE</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --black: #000;
+            --surface: rgba(10,10,10,.94);
+            --white: #fff;
+            --w70: rgba(255,255,255,.70);
+            --w50: rgba(255,255,255,.50);
+            --w30: rgba(255,255,255,.30);
+            --w20: rgba(255,255,255,.20);
+            --w12: rgba(255,255,255,.12);
+            --w06: rgba(255,255,255,.06);
+            --pass: #00ff00;
+            --alert: #ff0000;
+            --fm: 'IBM Plex Mono', 'Courier New', monospace;
+            --fd: 'Courier Prime', 'Courier New', monospace;
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            background: var(--black);
+            color: var(--white);
+            font-family: var(--fm);
+            font-size: 13px;
+            line-height: 1.6;
+            position: relative;
+        }
+
+        /* CRT scan lines */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 9999;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 3px,
+                rgba(0,0,0,.04) 3px,
+                rgba(0,0,0,.04) 4px
+            );
+        }
+
+        /* Flower of Life background */
+        #fol-bg {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            opacity: .05;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* ── LAYOUT ─────────────────────────────────────────── */
+        .wrap {
+            position: relative;
+            z-index: 1;
+            max-width: 1080px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem 4rem;
+        }
+
+        /* ── PANEL ──────────────────────────────────────────── */
+        .panel {
+            border: 1px solid var(--w30);
+            background: var(--surface);
+            margin-bottom: 1.25rem;
+        }
+
+        .ph {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 12px;
+            border-bottom: 1px solid var(--w20);
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: .14em;
+            color: var(--w50);
+            background: rgba(255,255,255,.025);
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .pb { padding: 16px 14px; }
+
+        /* ── HERO ───────────────────────────────────────────── */
+        .logo-ascii {
+            font-family: var(--fd);
+            font-size: 12px;
+            line-height: 1.15;
+            white-space: pre;
+            text-align: center;
+            color: var(--white);
+            margin-bottom: 16px;
+            display: block;
+        }
+
+        .hero-sub {
+            text-align: center;
+            font-size: 10px;
+            letter-spacing: .16em;
+            text-transform: uppercase;
+            color: var(--w50);
+            margin-bottom: 10px;
+        }
+
+        .hero-status {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            font-size: 11px;
+            color: var(--w50);
+            margin-bottom: 10px;
+        }
+
+        .hero-cmd {
+            text-align: center;
+            font-family: var(--fd);
+            font-size: 11px;
+            color: var(--w30);
+        }
+
+        /* ── STATUS BAR ─────────────────────────────────────── */
+        .stat-bar {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            background: var(--w12);
+            gap: 1px;
+        }
+
+        .stat-cell {
+            background: var(--surface);
+            padding: 11px 14px;
+        }
+
+        .stat-lbl { font-size: 9px; text-transform: uppercase; letter-spacing: .14em; color: var(--w30); margin-bottom: 3px; }
+        .stat-val { font-size: 15px; font-weight: 700; }
+        .stat-sub { font-size: 10px; color: var(--w50); margin-top: 2px; }
+
+        .tag-row {
+            padding: 7px 14px;
+            border-top: 1px solid var(--w12);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0;
+            font-size: 10px;
+        }
+
+        .tag-item {
+            padding: 2px 14px 2px 0;
+            margin-right: 14px;
+            border-right: 1px solid var(--w12);
+        }
+
+        .tag-item:last-child { border-right: none; margin-right: 0; }
+
+        /* ── SECTION COPY ───────────────────────────────────── */
+        .sec-title { font-size: 14px; font-weight: 700; letter-spacing: .06em; margin-bottom: 10px; }
+        .sec-body { font-size: 12px; color: var(--w70); line-height: 1.75; }
+        .sec-body + .sec-body { margin-top: 10px; }
+
+        .thesis {
+            border-left: 2px solid var(--white);
+            padding: 10px 16px;
+            margin: 14px 0;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: .04em;
+        }
+
+        .callout {
+            padding: 10px 14px;
+            border: 1px solid var(--w20);
+            background: rgba(255,255,255,.02);
+            font-size: 12px;
+            font-style: italic;
+            color: var(--w70);
+            margin-top: 14px;
+        }
+
+        /* ── PIPELINE ───────────────────────────────────────── */
+        .pipe-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background: var(--w12);
+        }
+
+        .pipe-card {
+            background: var(--surface);
+            padding: 14px 10px;
+            text-align: center;
+        }
+
+        .pipe-num { font-size: 9px; color: var(--w30); letter-spacing: .12em; margin-bottom: 5px; }
+        .pipe-name { font-size: 11px; font-weight: 700; letter-spacing: .06em; }
+
+        .pipe-footer {
+            padding: 8px 14px;
+            border-top: 1px solid var(--w12);
+            font-size: 10px;
+            color: var(--w30);
+            font-family: var(--fd);
+            letter-spacing: .03em;
+        }
+
+        /* ── GATE GRID ──────────────────────────────────────── */
+        .gate-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1px;
+            background: var(--w12);
+        }
+
+        .gate-card {
+            background: var(--surface);
+            padding: 14px;
+        }
+
+        .gate-num { font-size: 9px; color: var(--w30); letter-spacing: .14em; text-transform: uppercase; margin-bottom: 4px; }
+        .gate-name { font-size: 13px; font-weight: 700; margin-bottom: 9px; }
+
+        .gate-criteria { font-size: 11px; color: var(--w50); line-height: 1.7; }
+        .gate-criteria span { display: block; }
+        .gate-criteria span::before { content: '▸ '; color: var(--w30); }
+
+        /* ── VERDICT GRID ───────────────────────────────────── */
+        .verdict-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1px;
+            background: var(--w12);
+        }
+
+        .verdict-card { background: var(--surface); padding: 13px 14px; }
+        .verdict-name { font-size: 11px; font-weight: 700; letter-spacing: .10em; margin-bottom: 4px; text-transform: uppercase; }
+        .verdict-desc { font-size: 11px; color: var(--w50); line-height: 1.5; }
+
+        /* ── ADAPTER GRID ───────────────────────────────────── */
+        .adapter-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1px;
+            background: var(--w12);
+        }
+
+        .adapter-card { background: var(--surface); padding: 14px; }
+        .adapter-name { font-size: 11px; font-weight: 700; letter-spacing: .10em; text-transform: uppercase; margin-bottom: 2px; }
+        .adapter-module { font-family: var(--fd); font-size: 10px; color: var(--w30); margin-bottom: 8px; letter-spacing: .04em; }
+        .adapter-desc { font-size: 11px; color: var(--w70); line-height: 1.6; }
+
+        /* ── BRIEF LIST ─────────────────────────────────────── */
+        .brief-list { list-style: none; }
+        .brief-list li {
+            padding: 6px 14px;
+            border-bottom: 1px solid var(--w06);
+            font-size: 12px;
+            color: var(--w70);
+        }
+        .brief-list li::before { content: '▸ '; color: var(--w30); }
+        .brief-list li:last-child { border-bottom: none; }
+
+        /* ── MCP ROW ────────────────────────────────────────── */
+        .mcp-row {
+            padding: 8px 14px;
+            border-top: 1px solid var(--w12);
+            font-size: 10px;
+            color: var(--w30);
+            font-family: var(--fd);
+            line-height: 1.7;
+        }
+
+        /* ── TECH TABLE ─────────────────────────────────────── */
+        .tech-table { width: 100%; border-collapse: collapse; }
+        .tech-table tr { border-bottom: 1px solid var(--w12); }
+        .tech-table tr:last-child { border-bottom: none; }
+        .tech-table td { padding: 8px 14px; vertical-align: top; }
+        .tech-table td:first-child {
+            color: var(--w30);
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: .12em;
+            white-space: nowrap;
+            width: 200px;
+            padding-right: 20px;
+        }
+        .tech-table td:last-child { color: var(--w70); font-family: var(--fd); font-size: 11px; }
+
+        /* ── TERMINAL BLOCKS ────────────────────────────────── */
+        pre {
+            font-family: var(--fd);
+            font-size: 11px;
+            line-height: 1.75;
+            color: var(--w70);
+            padding: 14px;
+            overflow-x: auto;
+        }
+
+        /* ── CTA ────────────────────────────────────────────── */
+        .cta-box { text-align: center; padding: 28px 20px; }
+        .cta-eyebrow { font-size: 9px; letter-spacing: .18em; text-transform: uppercase; color: var(--w30); margin-bottom: 10px; }
+        .cta-line { font-size: 13px; color: var(--w70); margin-bottom: 20px; }
+
+        .btn-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+        .btn {
+            display: inline-block;
+            padding: 8px 20px;
+            border: 1px solid var(--white);
+            color: var(--white);
+            font-family: var(--fm);
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: .12em;
+            text-decoration: none;
+            transition: background .12s cubic-bezier(.4,0,.2,1), color .12s;
+        }
+        .btn:hover { background: var(--white); color: var(--black); }
+
+        /* ── FOOTER ─────────────────────────────────────────── */
+        footer {
+            border-top: 1px solid var(--w12);
+            padding-top: 20px;
+            text-align: center;
+            font-size: 10px;
+            color: var(--w30);
+            letter-spacing: .10em;
+            text-transform: uppercase;
+            line-height: 1.9;
+        }
+
+        /* ── UTILS ──────────────────────────────────────────── */
+        .pass { color: var(--pass); }
+        .caution { color: var(--alert); }
+        .muted { color: var(--w50); }
+        .dim { color: var(--w30); }
+        .mono { font-family: var(--fd); }
+        .divider { height: 1px; background: var(--w12); }
+
+        .cursor {
+            display: inline-block;
+            width: 7px;
+            height: 13px;
+            background: var(--white);
+            vertical-align: middle;
+            animation: blink 1s step-end infinite;
+        }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+        /* ── RESPONSIVE ─────────────────────────────────────── */
+        @media (max-width: 860px) {
+            .stat-bar { grid-template-columns: repeat(2,1fr); }
+            .pipe-grid { grid-template-columns: repeat(4,1fr); }
+            .gate-grid { grid-template-columns: repeat(2,1fr); }
+            .verdict-grid { grid-template-columns: repeat(2,1fr); }
+        }
+        @media (max-width: 560px) {
+            .stat-bar, .gate-grid, .verdict-grid, .adapter-grid { grid-template-columns: 1fr; }
+            .pipe-grid { grid-template-columns: repeat(2,1fr); }
+            .logo-ascii { font-size: 7px; }
+            .tech-table td:first-child { width: auto; white-space: normal; }
+        }
+    </style>
+<meta property="og:image" content="https://cls-1000.github.io/spec-1/docs/open-graph.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:image" content="https://cls-1000.github.io/spec-1/docs/open-graph.png" />
 </head>
 <body>
-<x-dc>
-<helmet>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
-<style>
-* { margin:0; padding:0; box-sizing:border-box; }
-html, body { background:#000; color:#fff; font-family:'IBM Plex Mono','Courier New',monospace; }
-svg text { font-family:'IBM Plex Mono','Courier New',monospace; }
-</style>
-</helmet>
 
-<template id="__bundler_thumbnail">
-  <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-    <rect width="200" height="200" fill="#000"></rect>
-    <rect x="60" y="60" width="80" height="80" fill="none" stroke="#fff" stroke-width="2"></rect>
-    <text x="100" y="106" font-family="monospace" font-size="26" font-weight="700" fill="#00ff00" text-anchor="middle">S1</text>
-  </svg>
-</template>
+<!-- FLOWER OF LIFE -->
+<svg id="fol-bg" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <pattern id="fol" x="0" y="0" width="69.28" height="60" patternUnits="userSpaceOnUse">
+            <circle cx="34.64" cy="30" r="20" fill="none" stroke="#fff" stroke-width="0.5"></circle>
+            <circle cx="34.64" cy="10" r="20" fill="none" stroke="#fff" stroke-width="0.5"></circle>
+            <circle cx="34.64" cy="50" r="20" fill="none" stroke="#fff" stroke-width="0.5"></circle>
+            <circle cx="17.32" cy="20" r="20" fill="none" stroke="#fff" stroke-width="0.5"></circle>
+            <circle cx="51.96" cy="20" r="20" fill="none" stroke="#fff" stroke-width="0.5"></circle>
+            <circle cx="17.32" cy="40" r="20" fill="none" stroke="#fff" stroke-width="0.5"></circle>
+            <circle cx="51.96" cy="40" r="20" fill="none" stroke="#fff" stroke-width="0.5"></circle>
+        </pattern>
+    </defs>
+    <rect width="100%" height="100%" fill="url(#fol)"></rect>
+</svg>
 
-<div style="position:relative; padding:32px 24px 64px; min-height:100vh;">
-  <svg style="position:absolute; inset:0; width:100%; height:100%; pointer-events:none; opacity:.05;" xmlns="http://www.w3.org/2000/svg">
-    <defs><pattern id="fol" patternUnits="userSpaceOnUse" width="80" height="69.28">
-      <circle cx="0" cy="0" r="40" fill="none" stroke="#fff" stroke-width=".6"></circle><circle cx="40" cy="0" r="40" fill="none" stroke="#fff" stroke-width=".6"></circle><circle cx="80" cy="0" r="40" fill="none" stroke="#fff" stroke-width=".6"></circle>
-      <circle cx="-20" cy="34.64" r="40" fill="none" stroke="#fff" stroke-width=".6"></circle><circle cx="20" cy="34.64" r="40" fill="none" stroke="#fff" stroke-width=".6"></circle><circle cx="60" cy="34.64" r="40" fill="none" stroke="#fff" stroke-width=".6"></circle><circle cx="100" cy="34.64" r="40" fill="none" stroke="#fff" stroke-width=".6"></circle>
-      <circle cx="0" cy="69.28" r="40" fill="none" stroke="#fff" stroke-width=".6"></circle><circle cx="40" cy="69.28" r="40" fill="none" stroke="#fff" stroke-width=".6"></circle><circle cx="80" cy="69.28" r="40" fill="none" stroke="#fff" stroke-width=".6"></circle>
-    </pattern></defs><rect width="100%" height="100%" fill="url(#fol)"></rect>
-  </svg>
+<div class="wrap">
 
-  <div style="position:relative; max-width:1560px; margin:0 auto;">
-
-    <!-- ══ TITLE BLOCK ══ -->
-    <div style="border:2px solid #fff; display:grid; grid-template-columns:1fr 200px 140px 140px 180px; margin-bottom:8px;">
-      <div style="padding:18px 20px; border-right:1px solid rgba(255,255,255,.3);">
-        <div style="font-size:10px; letter-spacing:.18em; color:#666; font-weight:600; margin-bottom:8px;">EVASTARARCANA LLC · PORTLAND OR</div>
-        <div style="font-size:24px; font-weight:700; letter-spacing:.06em;">SPEC-1 :: PIPELINE ARCHITECTURE</div>
-        <div style="font-size:11px; color:#999; letter-spacing:.06em; margin-top:6px;">GENERAL ARRANGEMENT · 6 STAGES · CROSS-CUTTING SYSTEMS</div>
-      </div>
-      <div style="padding:14px 16px; border-right:1px solid rgba(255,255,255,.3); display:flex; flex-direction:column; justify-content:center;">
-        <div style="font-size:9px; letter-spacing:.14em; color:#666; margin-bottom:4px;">DWG NO.</div>
-        <div style="font-family:'Courier Prime',monospace; font-size:13px;">SPEC1-ARCH-001</div>
-      </div>
-      <div style="padding:14px 16px; border-right:1px solid rgba(255,255,255,.3); display:flex; flex-direction:column; justify-content:center;">
-        <div style="font-size:9px; letter-spacing:.14em; color:#666; margin-bottom:4px;">SCALE</div>
-        <div style="font-family:'Courier Prime',monospace; font-size:13px;">NTS</div>
-      </div>
-      <div style="padding:14px 16px; border-right:1px solid rgba(255,255,255,.3); display:flex; flex-direction:column; justify-content:center;">
-        <div style="font-size:9px; letter-spacing:.14em; color:#666; margin-bottom:4px;">REV</div>
-        <div style="font-family:'Courier Prime',monospace; font-size:13px;">v0.1</div>
-      </div>
-      <div style="padding:14px 16px; display:flex; flex-direction:column; justify-content:center;">
-        <div style="font-size:9px; letter-spacing:.14em; color:#666; margin-bottom:4px;">CLASSIFICATION</div>
-        <div style="font-family:'Courier Prime',monospace; font-size:13px;">UNCLASSIFIED</div>
-      </div>
-    </div>
-    <div style="display:flex; gap:16px; font-size:10px; letter-spacing:.14em; color:#666; margin-bottom:48px;">
-      <span>LEGEND:</span>
-      <span style="color:#00ff00;">━━ [CONFIRMED]</span>
-      <span style="color:#ccc;">┄┄ [PROPOSED]</span>
-      <span style="color:#ff0000;">▲ [OPEN]</span>
-      <span style="margin-left:auto; color:#444;">DIMENSIONS IN RECORDS UNLESS NOTED</span>
+    <!-- ══ HERO ══════════════════════════════════════════════════════ -->
+    <div class="panel">
+        <div class="ph">
+            <span>[ SPEC-1 RESEARCH ENGINE ]</span>
+            <span>V0.6.2  ● STABLE</span>
+        </div>
+        <div class="pb" style="padding: 24px 14px 16px;">
+            <pre class="logo-ascii"> ███████╗██████╗ ███████╗ ██████╗ ██╗
+ ██╔════╝██╔══██╗██╔════╝██╔════╝ ██║
+ ███████╗██████╔╝█████╗  ██║      ██║
+ ╚════██║██╔═══╝ ██╔══╝  ██║      ██║
+ ███████║██║     ███████╗╚██████╗ ██║
+ ╚══════╝╚═╝     ╚══════╝ ╚═════╝ ╚═╝</pre>
+            <div class="hero-sub">OSINT RESEARCH COMMAND CENTER &nbsp;·&nbsp; PORTLAND OR &nbsp;·&nbsp; EVASTARARCANA</div>
+            <div class="hero-status">
+                <span><span class="pass">●</span> PIPELINE ACTIVE</span>
+                <span class="dim">·</span>
+                <span>SOURCES: RSS &nbsp;·&nbsp; FARA &nbsp;·&nbsp; CONGRESSIONAL &nbsp;·&nbsp; NARRATIVE</span>
+                <span class="dim">·</span>
+                <span><span class="pass">PASS</span> :: CREDIBILITY GATE</span>
+            </div>
+            <div class="hero-cmd">$ python -m spec1_api.main <span class="cursor"></span></div>
+        </div>
     </div>
 
-    <!-- ══ FIG 01 · SYSTEM PLAN VIEW ══ -->
-    <div style="position:relative; border:1px solid rgba(255,255,255,.3); background:rgba(10,10,10,.92); padding:28px; margin-bottom:12px;">
-      <div style="position:absolute; top:0; left:0; width:20px; height:20px; border-top:2px solid #fff; border-left:2px solid #fff;"></div>
-      <div style="position:absolute; bottom:0; right:0; width:20px; height:20px; border-bottom:2px solid #fff; border-right:2px solid #fff;"></div>
-
-      <svg viewBox="0 0 1460 700" style="width:100%; height:auto; display:block;" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <marker id="arw" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 Z" fill="#fff"></path></marker>
-          <marker id="arwm" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><path d="M0,0 L9,3.5 L0,7 Z" fill="#666"></path></marker>
-          <marker id="dimt" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><line x1="1" y1="7" x2="7" y2="1" stroke="#666" stroke-width="1"></line></marker>
-        </defs>
-
-        <!-- R1 kill-switch guard bus, row 1 -->
-        <line x1="60" y1="66" x2="1400" y2="66" stroke="#ff0000" stroke-width="1" stroke-dasharray="6 4" opacity=".7"></line>
-        <text x="60" y="56" font-size="10" letter-spacing="1.4" fill="#ff0000">R1 · KILL-SWITCH GUARD BUS — guard(step) BEFORE EVERY SIDE EFFECT</text>
-        <line x1="200" y1="66" x2="200" y2="100" stroke="#ff0000" stroke-width="1" stroke-dasharray="3 3" opacity=".7"></line>
-        <line x1="690" y1="66" x2="690" y2="100" stroke="#ff0000" stroke-width="1" stroke-dasharray="3 3" opacity=".7"></line>
-        <line x1="1180" y1="66" x2="1180" y2="100" stroke="#ff0000" stroke-width="1" stroke-dasharray="3 3" opacity=".7"></line>
-
-        <!-- STAGE 01 -->
-        <rect x="60" y="100" width="280" height="150" fill="rgba(10,10,10,.96)" stroke="#fff" stroke-width="1"></rect>
-        <line x1="60" y1="132" x2="340" y2="132" stroke="rgba(255,255,255,.3)" stroke-width="1"></line>
-        <circle cx="82" cy="116" r="11" fill="none" stroke="#00ff00" stroke-width="1"></circle>
-        <text x="82" y="120" font-size="10" fill="#00ff00" text-anchor="middle">01</text>
-        <text x="104" y="120" font-size="13" font-weight="700" fill="#fff" letter-spacing="1">HARVEST &amp; PARSE</text>
-        <text x="76" y="156" font-size="10" fill="#666" letter-spacing="1.2">IN</text>
-        <text x="112" y="156" font-size="11" fill="#ccc" font-family="Courier Prime, monospace">adapter configs · creds</text>
-        <text x="76" y="176" font-size="10" fill="#666" letter-spacing="1.2">OUT</text>
-        <text x="112" y="176" font-size="11" fill="#ccc" font-family="Courier Prime, monospace">Signal[] → ParsedSignal[]</text>
-        <text x="76" y="200" font-size="10" fill="#666" letter-spacing="1.2">ADAPTERS</text>
-        <text x="76" y="218" font-size="10" fill="#999" font-family="Courier Prime, monospace">ORESTAR·3 OLIS·2 SEI·2 WA_PDC·2 PRESS·3</text>
-        <text x="76" y="238" font-size="10" fill="#00ff00" font-family="Courier Prime, monospace">spec1_YYYY_MMDD_HHMMSS</text>
-
-        <line x1="340" y1="175" x2="400" y2="175" stroke="#fff" stroke-width="1" marker-end="url(#arw)"></line>
-
-        <!-- STAGE 02 -->
-        <rect x="400" y="100" width="280" height="150" fill="rgba(10,10,10,.96)" stroke="#fff" stroke-width="1"></rect>
-        <line x1="400" y1="132" x2="680" y2="132" stroke="rgba(255,255,255,.3)" stroke-width="1"></line>
-        <circle cx="422" cy="116" r="11" fill="none" stroke="#00ff00" stroke-width="1"></circle>
-        <text x="422" y="120" font-size="10" fill="#00ff00" text-anchor="middle">02</text>
-        <text x="444" y="120" font-size="13" font-weight="700" fill="#fff" letter-spacing="1">GATE SCORING</text>
-        <text x="416" y="156" font-size="10" fill="#666" letter-spacing="1.2">4 GATES · WEIGHTED COMPOSITE</text>
-        <text x="416" y="178" font-size="10" fill="#ccc" font-family="Courier Prime, monospace">CRED .30  VOL .20  VEL .20  NOV .30</text>
-        <text x="416" y="200" font-size="10" fill="#666" letter-spacing="1.2">THRESHOLD</text>
-        <text x="520" y="200" font-size="11" fill="#fff" font-family="Courier Prime, monospace">≥ 0.40</text>
-        <text x="416" y="222" font-size="10" fill="#999">PURE FN OF (ParsedSignal, calibration)</text>
-        <text x="416" y="240" font-size="10" fill="#666">SEE DETAIL A</text>
-        <circle cx="500" cy="236" r="12" fill="none" stroke="#fff" stroke-width="1"></circle>
-        <text x="500" y="240" font-size="10" fill="#fff" text-anchor="middle">A</text>
-
-        <line x1="680" y1="175" x2="740" y2="175" stroke="#fff" stroke-width="1" marker-end="url(#arw)"></line>
-
-        <!-- STAGE 03 -->
-        <rect x="740" y="100" width="280" height="150" fill="rgba(10,10,10,.96)" stroke="#fff" stroke-width="1"></rect>
-        <line x1="740" y1="132" x2="1020" y2="132" stroke="rgba(255,255,255,.3)" stroke-width="1"></line>
-        <circle cx="762" cy="116" r="11" fill="none" stroke="#00ff00" stroke-width="1"></circle>
-        <text x="762" y="120" font-size="10" fill="#00ff00" text-anchor="middle">03</text>
-        <text x="784" y="120" font-size="13" font-weight="700" fill="#fff" letter-spacing="1">SIGNAL LOOP PERSIST</text>
-        <text x="756" y="156" font-size="10" fill="#666" letter-spacing="1.2">CANONICAL LOOP</text>
-        <text x="756" y="176" font-size="10" fill="#ccc" font-family="Courier Prime, monospace">Signal→Opportunity→Investigation</text>
-        <text x="756" y="192" font-size="10" fill="#ccc" font-family="Courier Prime, monospace">→Outcome→Intelligence</text>
-        <text x="756" y="216" font-size="10" fill="#666" letter-spacing="1.2">DUAL-WRITE · JSONL IS TRUTH</text>
-        <text x="756" y="240" font-size="10" fill="#666">SEE SECTION C</text>
-        <circle cx="862" cy="236" r="12" fill="none" stroke="#fff" stroke-width="1"></circle>
-        <text x="862" y="240" font-size="10" fill="#fff" text-anchor="middle">C</text>
-
-        <!-- routing 03 → 04 -->
-        <polyline points="1020,175 1090,175 1090,300 40,300 40,450 60,450" fill="none" stroke="#fff" stroke-width="1" marker-end="url(#arw)"></polyline>
-        <circle cx="1090" cy="175" r="2.5" fill="#fff"></circle>
-        <circle cx="40" cy="300" r="2.5" fill="#fff"></circle>
-
-        <!-- dimension line: throughput -->
-        <line x1="60" y1="272" x2="1020" y2="272" stroke="#666" stroke-width="1" marker-start="url(#dimt)" marker-end="url(#dimt)"></line>
-        <line x1="60" y1="256" x2="60" y2="278" stroke="#666" stroke-width="1" opacity=".5"></line>
-        <line x1="400" y1="256" x2="400" y2="278" stroke="#666" stroke-width="1" opacity=".5"></line>
-        <line x1="740" y1="256" x2="740" y2="278" stroke="#666" stroke-width="1" opacity=".5"></line>
-        <line x1="1020" y1="256" x2="1020" y2="278" stroke="#666" stroke-width="1" opacity=".5"></line>
-        <rect x="176" y="262" width="88" height="16" fill="#000"></rect>
-        <text x="220" y="274" font-size="10" fill="#666" text-anchor="middle" font-family="Courier Prime, monospace">12 HARVESTED</text>
-        <rect x="500" y="262" width="80" height="16" fill="#000"></rect>
-        <text x="540" y="274" font-size="10" fill="#666" text-anchor="middle" font-family="Courier Prime, monospace">12 PARSED</text>
-        <rect x="820" y="262" width="120" height="16" fill="#000"></rect>
-        <text x="880" y="274" font-size="10" fill="#666" text-anchor="middle" font-family="Courier Prime, monospace">10 OPPORTUNITIES</text>
-        <text x="1160" y="276" font-size="10" fill="#444" font-family="Courier Prime, monospace">REGRESSION FIXTURE 12/12/10/10</text>
-
-        <!-- R1 bus, row 2 -->
-        <line x1="60" y1="356" x2="1400" y2="356" stroke="#ff0000" stroke-width="1" stroke-dasharray="6 4" opacity=".7"></line>
-        <line x1="200" y1="356" x2="200" y2="375" stroke="#ff0000" stroke-width="1" stroke-dasharray="3 3" opacity=".7"></line>
-        <line x1="690" y1="356" x2="690" y2="375" stroke="#ff0000" stroke-width="1" stroke-dasharray="3 3" opacity=".7"></line>
-        <line x1="1180" y1="356" x2="1180" y2="375" stroke="#ff0000" stroke-width="1" stroke-dasharray="3 3" opacity=".7"></line>
-
-        <!-- STAGE 04 -->
-        <rect x="60" y="375" width="280" height="150" fill="rgba(10,10,10,.96)" stroke="#ff0000" stroke-width="1"></rect>
-        <line x1="60" y1="407" x2="340" y2="407" stroke="rgba(255,255,255,.3)" stroke-width="1"></line>
-        <circle cx="82" cy="391" r="11" fill="none" stroke="#ff0000" stroke-width="1"></circle>
-        <text x="82" y="395" font-size="10" fill="#ff0000" text-anchor="middle">04</text>
-        <text x="104" y="395" font-size="13" font-weight="700" fill="#fff" letter-spacing="1">THREAT INDEX → BRIEF</text>
-        <text x="76" y="430" font-size="10" fill="#ccc" font-family="Courier Prime, monospace">threat_index.py → IndexRecord</text>
-        <text x="76" y="448" font-size="10" fill="#ccc" font-family="Courier Prime, monospace">alert_dispatcher.py (DELIVERY ONLY)</text>
-        <text x="76" y="466" font-size="10" fill="#ccc" font-family="Courier Prime, monospace">brief_writer.py (LLM + FALLBACK)</text>
-        <text x="76" y="490" font-size="10" fill="#666" letter-spacing="1.2">BANDS 75 / 90 · COOLDOWN PERSISTENT</text>
-        <rect x="76" y="500" width="182" height="16" fill="none" stroke="#ff0000" stroke-width="1"></rect>
-        <text x="167" y="512" font-size="9" fill="#ff0000" text-anchor="middle" letter-spacing="1.2">▲ UNCALIBRATED — NO EXT. ALERTS</text>
-
-        <line x1="340" y1="450" x2="400" y2="450" stroke="#fff" stroke-width="1" marker-end="url(#arw)"></line>
-
-        <!-- STAGE 05 -->
-        <rect x="400" y="375" width="280" height="150" fill="rgba(10,10,10,.96)" stroke="#fff" stroke-width="1"></rect>
-        <line x1="400" y1="407" x2="680" y2="407" stroke="rgba(255,255,255,.3)" stroke-width="1"></line>
-        <circle cx="422" cy="391" r="11" fill="none" stroke="#00ff00" stroke-width="1"></circle>
-        <text x="422" y="395" font-size="10" fill="#00ff00" text-anchor="middle">05</text>
-        <text x="444" y="395" font-size="13" font-weight="700" fill="#fff" letter-spacing="1">ANALYST WORKFLOW</text>
-        <text x="416" y="430" font-size="10" fill="#666" letter-spacing="1.2">MIGRATION 008 · CHAIN OF CUSTODY</text>
-        <text x="416" y="452" font-size="10" fill="#ccc" font-family="Courier Prime, monospace">analyst_cases → analyst_outputs</text>
-        <text x="416" y="468" font-size="10" fill="#ccc" font-family="Courier Prime, monospace">→ audit_results → analyst_verdicts</text>
-        <text x="416" y="492" font-size="10" fill="#fff" letter-spacing="1.2">SYSTEM OF RECORD — NOT DERIVED</text>
-        <text x="416" y="512" font-size="10" fill="#666" font-family="Courier Prime, monospace">confirmed | partial | flagged | rejected</text>
-
-        <line x1="680" y1="450" x2="740" y2="450" stroke="#fff" stroke-width="1" marker-end="url(#arw)"></line>
-
-        <!-- STAGE 06 -->
-        <rect x="740" y="375" width="280" height="150" fill="rgba(10,10,10,.96)" stroke="#fff" stroke-width="1"></rect>
-        <line x1="740" y1="407" x2="1020" y2="407" stroke="rgba(255,255,255,.3)" stroke-width="1"></line>
-        <circle cx="762" cy="391" r="11" fill="none" stroke="#00ff00" stroke-width="1"></circle>
-        <text x="762" y="395" font-size="10" fill="#00ff00" text-anchor="middle">06</text>
-        <text x="784" y="395" font-size="13" font-weight="700" fill="#fff" letter-spacing="1">PUBLICATION HANDOFF</text>
-        <text x="756" y="430" font-size="10" fill="#666" letter-spacing="1.2">EDITORIAL BOUNDARY — AUTOMATION STOPS</text>
-        <text x="756" y="452" font-size="10" fill="#ccc" font-family="Courier Prime, monospace">publication_generator.py · reportlab</text>
-        <text x="756" y="474" font-size="10" fill="#ccc">SPEC-1 = STRUCTURE + PROVENANCE</text>
-        <text x="756" y="492" font-size="10" fill="#ccc">NOTITIA CIVICA = CLAIMS</text>
-        <text x="756" y="514" font-size="10" fill="#666" letter-spacing="1.2">REQUIRES HUMAN BYLINE</text>
-
-        <!-- boundary hatch -->
-        <line x1="1030" y1="375" x2="1030" y2="525" stroke="#fff" stroke-width="1" stroke-dasharray="4 4"></line>
-        <text x="1044" y="440" font-size="10" fill="#666" letter-spacing="1.4">PUBLISH</text>
-        <text x="1044" y="456" font-size="10" fill="#666" letter-spacing="1.4">BOUNDARY</text>
-        <line x1="1020" y1="450" x2="1120" y2="450" stroke="#fff" stroke-width="1" marker-end="url(#arw)"></line>
-
-        <!-- HOLD re-entry loop 02 -->
-        <polyline points="540,100 540,86 366,86 366,175" fill="none" stroke="#666" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#arwm)"></polyline>
-        <text x="376" y="80" font-size="9" fill="#666" letter-spacing="1.2">R7 · HOLD RE-ENTRY (RE-SCORED AS CORROBORATION ARRIVES)</text>
-
-        <!-- STORE LAYER -->
-        <line x1="60" y1="570" x2="1400" y2="570" stroke="rgba(255,255,255,.12)" stroke-width="1"></line>
-        <text x="60" y="560" font-size="10" fill="#666" letter-spacing="1.4">R3 · SINGLE-WRITER REGISTRY — DATUM: ONE PROCESS PER NAMESPACE</text>
-
-        <rect x="60" y="596" width="230" height="72" fill="rgba(10,10,10,.96)" stroke="#fff" stroke-width="1"></rect>
-        <text x="74" y="618" font-size="10" fill="#fff" font-family="Courier Prime, monospace">spec1_intelligence.jsonl</text>
-        <text x="74" y="636" font-size="9" fill="#666" letter-spacing="1.2">WRITER: engine cycle</text>
-        <text x="74" y="654" font-size="9" fill="#00ff00" letter-spacing="1.2">APPEND-ONLY · CANONICAL</text>
-
-        <rect x="310" y="596" width="230" height="72" fill="rgba(10,10,10,.96)" stroke="rgba(255,255,255,.3)" stroke-width="1"></rect>
-        <text x="324" y="618" font-size="10" fill="#ccc" font-family="Courier Prime, monospace">SQLite mirror · 9 migrations</text>
-        <text x="324" y="636" font-size="9" fill="#666" letter-spacing="1.2">WRITER: dual-write job</text>
-        <text x="324" y="654" font-size="9" fill="#666" letter-spacing="1.2">DERIVED · 3,076 BACKFILLED</text>
-
-        <rect x="560" y="596" width="230" height="72" fill="rgba(10,10,10,.96)" stroke="rgba(255,255,255,.3)" stroke-width="1"></rect>
-        <text x="574" y="618" font-size="10" fill="#ccc" font-family="Courier Prime, monospace">political_signals (PG)</text>
-        <text x="574" y="636" font-size="9" fill="#666" letter-spacing="1.2">WRITER: ingest router</text>
-        <text x="574" y="654" font-size="9" fill="#666" letter-spacing="1.2">RULE-PROTECTED · pdx-1i FORK</text>
-
-        <rect x="810" y="596" width="250" height="72" fill="rgba(10,10,10,.96)" stroke="#fff" stroke-width="2"></rect>
-        <text x="824" y="618" font-size="10" fill="#fff" font-family="Courier Prime, monospace">analyst_* · audit_results</text>
-        <text x="824" y="636" font-size="9" fill="#666" letter-spacing="1.2">WRITER: human only</text>
-        <text x="824" y="654" font-size="9" fill="#fff" letter-spacing="1.2">SYSTEM OF RECORD · NO UPSTREAM</text>
-
-        <rect x="1080" y="596" width="230" height="72" fill="rgba(10,10,10,.96)" stroke="rgba(255,255,255,.3)" stroke-width="1"></rect>
-        <text x="1094" y="618" font-size="10" fill="#ccc" font-family="Courier Prime, monospace">calibration.py</text>
-        <text x="1094" y="636" font-size="9" fill="#666" letter-spacing="1.2">WRITER: human, reviewed</text>
-        <text x="1094" y="654" font-size="9" fill="#666" letter-spacing="1.2">R10 · NEVER WRITTEN BY A JOB</text>
-
-        <!-- write leaders from stages to stores -->
-        <polyline points="880,250 880,586 175,586 175,596" fill="none" stroke="#666" stroke-width="1" marker-end="url(#arwm)"></polyline>
-        <polyline points="425,596 425,586 900,586 900,250" fill="none" stroke="#666" stroke-width="1" stroke-dasharray="3 3"></polyline>
-        <polyline points="540,525 540,586 935,586 935,596" fill="none" stroke="#666" stroke-width="1" marker-end="url(#arwm)"></polyline>
-      </svg>
-
-      <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:20px; padding-top:14px; border-top:1px solid rgba(255,255,255,.12);">
-        <div style="font-size:11px; font-weight:600; letter-spacing:.14em;">FIG. 01 — SYSTEM PLAN VIEW</div>
-        <div style="font-size:10px; color:#666; letter-spacing:.1em;">SCALE NTS · PROJECTION: LEFT-TO-RIGHT SERPENTINE · TZ America/Los_Angeles</div>
-      </div>
+    <!-- ══ SYSTEM STATUS ══════════════════════════════════════════════ -->
+    <div class="panel">
+        <div class="ph">
+            <span>SYSTEM STATUS</span>
+            <span class="dim">// runtime telemetry</span>
+        </div>
+        <div class="stat-bar">
+            <div class="stat-cell">
+                <div class="stat-lbl">System</div>
+                <div class="stat-val"><span class="pass">ONLINE</span></div>
+                <div class="stat-sub">● Pipeline active</div>
+            </div>
+            <div class="stat-cell">
+                <div class="stat-lbl">Tests Passing</div>
+                <div class="stat-val">621</div>
+                <div class="stat-sub">69 files covered</div>
+            </div>
+            <div class="stat-cell">
+                <div class="stat-lbl">Pipeline</div>
+                <div class="stat-val">7-STAGE</div>
+                <div class="stat-sub">Harvest → Store</div>
+            </div>
+            <div class="stat-cell">
+                <div class="stat-lbl">AI Layer</div>
+                <div class="stat-val">CLAUDE</div>
+                <div class="stat-sub">Haiku + Sonnet</div>
+            </div>
+        </div>
+        <div class="tag-row">
+            <span class="tag-item"><span class="dim">CREDIBILITY GATE </span><span class="pass">PASS</span></span>
+            <span class="tag-item"><span class="dim">4-GATE FILTER </span><span class="pass">PASS</span></span>
+            <span class="tag-item"><span class="dim">LICENSE </span><span>OPEN SOURCE</span></span>
+            <span class="tag-item"><span class="dim">PYTHON </span><span>3.9+</span></span>
+            <span class="tag-item" style="border-right:none;margin-right:0;"><span class="dim">API </span><span>FastAPI + MCP</span></span>
+        </div>
     </div>
 
-    <!-- NOTES · FIG 01 -->
-    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:48px;">
-      <div style="border:1px solid rgba(255,255,255,.2); background:rgba(10,10,10,.92); padding:18px;">
-        <div style="font-size:10px; letter-spacing:.14em; color:#666; font-weight:600; margin-bottom:12px;">NOTES 01 — HARVEST &amp; PARSE</div>
-        <div style="font-size:11px; color:#999; line-height:1.7;">
-          <div>1.1 &nbsp;Every Signal carries source_uri, fetched_at, adapter_name, adapter_version, run_id. Provenance is stamped at harvest; it cannot be reconstructed later.</div>
-          <div style="margin-top:8px;">1.2 &nbsp;An adapter that raises returns AdapterHealth.FAILED for the run. It does not return []. Empty and broken are different facts.</div>
-          <div style="margin-top:8px;">1.3 &nbsp;Parse failures logged per-record with raw payload hash. Adapters are read-only against the world.</div>
-          <div style="margin-top:8px; color:#666;">FAIL: yield drop &gt;30% vs 7-day median → DEGRADED · unreachable → 3× backoff then FAILED · ≥2 FAILED → exit 1 · all FAILED → exit 2, publish nothing.</div>
-          <div style="margin-top:8px; color:#ccc;">VERIFY: fixture reproduces 12/12/10/10 · non-null source_uri + adapter_version · network kill yields FAILED not [].</div>
+    <!-- ══ 01 WHAT THIS IS ════════════════════════════════════════════ -->
+    <div class="panel">
+        <div class="ph">
+            <span>01 — WHAT THIS IS</span>
+            <span class="dim">// product overview</span>
         </div>
-      </div>
-      <div style="border:1px solid rgba(255,255,255,.2); background:rgba(10,10,10,.92); padding:18px;">
-        <div style="font-size:10px; letter-spacing:.14em; color:#666; font-weight:600; margin-bottom:12px;">NOTES 02 — GATE SCORING</div>
-        <div style="font-size:11px; color:#999; line-height:1.7;">
-          <div>2.1 &nbsp;Pure function of (ParsedSignal, calibration). No clock reads, no hash(), no network. Same inputs → same output on replay.</div>
-          <div style="margin-top:8px;">2.2 &nbsp;All four sub-scores persisted alongside the composite. Storing only the composite makes every future recalibration a guess.</div>
-          <div style="margin-top:8px;">2.3 &nbsp;A HOLD row is durable and re-enterable. Promotion to PASS is a new row with supersedes_id.</div>
-          <div style="margin-top:8px; color:#666;">FAIL: gate exception → UNKNOWN not 0.0 · empty novelty corpus → require ≥5 prior PASS · stale clock inverts decay → assert fetched_at ≤ now · calibration edit without replay.</div>
-          <div style="margin-top:8px; color:#ccc;">VERIFY: same fixture in two processes → byte-identical GateResults · replay harness reproduces bands on 3,076-record backfill.</div>
+        <div class="pb">
+            <div class="sec-title">Real-time signal monitoring for national security and geopolitical risk</div>
+            <p class="sec-body">SPEC-1 is an automated open-source research engine. It harvests signals from authoritative sources, filters them through a deterministic four-gate framework, and surfaces what matters — producing structured research records and daily written briefs without manual intervention.</p>
+            <div class="thesis">The bottleneck is attention, not access.</div>
+            <p class="sec-body">One purpose: separate signal from noise in a high-volume information environment, and deliver what actually requires human attention.</p>
         </div>
-      </div>
-      <div style="border:1px solid rgba(255,255,255,.2); background:rgba(10,10,10,.92); padding:18px;">
-        <div style="font-size:10px; letter-spacing:.14em; color:#666; font-weight:600; margin-bottom:12px;">NOTES 03 — PERSISTENCE</div>
-        <div style="font-size:11px; color:#999; line-height:1.7;">
-          <div>3.1 &nbsp;JSONL opened "a" only. A "w" on a canonical store is a Critical incident.</div>
-          <div style="margin-top:8px;">3.2 &nbsp;Mirror is never the source for any recalculation. Rebuild from JSONL or do not rebuild.</div>
-          <div style="margin-top:8px;">3.3 &nbsp;count(JSONL) == count(SQLite) asserted at end of every cycle. PG index on (node_id, gate_status, published_at DESC); gate scores stored flat and as jsonb.</div>
-          <div style="margin-top:8px; color:#666;">FAIL: mirror drift → replay from offset · partial line → truncate to last complete, replay tail · duplicate run_id → refuse write, never delete · migration out of order → halt.</div>
-          <div style="margin-top:8px; color:#ccc;">VERIFY: kill -9 mid-cycle leaves JSONL parseable and mirror repairable · UPDATE on political_signals refused by RULE.</div>
-        </div>
-      </div>
-      <div style="border:1px solid #ff0000; background:rgba(255,0,0,.04); padding:18px;">
-        <div style="font-size:10px; letter-spacing:.14em; color:#ff0000; font-weight:600; margin-bottom:12px;">NOTES 04 — THREAT INDEX ▲ OPEN</div>
-        <div style="font-size:11px; color:#999; line-height:1.7;">
-          <div>4.1 &nbsp;DOMAIN_WEIGHTS and ALPHA_OVERRIDE are placeholders pending backfill replay. Until calibrated the index must not drive an external alert or a published headline. PROVISIONAL badge on SWITCHBOARD only.</div>
-          <div style="margin-top:8px;">4.2 &nbsp;The dispatcher delivers. It does not compute, re-score, or re-band. Ever.</div>
-          <div style="margin-top:8px;">4.3 &nbsp;Every number in generated prose is validated against the source IndexRecord post-generation. Mismatch fails the run and falls back to the deterministic template. The LLM never authors a figure.</div>
-          <div style="margin-top:8px;">4.4 &nbsp;Cooldown state persists across restarts. Band escalation resets cooldown; de-escalation does not fire.</div>
-          <div style="margin-top:8px; color:#666;">CALIBRATION: freeze weight diff → replay 3,076 records → record band distribution + 75/90 crossings → compare to hand-labeled set → commit with replay output.</div>
-        </div>
-      </div>
-      <div style="border:1px solid rgba(255,255,255,.2); background:rgba(10,10,10,.92); padding:18px;">
-        <div style="font-size:10px; letter-spacing:.14em; color:#666; font-weight:600; margin-bottom:12px;">NOTES 05 — ANALYST WORKFLOW</div>
-        <div style="font-size:11px; color:#999; line-height:1.7;">
-          <div>5.1 &nbsp;These tables are the system of record. Everything else in the dual-write is rebuildable from JSONL; migration 008's chain is not.</div>
-          <div style="margin-top:8px;">5.2 &nbsp;No agent, script, or job may write here. Human-initiated only. Backup runs on its own schedule, independent of the mirror.</div>
-          <div style="margin-top:8px;">5.3 &nbsp;A correction is a new verdict row with supersedes_id. The wrong verdict stays visible forever. That is the point.</div>
-          <div style="margin-top:8px; color:#ff0000;">▲ OPEN — HOLD ASYMMETRY: gates have HOLD, verdicts do not. (a) add hold kind via migration 010 · (b) map to partial + hold_reason · (c) keep HOLD pre-analyst only. Recommendation: (a).</div>
-          <div style="margin-top:8px; color:#ccc;">VERIFY: no orphan analyst_output · claims_confirmed+flagged+dropped reconciles · confidence bounded 0–1 · UPDATE refused at DB layer.</div>
-        </div>
-      </div>
-      <div style="border:1px solid rgba(255,255,255,.2); background:rgba(10,10,10,.92); padding:18px;">
-        <div style="font-size:10px; letter-spacing:.14em; color:#666; font-weight:600; margin-bottom:12px;">NOTES 06 — PUBLICATION HANDOFF</div>
-        <div style="font-size:11px; color:#999; line-height:1.7;">
-          <div>6.1 &nbsp;Nothing crosses the boundary without: a run_id chain resolvable to source URIs · a verdict of confirmed or partial · provisional structure surfaced via seed_warnings() · a human byline.</div>
-          <div style="margin-top:8px;">6.2 &nbsp;Design system split: SWITCHBOARD runs the phosphor terminal palette; every public surface runs the mid-century-modern editorial system. Do not mix them.</div>
-          <div style="margin-top:8px;">6.3 &nbsp;models.Node holds role-based seats, never named individuals. The 57 seeded officials migrated as structure only; names were deliberately discarded. Person-nodes are a live editorial decision, deferred not closed.</div>
-        </div>
-      </div>
     </div>
 
-    <!-- ══ DETAIL A + DETAIL B ══ -->
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:48px;">
-      <div style="position:relative; border:1px solid rgba(255,255,255,.3); background:rgba(10,10,10,.92); padding:24px;">
-        <svg viewBox="0 0 640 400" style="width:100%; height:auto; display:block;" xmlns="http://www.w3.org/2000/svg">
-          <defs><marker id="arw2" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><path d="M0,0 L9,3.5 L0,7 Z" fill="#fff"></path></marker>
-          <marker id="dimt2" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><line x1="1" y1="7" x2="7" y2="1" stroke="#666" stroke-width="1"></line></marker></defs>
-          <circle cx="30" cy="26" r="13" fill="none" stroke="#fff" stroke-width="1"></circle>
-          <text x="30" y="30" font-size="11" fill="#fff" text-anchor="middle">A</text>
-          <text x="54" y="24" font-size="12" font-weight="700" fill="#fff" letter-spacing="1.2">DETAIL A — FOUR-GATE COMPOSITE</text>
-          <text x="54" y="38" font-size="9" fill="#666" letter-spacing="1.2">SCALE 0.00–1.00 · WEIGHTS FROM calibration.py</text>
-
-          <!-- weight bars -->
-          <text x="20" y="86" font-size="10" fill="#ccc" letter-spacing="1.2">CREDIBILITY</text>
-          <text x="150" y="86" font-size="10" fill="#666" font-family="Courier Prime, monospace">w .30</text>
-          <rect x="210" y="76" width="390" height="12" fill="none" stroke="rgba(255,255,255,.2)"></rect>
-          <rect x="210" y="76" width="117" height="12" fill="#fff"></rect>
-          <text x="20" y="102" font-size="9" fill="#444">SOURCE DOMAIN AUTHORITY — portland.gov .90 · opb .85 · oregonlive .82 · wweek .80</text>
-
-          <text x="20" y="146" font-size="10" fill="#ccc" letter-spacing="1.2">VOLUME</text>
-          <text x="150" y="146" font-size="10" fill="#666" font-family="Courier Prime, monospace">w .20</text>
-          <rect x="210" y="136" width="390" height="12" fill="none" stroke="rgba(255,255,255,.2)"></rect>
-          <rect x="210" y="136" width="78" height="12" fill="#fff"></rect>
-          <text x="20" y="162" font-size="9" fill="#444">CORROBORATION BREADTH — gates MIN_CORROBORATION for PASS</text>
-
-          <text x="20" y="206" font-size="10" fill="#ccc" letter-spacing="1.2">VELOCITY</text>
-          <text x="150" y="206" font-size="10" fill="#666" font-family="Courier Prime, monospace">w .20</text>
-          <rect x="210" y="196" width="390" height="12" fill="none" stroke="rgba(255,255,255,.2)"></rect>
-          <rect x="210" y="196" width="78" height="12" fill="#fff"></rect>
-          <text x="20" y="222" font-size="9" fill="#444">RATE OF CHANGE — DECAY HALF-LIFE ≈ 36h</text>
-
-          <text x="20" y="266" font-size="10" fill="#ccc" letter-spacing="1.2">NOVELTY</text>
-          <text x="150" y="266" font-size="10" fill="#666" font-family="Courier Prime, monospace">w .30</text>
-          <rect x="210" y="256" width="390" height="12" fill="none" stroke="rgba(255,255,255,.2)"></rect>
-          <rect x="210" y="256" width="117" height="12" fill="#fff"></rect>
-          <text x="20" y="282" font-size="9" fill="#444">TF-IDF COSINE DISTANCE vs LAST 20 PASS SUMMARIES PER NODE</text>
-
-          <!-- weight sum dimension -->
-          <line x1="210" y1="306" x2="600" y2="306" stroke="#666" stroke-width="1" marker-start="url(#dimt2)" marker-end="url(#dimt2)"></line>
-          <rect x="352" y="298" width="106" height="16" fill="#0a0a0a"></rect>
-          <text x="405" y="310" font-size="9" fill="#666" text-anchor="middle" font-family="Courier Prime, monospace">Σw = 1.00</text>
-
-          <!-- threshold datum -->
-          <line x1="20" y1="344" x2="600" y2="344" stroke="#00ff00" stroke-width="1" stroke-dasharray="6 4"></line>
-          <text x="20" y="336" font-size="10" fill="#00ff00" letter-spacing="1.4">DATUM — COMPOSITE THRESHOLD 0.40</text>
-          <text x="20" y="366" font-size="9" fill="#666">READ FROM CONFIG AT CALL TIME · NEVER INLINED · R10 CONFIG OF RECORD</text>
-          <text x="20" y="384" font-size="9" fill="#ff0000">▲ NO hash() IN SCORING PATHS — USE hashlib.blake2b(key, digest_size=8)</text>
-        </svg>
-        <div style="display:flex; justify-content:space-between; margin-top:16px; padding-top:12px; border-top:1px solid rgba(255,255,255,.12); font-size:10px; color:#666; letter-spacing:.1em;">
-          <span>DETAIL A · GATE STACK</span><span>SEE FIG. 01 STAGE 02</span>
+    <!-- ══ 02 THE PROBLEM ═════════════════════════════════════════════ -->
+    <div class="panel">
+        <div class="ph">
+            <span>02 — THE PROBLEM IT SOLVES</span>
+            <span class="dim">// operational thesis</span>
         </div>
-      </div>
-
-      <div style="position:relative; border:1px solid rgba(255,255,255,.3); background:rgba(10,10,10,.92); padding:24px;">
-        <svg viewBox="0 0 640 400" style="width:100%; height:auto; display:block;" xmlns="http://www.w3.org/2000/svg">
-          <defs><marker id="arw3" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><path d="M0,0 L9,3.5 L0,7 Z" fill="#fff"></path></marker></defs>
-          <circle cx="30" cy="26" r="13" fill="none" stroke="#fff" stroke-width="1"></circle>
-          <text x="30" y="30" font-size="11" fill="#fff" text-anchor="middle">B</text>
-          <text x="54" y="24" font-size="12" font-weight="700" fill="#fff" letter-spacing="1.2">DETAIL B — VERDICT RESOLUTION</text>
-          <text x="54" y="38" font-size="9" fill="#666" letter-spacing="1.2">R6 FAIL CLOSED · R7 HOLD IS FIRST-CLASS</text>
-
-          <rect x="230" y="62" width="180" height="30" fill="none" stroke="#fff"></rect>
-          <text x="320" y="82" font-size="10" fill="#fff" text-anchor="middle" letter-spacing="1.2">GateScores</text>
-          <line x1="320" y1="92" x2="320" y2="112" stroke="#fff" stroke-width="1" marker-end="url(#arw3)"></line>
-
-          <path d="M320,116 L410,152 L320,188 L230,152 Z" fill="none" stroke="#fff"></path>
-          <text x="320" y="149" font-size="10" fill="#fff" text-anchor="middle">any_unknown()</text>
-          <text x="320" y="163" font-size="9" fill="#666" text-anchor="middle">R6</text>
-
-          <line x1="410" y1="152" x2="500" y2="152" stroke="#fff" stroke-width="1" marker-end="url(#arw3)"></line>
-          <text x="440" y="144" font-size="9" fill="#666">TRUE</text>
-          <line x1="320" y1="188" x2="320" y2="212" stroke="#fff" stroke-width="1" marker-end="url(#arw3)"></line>
-          <text x="330" y="206" font-size="9" fill="#666">FALSE</text>
-
-          <path d="M320,216 L420,252 L320,288 L220,252 Z" fill="none" stroke="#fff"></path>
-          <text x="320" y="249" font-size="10" fill="#fff" text-anchor="middle">composite ≥ 0.40</text>
-          <line x1="220" y1="252" x2="140" y2="252" stroke="#fff" stroke-width="1" marker-end="url(#arw3)"></line>
-          <text x="164" y="244" font-size="9" fill="#666">FALSE</text>
-          <line x1="320" y1="288" x2="320" y2="312" stroke="#fff" stroke-width="1" marker-end="url(#arw3)"></line>
-
-          <path d="M320,316 L440,352 L320,388 L200,352 Z" fill="none" stroke="#fff"></path>
-          <text x="320" y="349" font-size="10" fill="#fff" text-anchor="middle">volume_sources ≥ MIN</text>
-          <text x="320" y="363" font-size="9" fill="#666" text-anchor="middle">CORROBORATION</text>
-          <line x1="200" y1="352" x2="140" y2="352" stroke="#fff" stroke-width="1" marker-end="url(#arw3)"></line>
-          <text x="152" y="344" font-size="9" fill="#666">FALSE</text>
-          <line x1="440" y1="352" x2="500" y2="352" stroke="#fff" stroke-width="1" marker-end="url(#arw3)"></line>
-          <text x="452" y="344" font-size="9" fill="#666">TRUE</text>
-
-          <rect x="500" y="136" width="120" height="32" fill="none" stroke="rgba(255,255,255,.7)"></rect>
-          <text x="560" y="157" font-size="11" fill="#fff" text-anchor="middle" letter-spacing="1.4">HOLD</text>
-          <rect x="20" y="236" width="110" height="32" fill="none" stroke="rgba(255,255,255,.45)"></rect>
-          <text x="75" y="257" font-size="11" fill="rgba(255,255,255,.7)" text-anchor="middle" letter-spacing="1.4">FAIL</text>
-          <rect x="20" y="336" width="110" height="32" fill="none" stroke="rgba(255,255,255,.7)"></rect>
-          <text x="75" y="357" font-size="11" fill="#fff" text-anchor="middle" letter-spacing="1.4">HOLD</text>
-          <rect x="500" y="336" width="120" height="32" fill="none" stroke="#00ff00"></rect>
-          <text x="560" y="357" font-size="11" fill="#00ff00" text-anchor="middle" letter-spacing="1.4">PASS</text>
-          <text x="500" y="382" font-size="9" fill="#666">→ Opportunity</text>
-          <text x="500" y="182" font-size="9" fill="#666">UNKNOWN NEVER PASSES</text>
-        </svg>
-        <div style="display:flex; justify-content:space-between; margin-top:16px; padding-top:12px; border-top:1px solid rgba(255,255,255,.12); font-size:10px; color:#666; letter-spacing:.1em;">
-          <span>DETAIL B · VERDICT TREE</span><span>HOLD = CREDIBLE, UNCORROBORATED</span>
+        <div class="pb">
+            <p class="sec-body">Anyone working in national security, geopolitical risk, or threat analysis faces the same daily reality: there is far more credible reporting than any human can process. Feeds from think tanks, investigative journalists, and defense research organizations produce dozens of new pieces every day. Most are not actionable. A small fraction are. The challenge is not access to information — it is triage.</p>
+            <p class="sec-body">SPEC-1 automates that triage. It monitors a curated set of high-credibility sources continuously, evaluates each new signal through a structured scoring framework, and surfaces only those that clear every threshold. Signals that pass are handed to an investigation and verification workflow powered by Claude. The result is a compressed, high-confidence set of research records and a daily written brief — ready for human review without the noise.</p>
+            <div class="callout">"The system handles the volume. The analyst handles the judgment."</div>
         </div>
-      </div>
     </div>
 
-    <!-- ══ SECTION C — DUAL-WRITE ══ -->
-    <div style="border:1px solid rgba(255,255,255,.3); background:rgba(10,10,10,.92); padding:28px; margin-bottom:48px;">
-      <svg viewBox="0 0 1400 300" style="width:100%; height:auto; display:block;" xmlns="http://www.w3.org/2000/svg">
-        <defs><marker id="arw4" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 Z" fill="#fff"></path></marker>
-        <marker id="arw4r" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 Z" fill="#ff0000"></path></marker></defs>
-        <circle cx="30" cy="26" r="13" fill="none" stroke="#fff" stroke-width="1"></circle>
-        <text x="30" y="30" font-size="11" fill="#fff" text-anchor="middle">C</text>
-        <text x="54" y="24" font-size="12" font-weight="700" fill="#fff" letter-spacing="1.2">SECTION C — DUAL-WRITE SEQUENCE · CRASH-SAFE ORDERING</text>
-        <text x="54" y="38" font-size="9" fill="#666" letter-spacing="1.2">ORDER IS NOT A STYLE CHOICE — IT DETERMINES WHAT A CRASH LEAVES BEHIND</text>
-
-        <rect x="30" y="80" width="200" height="70" fill="none" stroke="#fff"></rect>
-        <text x="130" y="108" font-size="10" fill="#fff" text-anchor="middle" letter-spacing="1.2">IntelligenceRecord</text>
-        <text x="130" y="128" font-size="9" fill="#666" text-anchor="middle">run_id STAMPED · R4</text>
-
-        <line x1="230" y1="115" x2="310" y2="115" stroke="#fff" stroke-width="1" marker-end="url(#arw4)"></line>
-        <circle cx="270" cy="98" r="10" fill="none" stroke="#fff"></circle>
-        <text x="270" y="102" font-size="9" fill="#fff" text-anchor="middle">1</text>
-
-        <rect x="310" y="80" width="240" height="70" fill="none" stroke="#00ff00"></rect>
-        <text x="430" y="106" font-size="10" fill="#00ff00" text-anchor="middle" font-family="Courier Prime, monospace">append JSONL + fsync</text>
-        <text x="430" y="126" font-size="9" fill="#666" text-anchor="middle">MODE "a" ONLY · GROUND TRUTH</text>
-
-        <line x1="550" y1="115" x2="630" y2="115" stroke="#fff" stroke-width="1" marker-end="url(#arw4)"></line>
-        <circle cx="590" cy="98" r="10" fill="none" stroke="#fff"></circle>
-        <text x="590" y="102" font-size="9" fill="#fff" text-anchor="middle">2</text>
-
-        <rect x="630" y="80" width="240" height="70" fill="none" stroke="rgba(255,255,255,.3)"></rect>
-        <text x="750" y="106" font-size="10" fill="#ccc" text-anchor="middle" font-family="Courier Prime, monospace">mirror → SQLite (txn)</text>
-        <text x="750" y="126" font-size="9" fill="#666" text-anchor="middle">QUERY LAYER · DERIVED</text>
-
-        <!-- failure branch 3 -->
-        <polyline points="750,150 750,200 470,200" fill="none" stroke="#ff0000" stroke-width="1" marker-end="url(#arw4r)"></polyline>
-        <circle cx="700" cy="184" r="10" fill="none" stroke="#ff0000"></circle>
-        <text x="700" y="188" font-size="9" fill="#ff0000" text-anchor="middle">3</text>
-        <rect x="230" y="182" width="240" height="36" fill="none" stroke="#ff0000"></rect>
-        <text x="350" y="204" font-size="9" fill="#ff0000" text-anchor="middle" letter-spacing="1.2">LOG CRITICAL · MARK MIRROR STALE</text>
-        <text x="480" y="238" font-size="9" fill="#666">DO NOT ROLL BACK JSONL — A STALE MIRROR IS REPAIRABLE, A PHANTOM ROW IS NOT</text>
-
-        <!-- reconcile 4 -->
-        <polyline points="350,182 350,158 300,158 300,258 1000,258 1000,150" fill="none" stroke="#666" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#arw4)"></polyline>
-        <circle cx="640" cy="242" r="10" fill="none" stroke="#666"></circle>
-        <text x="640" y="246" font-size="9" fill="#666" text-anchor="middle">4</text>
-
-        <rect x="900" y="80" width="200" height="70" fill="none" stroke="rgba(255,255,255,.3)"></rect>
-        <text x="1000" y="106" font-size="10" fill="#ccc" text-anchor="middle">RECONCILE JOB</text>
-        <text x="1000" y="126" font-size="9" fill="#666" text-anchor="middle">REPLAY FROM LAST OFFSET</text>
-
-        <line x1="1100" y1="115" x2="1160" y2="115" stroke="#fff" stroke-width="1" marker-end="url(#arw4)"></line>
-        <rect x="1160" y="80" width="210" height="70" fill="none" stroke="#fff"></rect>
-        <text x="1265" y="102" font-size="10" fill="#fff" text-anchor="middle" font-family="Courier Prime, monospace">count(JSONL)==count(DB)</text>
-        <text x="1265" y="122" font-size="9" fill="#666" text-anchor="middle">ASSERTED END-OF-CYCLE</text>
-        <text x="1265" y="140" font-size="9" fill="#ff0000" text-anchor="middle">DELTA ≠ 0 → EXIT 2</text>
-      </svg>
-      <div style="display:flex; justify-content:space-between; margin-top:16px; padding-top:12px; border-top:1px solid rgba(255,255,255,.12); font-size:10px; color:#666; letter-spacing:.1em;">
-        <span>SECTION C · PERSISTENCE ORDERING</span><span>SEE FIG. 01 STAGE 03 · R2 APPEND-ONLY</span>
-      </div>
+    <!-- ══ 03 PIPELINE ════════════════════════════════════════════════ -->
+    <div class="panel">
+        <div class="ph">
+            <span>03 — PIPELINE</span>
+            <span class="dim">// 7 stages · fault-tolerant · daily cron 06:00 PT</span>
+        </div>
+        <div class="pb" style="padding-bottom: 10px;">
+            <p class="sec-body">Seven sequential stages. Each transforms the data and gates what moves forward. Any single failure is logged and skipped — the cycle never halts on a single error.</p>
+        </div>
+        <div class="pipe-grid">
+            <div class="pipe-card"><div class="pipe-num">[01]</div><div class="pipe-name">HARVEST</div></div>
+            <div class="pipe-card"><div class="pipe-num">[02]</div><div class="pipe-name">PARSE</div></div>
+            <div class="pipe-card"><div class="pipe-num">[03]</div><div class="pipe-name">SCORE</div></div>
+            <div class="pipe-card"><div class="pipe-num">[04]</div><div class="pipe-name">INVESTIGATE</div></div>
+            <div class="pipe-card"><div class="pipe-num">[05]</div><div class="pipe-name">VERIFY</div></div>
+            <div class="pipe-card"><div class="pipe-num">[06]</div><div class="pipe-name">ANALYZE</div></div>
+            <div class="pipe-card"><div class="pipe-num">[07]</div><div class="pipe-name">STORE</div></div>
+        </div>
+        <div class="pipe-footer">
+            [01 HARVEST] &gt; [02 PARSE] &gt; [03 SCORE] &gt; [04 INVESTIGATE] &gt; [05 VERIFY] &gt; [06 ANALYZE] &gt; [07 STORE]
+        </div>
+        <div style="padding: 10px 14px; border-top: 1px solid var(--w12); font-size: 11px; color: var(--w50);">
+            Signals clearing all four gates become <span class="mono">Opportunity</span> objects, investigated by Claude, synthesized into <span class="mono">ResearchRecord</span> objects, dual-written to JSONL + SQLite.
+        </div>
     </div>
 
-    <!-- ══ FIG 02 — SCHEDULE ELEVATION ══ -->
-    <div style="border:1px solid rgba(255,255,255,.3); background:rgba(10,10,10,.92); padding:28px; margin-bottom:12px;">
-      <svg viewBox="0 0 1400 260" style="width:100%; height:auto; display:block;" xmlns="http://www.w3.org/2000/svg">
-        <defs><marker id="arw5" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 Z" fill="#666"></path></marker>
-        <marker id="dimt5" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><line x1="1" y1="7" x2="7" y2="1" stroke="#666" stroke-width="1"></line></marker></defs>
-        <text x="30" y="26" font-size="12" font-weight="700" fill="#fff" letter-spacing="1.2">FIG. 02 — SCHEDULE ELEVATION · TZ America/Los_Angeles</text>
-        <text x="30" y="42" font-size="9" fill="#666" letter-spacing="1.2">[PROPOSED] MODELED ON CONFIRMED pdx-1i DEFAULTS (06:00 PT, WARNS UNLESS PDX1_ENVIRONMENT=production)</text>
-
-        <line x1="60" y1="150" x2="1340" y2="150" stroke="rgba(255,255,255,.3)" stroke-width="1" marker-end="url(#arw5)"></line>
-
-        <line x1="120" y1="150" x2="120" y2="110" stroke="#fff" stroke-width="1"></line>
-        <rect x="112" y="102" width="16" height="16" fill="#fff" transform="rotate(45 120 110)"></rect>
-        <text x="120" y="88" font-size="11" fill="#00ff00" text-anchor="middle" font-family="Courier Prime, monospace">06:00</text>
-        <text x="120" y="172" font-size="10" fill="#fff" text-anchor="middle" letter-spacing="1.2">make cycle</text>
-        <text x="120" y="190" font-size="9" fill="#666" text-anchor="middle">HARVEST→PARSE→GATE→PERSIST</text>
-
-        <line x1="380" y1="150" x2="380" y2="110" stroke="#fff" stroke-width="1"></line>
-        <rect x="372" y="102" width="16" height="16" fill="none" stroke="#fff" transform="rotate(45 380 110)"></rect>
-        <text x="380" y="88" font-size="11" fill="#00ff00" text-anchor="middle" font-family="Courier Prime, monospace">07:00</text>
-        <text x="380" y="172" font-size="10" fill="#fff" text-anchor="middle" letter-spacing="1.2">reconcile + drift validator</text>
-        <text x="380" y="190" font-size="9" fill="#666" text-anchor="middle">EXIT 0 / 1 / 2 → TIMER FAILURE PATH</text>
-
-        <line x1="640" y1="150" x2="640" y2="110" stroke="#ff0000" stroke-width="1"></line>
-        <rect x="632" y="102" width="16" height="16" fill="none" stroke="#ff0000" transform="rotate(45 640 110)"></rect>
-        <text x="640" y="88" font-size="11" fill="#ff0000" text-anchor="middle" font-family="Courier Prime, monospace">07:30</text>
-        <text x="640" y="172" font-size="10" fill="#fff" text-anchor="middle" letter-spacing="1.2">threat index</text>
-        <text x="640" y="190" font-size="9" fill="#ff0000" text-anchor="middle">▲ BLOCKED FROM ALERTING UNTIL CALIBRATED</text>
-
-        <line x1="900" y1="150" x2="900" y2="110" stroke="#fff" stroke-width="1"></line>
-        <rect x="892" y="102" width="16" height="16" fill="none" stroke="#fff" transform="rotate(45 900 110)"></rect>
-        <text x="900" y="88" font-size="11" fill="#00ff00" text-anchor="middle" font-family="Courier Prime, monospace">08:00</text>
-        <text x="900" y="172" font-size="10" fill="#fff" text-anchor="middle" letter-spacing="1.2">brief generation</text>
-        <text x="900" y="190" font-size="9" fill="#666" text-anchor="middle">LLM OR DETERMINISTIC TEMPLATE</text>
-
-        <line x1="1200" y1="150" x2="1200" y2="110" stroke="#fff" stroke-width="1"></line>
-        <rect x="1192" y="102" width="16" height="16" fill="none" stroke="#fff" transform="rotate(45 1200 110)"></rect>
-        <text x="1200" y="88" font-size="11" fill="#ccc" text-anchor="middle" font-family="Courier Prime, monospace">MON 09:00</text>
-        <text x="1200" y="172" font-size="10" fill="#fff" text-anchor="middle" letter-spacing="1.2">calibration replay report</text>
-        <text x="1200" y="190" font-size="9" fill="#666" text-anchor="middle">REPORT ONLY · NEVER AUTO-APPLIES</text>
-
-        <line x1="120" y1="228" x2="900" y2="228" stroke="#666" stroke-width="1" marker-start="url(#dimt5)" marker-end="url(#dimt5)"></line>
-        <rect x="440" y="220" width="140" height="16" fill="#0a0a0a"></rect>
-        <text x="510" y="232" font-size="9" fill="#666" text-anchor="middle" font-family="Courier Prime, monospace">DAILY WINDOW 2h 00m</text>
-      </svg>
-      <div style="display:flex; justify-content:space-between; margin-top:16px; padding-top:12px; border-top:1px solid rgba(255,255,255,.12); font-size:10px; color:#666; letter-spacing:.1em;">
-        <span>FIG. 02 · SCHEDULE</span><span>KILL SWITCH .spec1_kill MUST BE OPERATOR-REACHABLE ON VM</span>
-      </div>
+    <!-- ══ FOUR-GATE FRAMEWORK ════════════════════════════════════════ -->
+    <div class="panel">
+        <div class="ph">
+            <span>STAGE 03 — FOUR-GATE SCORING FRAMEWORK</span>
+            <span class="dim">// any single failure → signal dropped</span>
+        </div>
+        <div class="gate-grid">
+            <div class="gate-card">
+                <div class="gate-num">Gate 1</div>
+                <div class="gate-name">CREDIBILITY</div>
+                <div class="gate-criteria">
+                    <span>Source rating</span>
+                    <span>Editorial standard</span>
+                    <span>Domain track record</span>
+                </div>
+            </div>
+            <div class="gate-card">
+                <div class="gate-num">Gate 2</div>
+                <div class="gate-name">VOLUME</div>
+                <div class="gate-criteria">
+                    <span>Content depth</span>
+                    <span>Word threshold</span>
+                    <span>Substance filter</span>
+                </div>
+            </div>
+            <div class="gate-card">
+                <div class="gate-num">Gate 3</div>
+                <div class="gate-name">VELOCITY</div>
+                <div class="gate-criteria">
+                    <span>Recency score</span>
+                    <span>Time-window decay</span>
+                    <span>Sliding scale</span>
+                </div>
+            </div>
+            <div class="gate-card">
+                <div class="gate-num">Gate 4</div>
+                <div class="gate-name">NOVELTY</div>
+                <div class="gate-criteria">
+                    <span>Keyword taxonomy</span>
+                    <span>Domain relevance</span>
+                    <span>Subject filter</span>
+                </div>
+            </div>
+        </div>
+        <div style="padding: 7px 14px; border-top: 1px solid var(--w12); font-size: 10px; color: var(--w30); font-style: italic;">
+            Gate weights remain unpublished. They represent the accumulated operational judgment of the system.
+        </div>
     </div>
 
-    <!-- DEPLOYMENT + BLOCKERS -->
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:48px;">
-      <div style="border:1px solid rgba(255,255,255,.2); background:rgba(10,10,10,.92); padding:22px;">
-        <div style="font-size:10px; letter-spacing:.14em; color:#666; font-weight:600; margin-bottom:16px;">GCP TARGET SHAPE — [CONFIRMED TARGET, NOT BUILT]</div>
-        <svg viewBox="0 0 620 220" style="width:100%; height:auto; display:block;" xmlns="http://www.w3.org/2000/svg">
-          <defs><marker id="arw6" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><path d="M0,0 L9,3.5 L0,7 Z" fill="#666"></path></marker></defs>
-          <rect x="20" y="20" width="330" height="180" fill="none" stroke="rgba(255,255,255,.3)" stroke-dasharray="5 4"></rect>
-          <text x="32" y="14" font-size="9" fill="#666" letter-spacing="1.4">COMPUTE ENGINE VM</text>
-          <rect x="44" y="44" width="130" height="46" fill="none" stroke="#fff"></rect>
-          <text x="109" y="66" font-size="9" fill="#fff" text-anchor="middle">FastAPI</text>
-          <text x="109" y="80" font-size="8" fill="#666" text-anchor="middle">systemd service</text>
-          <rect x="196" y="44" width="130" height="46" fill="none" stroke="#fff"></rect>
-          <text x="261" y="66" font-size="9" fill="#fff" text-anchor="middle">make cycle</text>
-          <text x="261" y="80" font-size="8" fill="#666" text-anchor="middle">systemd timer</text>
-          <rect x="44" y="126" width="282" height="52" fill="none" stroke="rgba(255,255,255,.3)"></rect>
-          <text x="185" y="148" font-size="9" fill="#ccc" text-anchor="middle" font-family="Courier Prime, monospace">PERSISTENT SSD — JSONL + SQLite</text>
-          <text x="185" y="166" font-size="8" fill="#666" text-anchor="middle">ANALYST TABLES: INDEPENDENT BACKUP SCHEDULE</text>
-          <line x1="109" y1="90" x2="109" y2="126" stroke="#666" stroke-width="1" marker-end="url(#arw6)"></line>
-          <line x1="261" y1="90" x2="261" y2="126" stroke="#666" stroke-width="1" marker-end="url(#arw6)"></line>
-          <rect x="410" y="60" width="190" height="60" fill="none" stroke="rgba(255,255,255,.3)"></rect>
-          <text x="505" y="86" font-size="9" fill="#ccc" text-anchor="middle">CLOUD SQL POSTGRES</text>
-          <text x="505" y="104" font-size="8" fill="#666" text-anchor="middle" font-family="Courier Prime, monospace">political_signals</text>
-          <line x1="350" y1="90" x2="410" y2="90" stroke="#666" stroke-width="1" marker-end="url(#arw6)"></line>
-          <rect x="410" y="150" width="190" height="50" fill="none" stroke="rgba(255,255,255,.2)"></rect>
-          <text x="505" y="172" font-size="9" fill="#ccc" text-anchor="middle">SECRET MANAGER</text>
-          <text x="505" y="188" font-size="8" fill="#666" text-anchor="middle">NOT A .env ON DISK</text>
-        </svg>
-      </div>
-      <div style="border:1px solid #ff0000; background:rgba(255,0,0,.04); padding:22px;">
-        <div style="font-size:10px; letter-spacing:.14em; color:#ff0000; font-weight:600; margin-bottom:16px;">▲ PRE-DEPLOY BLOCKERS — ALL MUST CLEAR</div>
-        <div style="font-size:11px; color:#999; line-height:2;">
-          <div>▸ <span style="color:#ff0000;">[OPEN]</span> Schema-init mechanism identified — no <span style="font-family:'Courier Prime',monospace;">make migrate</span> exists</div>
-          <div>▸ <span style="color:#ff0000;">[OPEN]</span> Which of four FastAPI app objects <span style="font-family:'Courier Prime',monospace;">make run</span> binds</div>
-          <div>▸ Port collision resolved and encoded in the unit file</div>
-          <div>▸ <span style="font-family:'Courier Prime',monospace;">live=False</span> hard-fails under ENVIRONMENT=production</div>
-          <div>▸ Python pinned — VM matches the 3.13 venv, not the 3.12 floor</div>
-          <div>▸ <span style="font-family:'Courier Prime',monospace;">.spec1_kill</span> reachable by the operator, documented path</div>
-          <div>▸ Analyst-table backup schedule (not reconstructable)</div>
-          <div>▸ Drift validator exit code wired into the timer failure path</div>
+    <!-- ══ VERIFICATION OUTCOMES ══════════════════════════════════════ -->
+    <div class="panel">
+        <div class="ph">
+            <span>STAGE 05 — VERIFICATION OUTCOMES</span>
+            <span class="dim">// Claude Haiku · + confidence score</span>
         </div>
-        <div style="margin-top:18px; padding-top:14px; border-top:1px solid rgba(255,0,0,.3); font-size:11px; color:#ccc; line-height:1.7;">
-          <span style="color:#ff0000; font-weight:600;">LIVE DEFECT · PORT COLLISION.</span> <span style="font-family:'Courier Prime',monospace;">pdx1-scheduler</span> starts its own API thread on <span style="font-family:'Courier Prime',monospace;">0.0.0.0:8000</span>; <span style="font-family:'Courier Prime',monospace;">pdx1-api</span> binds the same. Resolve: (a) scheduler runs <span style="font-family:'Courier Prime',monospace;">--no-api</span>, api owns the port — preferred; (b) scheduler owns the port, api never runs as a service.
+        <div class="verdict-grid">
+            <div class="verdict-card">
+                <div class="verdict-name pass">CORROBORATED</div>
+                <div class="verdict-desc">Evidence supports the hypothesis.</div>
+            </div>
+            <div class="verdict-card">
+                <div class="verdict-name caution">ESCALATE</div>
+                <div class="verdict-desc">High-confidence, high-urgency finding.</div>
+            </div>
+            <div class="verdict-card">
+                <div class="verdict-name" style="color: var(--white);">INVESTIGATE</div>
+                <div class="verdict-desc">Hypothesis plausible, more research needed.</div>
+            </div>
+            <div class="verdict-card">
+                <div class="verdict-name muted">MONITOR</div>
+                <div class="verdict-desc">Signal is real but not yet actionable.</div>
+            </div>
+            <div class="verdict-card">
+                <div class="verdict-name muted">CONFLICTED</div>
+                <div class="verdict-desc">Evidence is contradictory.</div>
+            </div>
+            <div class="verdict-card">
+                <div class="verdict-name dim">ARCHIVE</div>
+                <div class="verdict-desc">Signal does not warrant further attention.</div>
+            </div>
         </div>
-      </div>
+        <div style="padding: 7px 14px; border-top: 1px solid var(--w12); font-size: 10px; color: var(--w30); font-style: italic;">
+            API failure → graceful fallback &nbsp;·&nbsp; cycle never crashes on verification error
+        </div>
     </div>
 
-    <!-- ══ SYSTEM RULES SCHEDULE ══ -->
-    <div style="border:1px solid rgba(255,255,255,.3); background:rgba(10,10,10,.92); padding:0; margin-bottom:48px;">
-      <div style="padding:20px 24px; border-bottom:1px solid rgba(255,255,255,.3); display:flex; justify-content:space-between; align-items:baseline;">
-        <div style="font-size:13px; font-weight:700; letter-spacing:.14em;">SCHEDULE OF SYSTEM RULES — R1 … R10</div>
-        <div style="font-size:10px; color:#666; letter-spacing:.1em;">A MODULE THAT VIOLATES ONE IS BROKEN EVEN IF ITS TESTS PASS</div>
-      </div>
-      <table style="width:100%; border-collapse:collapse; font-size:11px;">
-        <thead>
-          <tr style="background:rgba(255,255,255,.02);">
-            <th style="text-align:left; padding:10px 16px; width:70px; font-size:10px; letter-spacing:.14em; color:#666; border-bottom:1px solid rgba(255,255,255,.2);">REF</th>
-            <th style="text-align:left; padding:10px 16px; width:230px; font-size:10px; letter-spacing:.14em; color:#666; border-bottom:1px solid rgba(255,255,255,.2);">RULE</th>
-            <th style="text-align:left; padding:10px 16px; font-size:10px; letter-spacing:.14em; color:#666; border-bottom:1px solid rgba(255,255,255,.2);">MECHANISM</th>
-            <th style="text-align:left; padding:10px 16px; width:130px; font-size:10px; letter-spacing:.14em; color:#666; border-bottom:1px solid rgba(255,255,255,.2);">STATUS</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td style="padding:12px 16px; font-family:'Courier Prime',monospace; color:#fff; border-bottom:1px solid rgba(255,255,255,.06);">R1</td><td style="padding:12px 16px; color:#fff; border-bottom:1px solid rgba(255,255,255,.06);">Kill switch, checked continuously</td><td style="padding:12px 16px; color:#999; border-bottom:1px solid rgba(255,255,255,.06);"><span style="font-family:'Courier Prime',monospace;">guard(step)</span> before every outbound call, LLM call, and write batch — not once at second zero</td><td style="padding:12px 16px; color:#ccc; border-bottom:1px solid rgba(255,255,255,.06);">[PROPOSED]</td></tr>
-          <tr><td style="padding:12px 16px; font-family:'Courier Prime',monospace; color:#fff; border-bottom:1px solid rgba(255,255,255,.06);">R2</td><td style="padding:12px 16px; color:#fff; border-bottom:1px solid rgba(255,255,255,.06);">Append-only records</td><td style="padding:12px 16px; color:#999; border-bottom:1px solid rgba(255,255,255,.06);">PG RULE blocks UPDATE/DELETE · SQLite BEFORE triggers · JSONL mode "a" enforced by lint. Correction carries <span style="font-family:'Courier Prime',monospace;">supersedes_id</span></td><td style="padding:12px 16px; color:#00ff00; border-bottom:1px solid rgba(255,255,255,.06);">[CONFIRMED]</td></tr>
-          <tr><td style="padding:12px 16px; font-family:'Courier Prime',monospace; color:#fff; border-bottom:1px solid rgba(255,255,255,.06);">R3</td><td style="padding:12px 16px; color:#fff; border-bottom:1px solid rgba(255,255,255,.06);">Single writer per namespace</td><td style="padding:12px 16px; color:#999; border-bottom:1px solid rgba(255,255,255,.06);">Every row carries <span style="font-family:'Courier Prime',monospace;">writer</span>. Mismatch against the registry is Critical, not a warning</td><td style="padding:12px 16px; color:#00ff00; border-bottom:1px solid rgba(255,255,255,.06);">[CONFIRMED]</td></tr>
-          <tr><td style="padding:12px 16px; font-family:'Courier Prime',monospace; color:#fff; border-bottom:1px solid rgba(255,255,255,.06);">R4</td><td style="padding:12px 16px; color:#fff; border-bottom:1px solid rgba(255,255,255,.06);">run_id traceability</td><td style="padding:12px 16px; color:#999; border-bottom:1px solid rgba(255,255,255,.06);">Non-nullable on every row in every store. Any published claim resolves to run → adapter → source URI</td><td style="padding:12px 16px; color:#00ff00; border-bottom:1px solid rgba(255,255,255,.06);">[CONFIRMED]</td></tr>
-          <tr><td style="padding:12px 16px; font-family:'Courier Prime',monospace; color:#fff; border-bottom:1px solid rgba(255,255,255,.06);">R5</td><td style="padding:12px 16px; color:#fff; border-bottom:1px solid rgba(255,255,255,.06);">Determinism outside the model boundary</td><td style="padding:12px 16px; color:#999; border-bottom:1px solid rgba(255,255,255,.06);">No <span style="font-family:'Courier Prime',monospace;">hash()</span> in scoring paths — salted per process. Use <span style="font-family:'Courier Prime',monospace;">blake2b(digest_size=8)</span></td><td style="padding:12px 16px; color:#ccc; border-bottom:1px solid rgba(255,255,255,.06);">[PROPOSED]</td></tr>
-          <tr><td style="padding:12px 16px; font-family:'Courier Prime',monospace; color:#fff; border-bottom:1px solid rgba(255,255,255,.06);">R6</td><td style="padding:12px 16px; color:#fff; border-bottom:1px solid rgba(255,255,255,.06);">Fail closed — "no" ≠ "unknown"</td><td style="padding:12px 16px; color:#999; border-bottom:1px solid rgba(255,255,255,.06);"><span style="font-family:'Courier Prime',monospace;">GateOutcome.UNKNOWN</span> never collapses to FAIL or 0.0. A broken adapter must not read as a quiet "nothing happened"</td><td style="padding:12px 16px; color:#ccc; border-bottom:1px solid rgba(255,255,255,.06);">[PROPOSED]</td></tr>
-          <tr><td style="padding:12px 16px; font-family:'Courier Prime',monospace; color:#fff; border-bottom:1px solid rgba(255,255,255,.06);">R7</td><td style="padding:12px 16px; color:#fff; border-bottom:1px solid rgba(255,255,255,.06);">HOLD is a first-class verdict</td><td style="padding:12px 16px; color:#999; border-bottom:1px solid rgba(255,255,255,.06);">Own row state, own re-entry rule, own count in every run summary. Credible but insufficiently corroborated</td><td style="padding:12px 16px; color:#00ff00; border-bottom:1px solid rgba(255,255,255,.06);">[CONFIRMED]</td></tr>
-          <tr><td style="padding:12px 16px; font-family:'Courier Prime',monospace; color:#fff; border-bottom:1px solid rgba(255,255,255,.06);">R8</td><td style="padding:12px 16px; color:#fff; border-bottom:1px solid rgba(255,255,255,.06);">Idempotency enforced before spend</td><td style="padding:12px 16px; color:#999; border-bottom:1px solid rgba(255,255,255,.06);"><span style="font-family:'Courier Prime',monospace;">{action}::{subject_id}::{run_date}</span> → <span style="font-family:'Courier Prime',monospace;">COUNT(status=OK) &lt;= 1</span>, checked before the API call</td><td style="padding:12px 16px; color:#00ff00; border-bottom:1px solid rgba(255,255,255,.06);">[CONFIRMED]</td></tr>
-          <tr><td style="padding:12px 16px; font-family:'Courier Prime',monospace; color:#fff; border-bottom:1px solid rgba(255,255,255,.06);">R9</td><td style="padding:12px 16px; color:#fff; border-bottom:1px solid rgba(255,255,255,.06);">Machine-readable summary + real exit code</td><td style="padding:12px 16px; color:#999; border-bottom:1px solid rgba(255,255,255,.06);"><span style="font-family:'Courier Prime',monospace;">RunSummary</span> → <span style="font-family:'Courier Prime',monospace;">data/run_summaries.jsonl</span>; <span style="font-family:'Courier Prime',monospace;">__main__</span> exits per the taxonomy below</td><td style="padding:12px 16px; color:#ccc; border-bottom:1px solid rgba(255,255,255,.06);">[PROPOSED]</td></tr>
-          <tr><td style="padding:12px 16px; font-family:'Courier Prime',monospace; color:#fff;">R10</td><td style="padding:12px 16px; color:#fff;">Calibration is config of record</td><td style="padding:12px 16px; color:#999;">Changes proposed as a diff, replayed against backfill, committed with the replay result in the message</td><td style="padding:12px 16px; color:#00ff00;">[CONFIRMED]</td></tr>
-        </tbody>
-      </table>
+    <!-- ══ DOMAIN ADAPTERS ════════════════════════════════════════════ -->
+    <div class="panel">
+        <div class="ph">
+            <span>04 — DOMAIN ADAPTERS</span>
+            <span class="dim">// cls_osint/adapters/</span>
+        </div>
+        <div class="pb" style="padding-bottom: 10px;">
+            <p class="sec-body">The core pipeline is domain-agnostic. Domain-specific analysis is handled by adapter modules that feed into the same scoring and persistence infrastructure.</p>
+        </div>
+        <div class="adapter-grid">
+            <div class="adapter-card">
+                <div class="adapter-name">FARA</div>
+                <div class="adapter-module">cls_osint/adapters/fara &nbsp;·&nbsp; 22 tests</div>
+                <div class="adapter-desc">DOJ public database filings. Cross-references foreign agent registrations against congressional activity and known influence networks. Surfaces registrant-principal relationships as scored signals.</div>
+            </div>
+            <div class="adapter-card">
+                <div class="adapter-name">CONGRESSIONAL</div>
+                <div class="adapter-module">cls_osint/adapters/congressional &nbsp;·&nbsp; 35 tests</div>
+                <div class="adapter-desc">Member financial disclosures via fallback chain: Quiver Quantitative → Capitol Trades → House eFD. Flags trades in defense, cybersecurity, and energy sectors for conflict-of-interest analysis.</div>
+            </div>
+            <div class="adapter-card">
+                <div class="adapter-name">NARRATIVE</div>
+                <div class="adapter-module">cls_osint/adapters/narrative</div>
+                <div class="adapter-desc">Psychological operations detection. TF-IDF cosine similarity clustering, entity anomalies, publication silence patterns. Surfaces narrative seeding, astroturfing, and information suppression as scored signals.</div>
+            </div>
+            <div class="adapter-card">
+                <div class="adapter-name">PERSISTENCE</div>
+                <div class="adapter-module">cls_db.dual_write</div>
+                <div class="adapter-desc">Atomic dual-write layer. Every store write keeps JSONL and SQLite in sync. JSONL is the immutable ground truth; SQLite is the query layer for historical analysis and downstream access.</div>
+            </div>
+        </div>
+        <div style="height: 1px; background: var(--w12);"></div>
     </div>
 
-    <!-- ══ FAILURE TAXONOMY + RUN ID ══ -->
-    <div style="display:grid; grid-template-columns:1.2fr 1fr; gap:12px; margin-bottom:48px;">
-      <div style="border:1px solid rgba(255,255,255,.2); background:rgba(10,10,10,.92); padding:24px;">
-        <div style="font-size:10px; letter-spacing:.14em; color:#666; font-weight:600; margin-bottom:18px;">FAILURE TAXONOMY &amp; EXIT CODES</div>
-        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:20px;">
-          <div style="border:1px solid rgba(255,255,255,.10); padding:12px;">
-            <div style="font-family:'Courier Prime',monospace; font-size:20px; color:rgba(255,255,255,.20);">0</div>
-            <div style="font-size:10px; letter-spacing:.1em; color:#666; margin-top:6px;">INFO</div>
-            <div style="font-size:10px; color:#666; margin-top:4px;">Expected, logged</div>
-          </div>
-          <div style="border:1px solid rgba(255,255,255,.20); padding:12px;">
-            <div style="font-family:'Courier Prime',monospace; font-size:20px; color:rgba(255,255,255,.45);">0</div>
-            <div style="font-size:10px; letter-spacing:.1em; color:#999; margin-top:6px;">WARNING</div>
-            <div style="font-size:10px; color:#666; margin-top:4px;">Degraded, continues</div>
-          </div>
-          <div style="border:1px solid rgba(255,255,255,.45); padding:12px;">
-            <div style="font-family:'Courier Prime',monospace; font-size:20px; color:rgba(255,255,255,.70);">1</div>
-            <div style="font-size:10px; letter-spacing:.1em; color:#ccc; margin-top:6px;">ERROR</div>
-            <div style="font-size:10px; color:#666; margin-top:4px;">Stage failed + alert</div>
-          </div>
-          <div style="border:1px solid #fff; padding:12px;">
-            <div style="font-family:'Courier Prime',monospace; font-size:20px; color:#fff;">2</div>
-            <div style="font-size:10px; letter-spacing:.1em; color:#fff; margin-top:6px;">CRITICAL</div>
-            <div style="font-size:10px; color:#666; margin-top:4px;">Halt, publish nothing</div>
-          </div>
+    <!-- ══ DAILY BRIEF ════════════════════════════════════════════════ -->
+    <div class="panel">
+        <div class="ph">
+            <span>06 — DAILY RESEARCH BRIEF</span>
+            <span class="dim">// Claude Sonnet &nbsp;·&nbsp; rule-based fallback if API unavailable</span>
         </div>
-        <div style="font-size:10px; letter-spacing:.14em; color:#666; margin-bottom:10px;">CRITICAL TRIGGERS</div>
-        <div style="font-size:11px; color:#999; line-height:1.9;">
-          <div>▸ Writer-registry violation</div>
-          <div>▸ Append-only violation</div>
-          <div>▸ JSONL / SQLite count mismatch after replay</div>
-          <div>▸ Orphan analyst row</div>
-          <div>▸ Promote action in <span style="font-family:'Courier Prime',monospace;">dev</span></div>
-          <div>▸ Uncalibrated threat weights in an external alert path</div>
+        <div class="pb" style="padding-bottom: 10px;">
+            <p class="sec-body">After each cycle, a briefing generator submits scored research records to Claude Sonnet with a professional editor prompt — precise, sourced, no speculation beyond the evidence. Every claim traces back to a scored signal. If the API call fails, a structured fallback brief is generated from raw record data. The cycle never produces nothing.</p>
         </div>
-        <div style="margin-top:16px; padding-top:14px; border-top:1px solid rgba(255,255,255,.12); font-size:11px; color:#ccc; line-height:1.7;">A pipeline that logs <span style="font-family:'Courier Prime',monospace;">status="failed"</span> and exits 0 is invisible to systemd, cron, and CI — it fails silently for as long as nobody reads the log.</div>
-      </div>
-      <div style="border:1px solid rgba(255,255,255,.2); background:rgba(10,10,10,.92); padding:24px;">
-        <div style="font-size:10px; letter-spacing:.14em; color:#666; font-weight:600; margin-bottom:18px;">RUN ID CONTRACT · APPX B</div>
-        <div style="border:1px solid #ff0000; padding:14px; margin-bottom:18px;">
-          <div style="font-size:10px; color:#ff0000; letter-spacing:.14em; margin-bottom:8px;">▲ WRONG — COMPUTED AT IMPORT</div>
-          <div style="font-family:'Courier Prime',monospace; font-size:11px; color:#999; line-height:1.6;">RUN_ID = f"spec1:{date.today().isoformat()}"</div>
-          <div style="font-size:10px; color:#666; margin-top:8px; line-height:1.6;">A long-lived scheduler writes every subsequent day under day one's run_id. Dedupe keys collide; after day 1 nothing writes. <span style="font-family:'Courier Prime',monospace;">date.today()</span> is host-local, so a run near midnight Pacific on a UTC host takes tomorrow's date.</div>
-        </div>
-        <div style="border:1px solid #00ff00; padding:14px; margin-bottom:18px;">
-          <div style="font-size:10px; color:#00ff00; letter-spacing:.14em; margin-bottom:8px;">✓ RIGHT — PER RUN, TZ-EXPLICIT</div>
-          <div style="font-family:'Courier Prime',monospace; font-size:11px; color:#ccc; line-height:1.6;">TZ = ZoneInfo("America/Los_Angeles")<br>now = datetime.now(tz=TZ)<br>return f"{prefix}_{now:%Y_%m%d_%H%M%S}"</div>
-        </div>
-        <div style="font-size:11px; color:#999; line-height:1.9;">
-          <div><span style="font-family:'Courier Prime',monospace; color:#00ff00;">pdx1_YYYY_MMDD_HHMMSS</span> — CONFIRMED, live run</div>
-          <div><span style="font-family:'Courier Prime',monospace; color:#ccc;">spec1_ · tidx_ · case_ · pub_</span> — PROPOSED, same suffix</div>
-          <div style="color:#ff0000; margin-top:8px;">▲ [OPEN] Confirm the engine cycle's current format from a live <span style="font-family:'Courier Prime',monospace;">make cycle</span> before writing any consumer that parses it.</div>
-        </div>
-      </div>
+        <ul class="brief-list">
+            <li>Executive summary of cycle findings</li>
+            <li>Elevated signals requiring immediate attention</li>
+            <li>Domain briefings — cyber and geopolitical separately</li>
+            <li>Story leads for further investigation</li>
+            <li>Watch list items for ongoing monitoring</li>
+        </ul>
+        <div style="height: 1px; background: var(--w12);"></div>
     </div>
 
-    <!-- ══ ASSET REGISTER ══ -->
-    <div style="border:1px solid rgba(255,255,255,.3); background:rgba(10,10,10,.92); margin-bottom:40px;">
-      <div style="padding:20px 24px; border-bottom:1px solid rgba(255,255,255,.3); display:flex; justify-content:space-between; align-items:baseline;">
-        <div style="font-size:13px; font-weight:700; letter-spacing:.14em;">MARKETABLE ASSET REGISTER</div>
-        <div style="font-size:10px; color:#666; letter-spacing:.1em;">RANKED BY SALEABILITY ÷ EFFORT TO EXTRACT</div>
-      </div>
-      <table style="width:100%; border-collapse:collapse; font-size:11px;">
-        <thead>
-          <tr style="background:rgba(255,255,255,.02);">
-            <th style="text-align:left; padding:10px 16px; width:44px; font-size:10px; letter-spacing:.14em; color:#666; border-bottom:1px solid rgba(255,255,255,.2);">#</th>
-            <th style="text-align:left; padding:10px 16px; width:240px; font-size:10px; letter-spacing:.14em; color:#666; border-bottom:1px solid rgba(255,255,255,.2);">ASSET</th>
-            <th style="text-align:left; padding:10px 16px; font-size:10px; letter-spacing:.14em; color:#666; border-bottom:1px solid rgba(255,255,255,.2);">SHAPE / BUYER</th>
-            <th style="text-align:left; padding:10px 16px; width:280px; font-size:10px; letter-spacing:.14em; color:#666; border-bottom:1px solid rgba(255,255,255,.2);">BLOCKER</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td style="padding:14px 16px; font-family:'Courier Prime',monospace; color:#fff; border-bottom:1px solid rgba(255,255,255,.06);">01</td><td style="padding:14px 16px; color:#fff; border-bottom:1px solid rgba(255,255,255,.06);">Portland metro officials registry<div style="font-size:10px; color:#666; margin-top:4px;">57 officials · 40 districts · 17 entities</div></td><td style="padding:14px 16px; color:#999; border-bottom:1px solid rgba(255,255,255,.06);">Subscription data product — quarterly verified snapshot + change feed. Newsrooms, civic orgs, campaign compliance, GR firms. Value is verification labor, not code.</td><td style="padding:14px 16px; color:#ccc; border-bottom:1px solid rgba(255,255,255,.06);">7 seed warnings must clear first — a paid registry inherits liability a free one does not. Names currently out of the graph (structure-only migration).</td></tr>
-          <tr><td style="padding:14px 16px; font-family:'Courier Prime',monospace; color:#fff; border-bottom:1px solid rgba(255,255,255,.06);">02</td><td style="padding:14px 16px; color:#fff; border-bottom:1px solid rgba(255,255,255,.06);">labeldrift<div style="font-size:10px; color:#666; margin-top:4px;">18 tests · PyPI Trusted Publishing</div></td><td style="padding:14px 16px; color:#999; border-bottom:1px solid rgba(255,255,255,.06);">Open-source linter. Not revenue — a credibility surface and top-of-funnel for paid work. Lowest effort on this list.</td><td style="padding:14px 16px; color:#ccc; border-bottom:1px solid rgba(255,255,255,.06);">The repo push is still empty. Ship it this week.</td></tr>
-          <tr><td style="padding:14px 16px; font-family:'Courier Prime',monospace; color:#fff; border-bottom:1px solid rgba(255,255,255,.06);">03</td><td style="padding:14px 16px; color:#fff; border-bottom:1px solid rgba(255,255,255,.06);">Narration layer<div style="font-size:10px; color:#666; margin-top:4px;">two-pass LLM agent pattern</div></td><td style="padding:14px 16px; color:#999; border-bottom:1px solid rgba(255,255,255,.06);">Action pass resolves commands → tool calls; observation pass translates raw JSON into analyst voice. Licensing candidate — generic across domains.</td><td style="padding:14px 16px; color:#ccc; border-bottom:1px solid rgba(255,255,255,.06);">Extract as a standalone package with SPEC-1 specifics stripped.</td></tr>
-          <tr><td style="padding:14px 16px; font-family:'Courier Prime',monospace; color:#fff; border-bottom:1px solid rgba(255,255,255,.06);">04</td><td style="padding:14px 16px; color:#fff; border-bottom:1px solid rgba(255,255,255,.06);">Threat index as brief headline<div style="font-size:10px; color:#666; margin-top:4px;">banded, domain-weighted composite</div></td><td style="padding:14px 16px; color:#999; border-bottom:1px solid rgba(255,255,255,.06);">Highest ceiling on the list.</td><td style="padding:14px 16px; color:#ff0000; border-bottom:1px solid rgba(255,255,255,.06);">▲ Gated on calibration. The item most damaged by shipping early.</td></tr>
-          <tr><td style="padding:14px 16px; font-family:'Courier Prime',monospace; color:#fff;">05</td><td style="padding:14px 16px; color:#fff;">Drift validator + codebook pattern<div style="font-size:10px; color:#666; margin-top:4px;">methodology, not software</div></td><td style="padding:14px 16px; color:#999;">Single-writer registry, provenance tagging, contract tests — sellable to small teams running LLM-assisted pipelines. Highest optionality.</td><td style="padding:14px 16px; color:#ccc;">Lowest confidence. Real only once SPEC-1 is a visible reference implementation. Park it.</td></tr>
-        </tbody>
-      </table>
+    <!-- ══ API + DEPLOY ═══════════════════════════════════════════════ -->
+    <div class="panel">
+        <div class="ph">
+            <span>07 — API AND SCHEDULING</span>
+            <span class="dim">// FastAPI &nbsp;·&nbsp; APScheduler &nbsp;·&nbsp; 06:00 PT daily</span>
+        </div>
+        <pre>$ git clone https://github.com/CLS-1000/spec-1.git
+$ cd spec-1
+$ pip install -e ".[dev]"
+$ cp .env.example .env          # add ANTHROPIC_API_KEY
+$ PYTHONPATH=src python -m spec1_api.main
+<span class="pass">[OK] SPEC-1 API running on http://0.0.0.0:8000</span>
+
+$ PYTHONPATH=src python -m spec1_core.app.cycle
+<span class="pass">[OK] Harvest complete</span>
+<span class="pass">[OK] 4-gate scoring: N signals → M opportunities</span>
+<span class="pass">[OK] Investigations generated and verified</span>
+<span class="pass">[OK] Daily brief written to generated/briefs/</span></pre>
+        <div class="mcp-row">
+            MCP :: run_cycle &nbsp;·&nbsp; get_signals &nbsp;·&nbsp; get_intel &nbsp;·&nbsp; get_leads &nbsp;·&nbsp; get_brief &nbsp;·&nbsp; get_psyop &nbsp;·&nbsp; get_fara &nbsp;·&nbsp; analyse_psyop &nbsp;·&nbsp; get_stats &nbsp;·&nbsp; file_verdict &nbsp;·&nbsp; get_verdicts &nbsp;·&nbsp; get_calibration &nbsp;·&nbsp; run_psyop &nbsp;·&nbsp; generate_brief &nbsp;·&nbsp; generate_leads &nbsp;·&nbsp; run_research &nbsp;·&nbsp; score_signal
+        </div>
     </div>
 
-    <div style="border-top:1px solid rgba(255,255,255,.12); padding-top:20px; display:flex; justify-content:space-between; font-size:10px; color:#444; letter-spacing:.14em;">
-      <span>SPEC-1 MASTER CODEBOOK v0.1 · DWG SPEC1-ARCH-001 · SHEET 1 OF 1</span>
-      <span>PROMOTE [PROPOSED] → [CONFIRMED] ONLY IN THE COMMIT THAT IMPLEMENTS THE LINE</span>
-      <span>EVASTARARCANA · CLASSIFICATION: UNCLASSIFIED</span>
+    <!-- ══ TECHNICAL SUMMARY ══════════════════════════════════════════ -->
+    <div class="panel">
+        <div class="ph">
+            <span>10 — TECHNICAL SUMMARY</span>
+            <span class="dim">// stack at a glance</span>
+        </div>
+        <table class="tech-table">
+            <tr><td>Language</td><td>Python 3.9+</td></tr>
+            <tr><td>Pipeline stages</td><td>7 (Harvest → Store)</td></tr>
+            <tr><td>Signal sources</td><td>RSS feeds from curated authoritative publishers</td></tr>
+            <tr><td>Scoring framework</td><td>4-gate deterministic filtering</td></tr>
+            <tr><td>AI integration</td><td>Claude Haiku (verification) &nbsp;·&nbsp; Claude Sonnet (briefing)</td></tr>
+            <tr><td>Persistence</td><td>Append-only JSONL + SQLite (cls_db dual-write)</td></tr>
+            <tr><td>Domain adapters</td><td>cls_osint/adapters: fara &nbsp;·&nbsp; congressional &nbsp;·&nbsp; narrative</td></tr>
+            <tr><td>API</td><td>FastAPI &nbsp;·&nbsp; APScheduler &nbsp;·&nbsp; 06:00 AM PT daily cron</td></tr>
+            <tr><td>MCP server</td><td>mcp_server.py &nbsp;·&nbsp; 17 tools exposed to Claude</td></tr>
+            <tr><td>Tests</td><td>621 across 69 files</td></tr>
+            <tr><td>Architecture</td><td>v0.6.2</td></tr>
+        </table>
     </div>
-  </div>
+
+    <!-- ══ WHY THIS MATTERS ═══════════════════════════════════════════ -->
+    <div class="panel">
+        <div class="ph">
+            <span>11 — WHY THIS MATTERS</span>
+        </div>
+        <div class="pb">
+            <div class="thesis">The system handles the volume. The analyst handles the judgment.</div>
+            <p class="sec-body">The bottleneck in analysis work is not information — it is attention. SPEC-1 is designed to protect analyst attention by doing the triage work that does not require human judgment: fetching, cleaning, filtering, and structuring.</p>
+            <p class="sec-body">What reaches the human is already scored, investigated, verified, and written up. The human role is then what it should be: evaluating the findings, directing follow-on research, and making decisions.</p>
+            <p class="sec-body">That division of labor is the point.</p>
+        </div>
+    </div>
+
+    <!-- ══ CTA ════════════════════════════════════════════════════════ -->
+    <div class="panel">
+        <div class="cta-box">
+            <div class="cta-eyebrow">OPEN SOURCE &nbsp;·&nbsp; AI-POWERED &nbsp;·&nbsp; TERMINAL-NATIVE</div>
+            <div class="cta-line">Real-time OSINT. Human-in-the-loop calibration. Built for analysts.</div>
+            <div class="btn-row">
+                <a href="https://github.com/CLS-1000/spec-1" class="btn" target="_blank" rel="noopener noreferrer">View on GitHub</a>
+                <a href="https://github.com/CLS-1000/spec-1/blob/develop/README.md" class="btn" target="_blank" rel="noopener noreferrer">Documentation</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ FOOTER ═════════════════════════════════════════════════════ -->
+    <footer>
+        SPEC-1 // OPEN SOURCE OSINT RESEARCH ENGINE — EVASTARARCANA LLC &nbsp;·&nbsp; PORTLAND OR<br>
+        CLASSIFICATION: UNCLASSIFIED &nbsp;·&nbsp; DATA_STREAM_SECURE &nbsp;·&nbsp; v0.6.2
+    </footer>
+
 </div>
-</x-dc>
 </body>
 </html>
