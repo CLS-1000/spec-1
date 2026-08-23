@@ -40,6 +40,7 @@ from spec1_api.routers import (
     publication,
     signals,
     verdicts,
+    weekly_brief,
     workspace,
 )
 from spec1_api.scheduler import maybe_run_on_start, start_scheduler, stop_scheduler
@@ -159,6 +160,7 @@ def create_app() -> FastAPI:
     app.include_router(intel.router, prefix=_V1)
     app.include_router(leads.router, prefix=_V1)
     app.include_router(brief.router, prefix=_V1)
+    app.include_router(weekly_brief.router, prefix=_V1)
     app.include_router(psyop.router, prefix=_V1)
     app.include_router(fara.router, prefix=_V1)
     app.include_router(cycle.router, prefix=_V1)

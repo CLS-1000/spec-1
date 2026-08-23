@@ -22,6 +22,7 @@ Tools exposed:
   - run_psyop          Score every intelligence record for psyop patterns (operator tool)
   - generate_brief     Build a daily brief for one run_id (operator tool, Claude + fallback)
   - generate_leads     Derive Lead objects from intelligence records (operator tool)
+  - generate_weekly_brief  Generate a public weekly intelligence brief (operator tool)
   - run_research       Run analyst-defined topic research dossier expansion
 
 This server uses a simple JSON-RPC 2.0 over stdio protocol compatible
@@ -353,6 +354,45 @@ def tool_generate_leads(args: dict) -> dict:
     }
 
 
+def tool_generate_weekly_brief(args: dict) -> dict:
+    """Generate a public weekly intelligence brief from the current intel store.
+
+    Aggregates the past 7 days of records, classifies evidence into
+    VERIFIED/INFERRED/SPECULATION tiers, and persists to JSONL + Markdown.
+
+    Reads from $SPEC1_STORE_PATH and writes to spec1_weekly_briefs.jsonl
+    (or custom path via 'out' parameter).
+    """
+    from cls_weekly_brief import produce_weekly_brief, WeeklyBriefStore
+
+    intel_path = _store_path("SPEC1_STORE_PATH", "spec1_intelligence.jsonl")
+    out_path = Path(args.get("out") or os.environ.get("SPEC1_WEEKLY_BRIEFS_PATH", "spec1_weekly_briefs.jsonl"))
+    week_id = args.get("week_id")
+
+    records = _read_jsonl(intel_path, limit=10**9)
+    brief = produce_weekly_brief(records, week_id=week_id)
+
+    store = WeeklyBriefStore(out_path)
+    entry = store.save(brief, write_markdown=True)
+
+    return {
+        "status": "success",
+        "brief_id": brief.brief_id,
+        "week_id": brief.week_id,
+        "week_start": brief.week_start,
+        "week_end": brief.week_end,
+        "intel_path": str(intel_path),
+        "records_analyzed": brief.records_analyzed,
+        "verified_count": brief.verified_count,
+        "inferred_count": brief.inferred_count,
+        "speculation_count": brief.speculation_count,
+        "produced_at": brief.produced_at.isoformat()
+        if hasattr(brief.produced_at, "isoformat")
+        else str(brief.produced_at),
+        "store_path": str(out_path),
+    }
+
+
 def tool_get_calibration(args: dict) -> dict:
     """Produce a calibration drift report from the current intel + verdicts stores."""
     from cls_calibration.aggregator import produce_report
@@ -646,6 +686,21 @@ TOOLS: dict[str, dict] = {
             },
         },
         "fn": tool_generate_leads,
+    },
+    "generate_weekly_brief": {
+        "description": (
+            "Generate a public weekly intelligence brief from the current intel store. "
+            "Aggregates the past 7 days, classifies evidence into VERIFIED/INFERRED/SPECULATION tiers. "
+            "Operator tool — runs out of band from the cycle."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "week_id": {"type": "string", "description": "ISO week format YYYY-W##; defaults to current week"},
+                "out": {"type": "string", "description": "Output JSONL path (default spec1_weekly_briefs.jsonl)"},
+            },
+        },
+        "fn": tool_generate_weekly_brief,
     },
     "run_research": {
         "description": (

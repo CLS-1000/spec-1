@@ -78,6 +78,9 @@ Local civic intelligence for the Portland bi-state metro: campaign finance anoma
 ### Legislative & Judicial Desk
 Federal and state legislative tracking, FARA filing analysis, judicial record monitoring, stated-purpose vs. beneficiary analysis.
 
+### Public Weekly Intelligence Brief
+Aggregated weekly report distinguished by evidence tier (VERIFIED facts, INFERRED analysis, SPECULATION). Each claim links to source records with full provenance. Suitable for public distribution with transparency about methodology and confidence. Published via API, CLI, and Markdown.
+
 ### Feedback Loop
 File verdicts on any report — correct, incorrect, partial, unclear. The calibration system surfaces drift over time. You decide whether thresholds need adjustment. Nothing auto-tunes.
 
@@ -87,8 +90,8 @@ File verdicts on any report — correct, incorrect, partial, unclear. The calibr
 
 | Interface | What It Does |
 |-----------|-------------|
-| **REST API** | 15+ endpoints under `/api/v1/` |
-| **MCP Server** | 16 tools exposed to Claude Desktop |
+| **REST API** | 17+ endpoints under `/api/v1/` (daily brief, weekly brief, signals, intel, leads, psyop, etc.) |
+| **MCP Server** | 17 tools exposed to Claude Desktop (including `generate_weekly_brief`) |
 | **CLI Workspace** | Case file management from the terminal |
 | **PDF Export** | Formatted reports for distribution |
 | **Verdict UI** | Browser form for filing feedback at `/verdicts/` |
