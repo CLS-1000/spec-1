@@ -22,7 +22,7 @@ import json
 import logging
 from datetime import datetime, timezone
 
-import anthropic
+from spec1_core.llm.fallback_client import FallbackLLMClient
 
 from cls_analyst_loop.schemas import AuditResult
 
@@ -62,29 +62,26 @@ Return JSON only:
 }"""
 
 
-async def run_audit(
+def run_audit(
     output_id: str,
     raw_output: str,
     source_data: str,
     audit_llm: str = "claude",
     api_key: str | None = None,
 ) -> AuditResult:
-    """Run an LLM audit on analyst output.
+    """Run an LLM audit on analyst output via the three-tier FallbackLLMClient.
 
     Args:
         output_id: ID of the AnalystOutput being audited
         raw_output: The analyst's full report text
         source_data: The data the analyst was given
-        audit_llm: Which LLM to use ("claude" supported)
-        api_key: Anthropic API key (uses env if not provided)
+        audit_llm: Which LLM tier label to use (informational; routing handled by FallbackLLMClient)
+        api_key: Unused — FallbackLLMClient reads ANTHROPIC_API_KEY from the environment
 
     Returns:
         AuditResult with audit_id, findings, confidence, etc.
     """
-    if audit_llm != "claude":
-        raise NotImplementedError(f"audit_llm={audit_llm!r} not yet supported")
-
-    client = anthropic.AsyncAnthropic(api_key=api_key)
+    client = FallbackLLMClient()
 
     prompt = f"""Source data provided to analyst:
 {source_data}
@@ -98,32 +95,7 @@ Analyst's report:
 
 Audit this report using the instructions above."""
 
-    try:
-        response = await client.messages.create(
-            model="claude-opus-4-8",
-            max_tokens=2048,
-            system=AUDIT_SYSTEM_PROMPT,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        audit_text = response.content[0].text
-    except Exception as e:
-        logger.error(f"Audit LLM call failed for output {output_id}: {e}")
-        audit_text = json.dumps(
-            {
-                "claims_confirmed": 0,
-                "claims_flagged": 0,
-                "claims_dropped": 0,
-                "confidence": 0.0,
-                "findings": [
-                    {
-                        "claim": "N/A",
-                        "problem": f"Audit failed: {str(e)}",
-                        "severity": "HIGH",
-                        "suggested_edit": "Retry audit",
-                    }
-                ],
-            }
-        )
+    audit_text = client.complete(prompt, system=AUDIT_SYSTEM_PROMPT)
 
     try:
         audit_data = json.loads(audit_text)
