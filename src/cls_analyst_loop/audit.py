@@ -67,7 +67,6 @@ def run_audit(
     raw_output: str,
     source_data: str,
     audit_llm: str = "claude",
-    api_key: str | None = None,
 ) -> AuditResult:
     """Run an LLM audit on analyst output via the three-tier FallbackLLMClient.
 
@@ -76,7 +75,6 @@ def run_audit(
         raw_output: The analyst's full report text
         source_data: The data the analyst was given
         audit_llm: Which LLM tier label to use (informational; routing handled by FallbackLLMClient)
-        api_key: Unused — FallbackLLMClient reads ANTHROPIC_API_KEY from the environment
 
     Returns:
         AuditResult with audit_id, findings, confidence, etc.
