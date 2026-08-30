@@ -17,7 +17,6 @@ Commands:
 
 from __future__ import annotations
 
-import asyncio
 import json
 import logging
 import sys
@@ -135,13 +134,11 @@ def run_audit_cmd(ctx: click.Context, output_id: str, llm: str) -> None:
         sys.exit(1)
 
     click.echo(f"Running audit on {output_id}...")
-    audit = asyncio.run(
-        run_audit(
-            output_id=output_id,
-            raw_output=output["raw_output"],
-            source_data=output["source_data"],
-            audit_llm=llm,
-        )
+    audit = run_audit(
+        output_id=output_id,
+        raw_output=output["raw_output"],
+        source_data=output["source_data"],
+        audit_llm=llm,
     )
     store.save_audit(audit)
     click.echo(f"Audit complete: {audit.audit_id}")
