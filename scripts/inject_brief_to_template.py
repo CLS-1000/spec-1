@@ -22,7 +22,7 @@ import argparse
 import html
 import re
 import sys
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 
@@ -308,7 +308,7 @@ def _build_meta_box_grid_html(meta: dict) -> str:
 
 def _update_issue_line(template_html: str, meta: dict, today: date) -> str:
     """Update the issue-line metadata strip with live run data."""
-    coverage_start = today.replace(day=max(1, today.day - 7)).strftime("%d %b").upper()
+    coverage_start = (today - timedelta(days=7)).strftime("%d %b").upper()
     coverage_end = today.strftime("%d %b").upper()
     new_issue_line = (
         f'<div class="issue-line">\n'

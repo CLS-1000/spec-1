@@ -35,6 +35,8 @@ jobs:
     name: Run cycle and publish to Notitia Civica
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: read
 
     steps:
       # ── 1. Checkout SPEC-1 ────────────────────────────────────────────────
@@ -62,11 +64,12 @@ jobs:
         working-directory: spec-1
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          # Route to Tier 3 rules when no Anthropic key is configured
-          SPEC1_DEV_MODE: ${{ secrets.ANTHROPIC_API_KEY == '' && 'true' || 'false' }}
           SPEC1_ENVIRONMENT: production
           PYTHONPATH: src
         run: |
+          # Route to Tier 3 rules when no Anthropic key is configured
+          SPEC1_DEV_MODE=$([ -z "$ANTHROPIC_API_KEY" ] && echo "true" || echo "false")
+          export SPEC1_DEV_MODE
           python -m spec1_core.app.cycle
           echo "Cycle complete. Brief files:"
           ls -lh briefs/
@@ -129,8 +132,11 @@ jobs:
           git add \
             "briefs/spec1_brief_${PUB_DATE}.md" \
             "briefs/spec1_brief_latest.md" \
-            "briefs/brief_index.jsonl" \
             "published/civic-intelligence-brief_${PUB_DATE}.html"
+          # Only stage brief_index.jsonl if it was actually copied this run
+          if [ -f "briefs/brief_index.jsonl" ]; then
+            git add "briefs/brief_index.jsonl"
+          fi
           # Only commit if there is something to commit
           if git diff --cached --quiet; then
             echo "Nothing new to commit (no changes vs HEAD)."
