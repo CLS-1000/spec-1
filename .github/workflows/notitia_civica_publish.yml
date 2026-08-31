@@ -1,0 +1,161 @@
+# .github/workflows/notitia_civica_publish.yml
+#
+# SPEC-1 → Notitia Civica Publication Pipeline
+#
+# Runs the SPEC-1 intelligence cycle, renders the brief into the
+# Notitia Civica print layout, and pushes three artifacts to
+# CLS-1000/notitia-civica:
+#
+#   briefs/spec1_brief_YYYY-MM-DD.md     — dated SPEC-1 brief
+#   briefs/spec1_brief_latest.md         — always-current alias
+#   published/civic-intelligence-brief_YYYY-MM-DD.html
+#                                        — rendered Notitia Civica print layout
+#
+# Prerequisites (set these secrets in the spec-1 repo settings):
+#   NOTITIA_PAT        — GitHub PAT with write access to CLS-1000/notitia-civica
+#   ANTHROPIC_API_KEY  — (optional) Anthropic key; absent → Tier 3 rule-based fallback
+
+name: Notitia Civica — Publish Brief
+
+on:
+  # Daily at 06:00 America/Los_Angeles (= 14:00 UTC, matching the API scheduler default)
+  schedule:
+    - cron: "0 14 * * *"
+
+  # Manual trigger — useful for on-demand publishing or testing
+  workflow_dispatch:
+    inputs:
+      date_override:
+        description: "Publication date override (YYYY-MM-DD). Defaults to today."
+        required: false
+        default: ""
+
+jobs:
+  publish:
+    name: Run cycle and publish to Notitia Civica
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      # ── 1. Checkout SPEC-1 ────────────────────────────────────────────────
+      - name: Checkout spec-1
+        uses: actions/checkout@v4
+        with:
+          path: spec-1
+
+      # ── 2. Set up Python ──────────────────────────────────────────────────
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: spec-1/requirements.txt
+
+      # ── 3. Install dependencies ───────────────────────────────────────────
+      - name: Install dependencies
+        working-directory: spec-1
+        run: pip install -e ".[dev]" --quiet
+
+      # ── 4. Run SPEC-1 cycle ───────────────────────────────────────────────
+      #     Falls back to Tier 3 (rule-based) automatically if no API key.
+      - name: Run SPEC-1 intelligence cycle
+        working-directory: spec-1
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Route to Tier 3 rules when no Anthropic key is configured
+          SPEC1_DEV_MODE: ${{ secrets.ANTHROPIC_API_KEY == '' && 'true' || 'false' }}
+          SPEC1_ENVIRONMENT: production
+          PYTHONPATH: src
+        run: |
+          python -m spec1_core.app.cycle
+          echo "Cycle complete. Brief files:"
+          ls -lh briefs/
+
+      # ── 5. Determine publication date ─────────────────────────────────────
+      - name: Resolve publication date
+        id: pub_date
+        run: |
+          if [ -n "${{ github.event.inputs.date_override }}" ]; then
+            echo "date=${{ github.event.inputs.date_override }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "date=$(date -u '+%Y-%m-%d')" >> "$GITHUB_OUTPUT"
+          fi
+
+      # ── 6. Checkout notitia-civica ────────────────────────────────────────
+      - name: Checkout notitia-civica
+        uses: actions/checkout@v4
+        with:
+          repository: CLS-1000/notitia-civica
+          token: ${{ secrets.NOTITIA_PAT }}
+          path: notitia-civica
+
+      # ── 7. Inject brief into print template ───────────────────────────────
+      - name: Inject SPEC-1 brief into Notitia Civica print template
+        env:
+          PUB_DATE: ${{ steps.pub_date.outputs.date }}
+          PYTHONPATH: spec-1/src
+        run: |
+          python spec-1/scripts/inject_brief_to_template.py \
+            --brief   "spec-1/briefs/spec1_brief_latest.md" \
+            --template "notitia-civica/templates/print/civic-intelligence-brief.html" \
+            --out     "notitia-civica/published/civic-intelligence-brief_${PUB_DATE}.html" \
+            --date    "${PUB_DATE}"
+
+      # ── 8. Copy brief Markdown files ──────────────────────────────────────
+      - name: Copy brief Markdown files to notitia-civica
+        env:
+          PUB_DATE: ${{ steps.pub_date.outputs.date }}
+        run: |
+          mkdir -p notitia-civica/briefs
+          cp "spec-1/briefs/spec1_brief_${PUB_DATE}.md" \
+             "notitia-civica/briefs/spec1_brief_${PUB_DATE}.md"
+          cp "spec-1/briefs/spec1_brief_latest.md" \
+             "notitia-civica/briefs/spec1_brief_latest.md"
+          # Also copy brief_index.jsonl so the index stays in sync
+          if [ -f "spec-1/briefs/brief_index.jsonl" ]; then
+            cp "spec-1/briefs/brief_index.jsonl" "notitia-civica/briefs/brief_index.jsonl"
+          fi
+          echo "Files staged for notitia-civica:"
+          ls -lh notitia-civica/briefs/ notitia-civica/published/
+
+      # ── 9. Commit and push to notitia-civica ──────────────────────────────
+      - name: Commit and push to notitia-civica
+        working-directory: notitia-civica
+        env:
+          PUB_DATE: ${{ steps.pub_date.outputs.date }}
+        run: |
+          git config user.name  "spec-1-bot"
+          git config user.email "spec-1-bot@users.noreply.github.com"
+          git add \
+            "briefs/spec1_brief_${PUB_DATE}.md" \
+            "briefs/spec1_brief_latest.md" \
+            "briefs/brief_index.jsonl" \
+            "published/civic-intelligence-brief_${PUB_DATE}.html"
+          # Only commit if there is something to commit
+          if git diff --cached --quiet; then
+            echo "Nothing new to commit (no changes vs HEAD)."
+          else
+            git commit -m "spec-1: publish brief ${PUB_DATE}
+
+Automated push from CLS-1000/spec-1 workflow run ${{ github.run_id }}.
+Artifacts:
+  briefs/spec1_brief_${PUB_DATE}.md
+  briefs/spec1_brief_latest.md
+  published/civic-intelligence-brief_${PUB_DATE}.html"
+            git push origin main
+            echo "Pushed to notitia-civica."
+          fi
+
+      # ── 10. Summary ───────────────────────────────────────────────────────
+      - name: Job summary
+        if: always()
+        env:
+          PUB_DATE: ${{ steps.pub_date.outputs.date }}
+        run: |
+          echo "## SPEC-1 → Notitia Civica — $PUB_DATE" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Artifact | Path |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|----------|------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Dated brief | \`briefs/spec1_brief_${PUB_DATE}.md\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Latest brief alias | \`briefs/spec1_brief_latest.md\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Print layout HTML | \`published/civic-intelligence-brief_${PUB_DATE}.html\` |" >> "$GITHUB_STEP_SUMMARY"
