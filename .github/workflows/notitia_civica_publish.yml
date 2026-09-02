@@ -141,13 +141,14 @@ jobs:
           if git diff --cached --quiet; then
             echo "Nothing new to commit (no changes vs HEAD)."
           else
-            git commit -m "spec-1: publish brief ${PUB_DATE}
-
-Automated push from CLS-1000/spec-1 workflow run ${{ github.run_id }}.
-Artifacts:
-  briefs/spec1_brief_${PUB_DATE}.md
-  briefs/spec1_brief_latest.md
-  published/civic-intelligence-brief_${PUB_DATE}.html"
+            COMMIT_MSG=$(printf '%s\n\n%s\n%s\n  %s\n  %s\n  %s' \
+              "spec-1: publish brief ${PUB_DATE}" \
+              "Automated push from CLS-1000/spec-1 workflow run ${{ github.run_id }}." \
+              "Artifacts:" \
+              "briefs/spec1_brief_${PUB_DATE}.md" \
+              "briefs/spec1_brief_latest.md" \
+              "published/civic-intelligence-brief_${PUB_DATE}.html")
+            git commit -m "${COMMIT_MSG}"
             git push origin main
             echo "Pushed to notitia-civica."
           fi
