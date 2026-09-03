@@ -37,6 +37,8 @@ jobs:
     timeout-minutes: 30
     permissions:
       contents: read
+    env:
+      NOTITIA_PAT: ${{ secrets.NOTITIA_PAT }}
 
     steps:
       # ── 1. Checkout SPEC-1 ────────────────────────────────────────────────
@@ -86,14 +88,16 @@ jobs:
 
       # ── 6. Checkout notitia-civica ────────────────────────────────────────
       - name: Checkout notitia-civica
+        if: ${{ env.NOTITIA_PAT != '' }}
         uses: actions/checkout@v4
         with:
           repository: CLS-1000/notitia-civica
-          token: ${{ secrets.NOTITIA_PAT }}
+          token: ${{ env.NOTITIA_PAT }}
           path: notitia-civica
 
       # ── 7. Inject brief into print template ───────────────────────────────
       - name: Inject SPEC-1 brief into Notitia Civica print template
+        if: ${{ env.NOTITIA_PAT != '' }}
         env:
           PUB_DATE: ${{ steps.pub_date.outputs.date }}
           PYTHONPATH: spec-1/src
@@ -106,6 +110,7 @@ jobs:
 
       # ── 8. Copy brief Markdown files ──────────────────────────────────────
       - name: Copy brief Markdown files to notitia-civica
+        if: ${{ env.NOTITIA_PAT != '' }}
         env:
           PUB_DATE: ${{ steps.pub_date.outputs.date }}
         run: |
@@ -123,6 +128,7 @@ jobs:
 
       # ── 9. Commit and push to notitia-civica ──────────────────────────────
       - name: Commit and push to notitia-civica
+        if: ${{ env.NOTITIA_PAT != '' }}
         working-directory: notitia-civica
         env:
           PUB_DATE: ${{ steps.pub_date.outputs.date }}
@@ -159,7 +165,14 @@ jobs:
         env:
           PUB_DATE: ${{ steps.pub_date.outputs.date }}
         run: |
+          if [ -n "${NOTITIA_PAT:-}" ]; then
+            publish_status="enabled"
+          else
+            publish_status="skipped (NOTITIA_PAT secret not configured)"
+          fi
           echo "## SPEC-1 → Notitia Civica — $PUB_DATE" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Publication status: ${publish_status}" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "| Artifact | Path |" >> "$GITHUB_STEP_SUMMARY"
           echo "|----------|------|" >> "$GITHUB_STEP_SUMMARY"
