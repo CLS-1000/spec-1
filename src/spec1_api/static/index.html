@@ -309,6 +309,23 @@
   .form-actions { display: flex; gap: 10px; margin-top: 18px; }
   .form-err { font-size: 11px; color: rgba(255,180,180,.8); margin-top: 8px; display: none; }
 
+
+
+  /* ── Zeus command deck ───────────────────────────────── */
+  .zeus-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap:10px; margin-bottom:18px; }
+  .zeus-card { border:1px solid rgba(255,255,255,.25); background:rgba(10,10,10,.92); padding:12px 14px; }
+  .zeus-card-k { font-size:10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.1em; margin-bottom:6px; }
+  .zeus-card-v { font-size:22px; font-weight:700; color:var(--text-primary); line-height:1; }
+  .zeus-card-s { font-size:11px; color:var(--text-muted); margin-top:5px; }
+  .zeus-strip { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+  .zeus-pill { border:1px solid rgba(255,255,255,.18); color:var(--text-secondary); padding:4px 9px; font-size:10px; letter-spacing:.08em; text-transform:uppercase; }
+
+  /* ── Notitia desk ─────────────────────────────────────── */
+  .notitia-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:10px; margin:12px 0 14px; }
+  .notitia-box { border:1px solid rgba(255,255,255,.18); background:rgba(10,10,10,.92); padding:14px 16px; }
+  .notitia-title { font-size:11px; letter-spacing:.1em; color:var(--text-muted); text-transform:uppercase; margin-bottom:8px; }
+  .notitia-text { font-size:12px; line-height:1.6; color:var(--text-secondary); }
+
   /* ── Policy Desk ───────────────────────────────────────────── */
   .policy-summary { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
   .policy-stat { background: rgba(10,10,10,.92); border: 1px solid rgba(255,255,255,.18); padding: 14px 18px; min-width: 130px; }
@@ -379,8 +396,14 @@
 
     <!-- ── Sidebar ── -->
     <nav id="sidebar">
+      <div class="nav-section">Command</div>
+      <div class="nav-item active" data-panel="panel-zeus" onclick="showPanel('panel-zeus')">
+        <span class="nav-glyph">⚡</span> Zeus Deck
+      </div>
+
+      <div class="nav-divider"></div>
       <div class="nav-section">Intelligence</div>
-      <div class="nav-item active" data-panel="panel-brief" onclick="showPanel('panel-brief')">
+      <div class="nav-item" data-panel="panel-brief" onclick="showPanel('panel-brief')">
         <span class="nav-glyph">◈</span> Daily Brief
       </div>
       <div class="nav-item" data-panel="panel-archive" onclick="showPanel('panel-archive')">
@@ -446,6 +469,9 @@
       <div class="nav-item" data-panel="panel-publications" onclick="showPanel('panel-publications')">
         <span class="nav-glyph">◫</span> Issue Generator
       </div>
+      <div class="nav-item" data-panel="panel-notitia" onclick="showPanel('panel-notitia')">
+        <span class="nav-glyph">✶</span> Notitia Civica
+      </div>
 
       <div class="nav-divider"></div>
       <div class="nav-section">Political</div>
@@ -460,8 +486,37 @@
     <!-- ── Main content ── -->
     <main>
 
+      <!-- ─────────────────────────── Zeus Deck ─────────────────────────── -->
+      <div class="panel active" id="panel-zeus">
+        <div class="panel-title">⚡ Zeus Command Deck</div>
+        <div class="panel-sub">Unified mission-control for the full SPEC-1 stack, including Notitia Civica publishing</div>
+
+        <div class="zeus-strip">
+          <span class="zeus-pill">REAL-TIME OSINT</span>
+          <span class="zeus-pill">MULTI-MODULE COVERAGE</span>
+          <span class="zeus-pill">PUBLISH-READY OUTPUT</span>
+        </div>
+
+        <div id="zeus-grid"><div class="loading">Reading system pulse…</div></div>
+
+        <div class="notitia-grid">
+          <div class="notitia-box">
+            <div class="notitia-title">Immediate actions</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="action-btn" onclick="runCycle()">Run Full Cycle</button>
+              <button class="action-btn" onclick="triggerGenerate()">Generate Issue</button>
+              <button class="action-btn" onclick="showPanel('panel-notitia')">Open Notitia Desk</button>
+            </div>
+          </div>
+          <div class="notitia-box">
+            <div class="notitia-title">Coverage map</div>
+            <div class="notitia-text">Signals · Intel · Leads · Psyop · Leg/Jud · Workbench · Calibration · Publications · Notitia Civica pipeline.</div>
+          </div>
+        </div>
+      </div>
+
       <!-- ─────────────────────────── Daily Brief ─────────────────────────── -->
-      <div class="panel active" id="panel-brief">
+      <div class="panel" id="panel-brief">
         <div class="panel-title">◈ Daily Brief</div>
         <div class="panel-sub">Latest world intelligence brief</div>
         <div id="brief-content"><div class="loading">Loading latest brief…</div></div>
@@ -800,6 +855,37 @@
         <div id="pub-list-content"><div class="loading">Loading publications…</div></div>
       </div>
 
+      <!-- ───────────────────────────── Notitia Civica ─────────────────────── -->
+      <div class="panel" id="panel-notitia">
+        <div class="panel-title">✶ Notitia Civica Bridge</div>
+        <div class="panel-sub">SPEC-1 → CLS-1000/notitia-civica publication pipeline</div>
+
+        <div class="notitia-grid">
+          <div class="notitia-box">
+            <div class="notitia-title">Workflow</div>
+            <div class="notitia-text"><code>.github/workflows/notitia_civica_publish.yml</code></div>
+          </div>
+          <div class="notitia-box">
+            <div class="notitia-title">Template injector</div>
+            <div class="notitia-text"><code>scripts/inject_brief_to_template.py</code></div>
+          </div>
+          <div class="notitia-box">
+            <div class="notitia-title">Required secret</div>
+            <div class="notitia-text"><code>NOTITIA_PAT</code> with push access to <code>CLS-1000/notitia-civica</code></div>
+          </div>
+        </div>
+
+        <div class="state-box" style="margin-bottom:14px">
+          <div class="section-heading">Artifacts generated per publish</div>
+          <pre>briefs/spec1_brief_YYYY-MM-DD.md
+briefs/spec1_brief_latest.md
+published/civic-intelligence-brief_YYYY-MM-DD.html</pre>
+          <button class="copy-btn" onclick="copyText(this, '.github/workflows/notitia_civica_publish.yml')">Copy workflow path</button>
+        </div>
+
+        <div id="notitia-content"><div class="loading">Loading Notitia integration status…</div></div>
+      </div>
+
       <!-- ────────────────────────────── Workbench ──────────────────────────── -->
       <div class="panel" id="panel-workbench">
         <div class="panel-title">⊞ Workbench</div>
@@ -1112,6 +1198,7 @@ document.getElementById('start-overlay').addEventListener('click', e => { if(e.t
 // ── Navigation ────────────────────────────────────────────────────────────────
 
 const _panelLoaders = {
+  'panel-zeus':        () => loadZeusDeck(),
   'panel-brief':       () => loadLatestBrief(),
   'panel-archive':     () => loadBriefIndex(),
   'panel-signals':     () => loadSignals(0),
@@ -1128,6 +1215,7 @@ const _panelLoaders = {
   'panel-publications': () => loadPublications(),
   'panel-workbench':   () => loadWorkbench(0),
   'panel-policy':      () => loadPolicyDesk(),
+  'panel-notitia':     () => loadNotitiaDesk(),
   'panel-local':       () => {},
 };
 
@@ -1148,6 +1236,93 @@ function showPanel(id) {
     document.getElementById('sidebar').classList.remove('open');
     document.getElementById('nav-overlay').classList.remove('open');
   }
+}
+
+// ── Zeus command deck ───────────────────────────────────────────────────────
+
+function _statCard(label, value, sub='') {
+  return `<div class="zeus-card">
+    <div class="zeus-card-k">${esc(label)}</div>
+    <div class="zeus-card-v">${esc(value)}</div>
+    <div class="zeus-card-s">${esc(sub)}</div>
+  </div>`;
+}
+
+async function loadZeusDeck() {
+  const el = document.getElementById('zeus-grid');
+  if (!el) return;
+  el.innerHTML = '<div class="loading">Reading system pulse…</div>';
+
+  const [health, signals, intel, leads, verdicts, cal, pubs, cases, legJud] = await Promise.all([
+    apiFetch('/health'),
+    apiFetch('/signals?limit=1'),
+    apiFetch('/intel?limit=1'),
+    apiFetch('/leads?limit=1'),
+    apiFetch('/verdicts?limit=1'),
+    apiFetch('/calibration/report'),
+    apiFetch('/publication/list'),
+    apiFetch('/workspace/cases?limit=1&status=OPEN'),
+    apiFetch('/leg_jud/brief'),
+  ]);
+
+  const apiLive = health && health.status === 'ok';
+  const cards = [
+    _statCard('API', apiLive ? 'LIVE' : 'OFFLINE', apiLive ? `v${health.version || '—'}` : 'start server to enable full deck'),
+    _statCard('Signals', String(signals?.total ?? 0), 'OSINT intake'),
+    _statCard('Intel Records', String(intel?.total ?? 0), '4-gate qualified'),
+    _statCard('Leads', String(leads?.total ?? 0), 'actionable outputs'),
+    _statCard('Open Cases', String(cases?.total ?? 0), 'workbench investigations'),
+    _statCard('Verdicts', String(verdicts?.total ?? 0), 'human ground truth'),
+    _statCard('Calibration', cal?.overall?.accuracy != null ? `${(cal.overall.accuracy*100).toFixed(1)}%` : '—', 'descriptive drift signal'),
+    _statCard('Publications', String(pubs?.items?.length ?? 0), 'issue files available'),
+    _statCard('Leg/Jud Brief', legJud?.brief ? 'READY' : 'PENDING', legJud?.brief?.date || 'run cycle if missing'),
+  ];
+
+  el.innerHTML = `<div class="zeus-grid">${cards.join('')}</div>`;
+}
+
+// ── Notitia Civica desk ───────────────────────────────────────────────────────
+
+async function loadNotitiaDesk() {
+  const el = document.getElementById('notitia-content');
+  if (!el) return;
+  el.innerHTML = '<div class="loading">Loading integration status…</div>';
+
+  const [brief, pubs, health] = await Promise.all([
+    apiFetch('/brief'),
+    apiFetch('/publication/list'),
+    apiFetch('/health'),
+  ]);
+
+  const latestBrief = brief?.date || brief?.generated_at || '—';
+  const latestPub = pubs?.items?.[0]?.filename || '—';
+  const api = (health && health.status === 'ok') ? 'LIVE' : 'OFFLINE';
+
+  el.innerHTML = `
+    <div class="notitia-grid">
+      <div class="notitia-box">
+        <div class="notitia-title">Pipeline health</div>
+        <div class="notitia-text">SPEC-1 API: <strong>${esc(api)}</strong></div>
+      </div>
+      <div class="notitia-box">
+        <div class="notitia-title">Latest brief signal</div>
+        <div class="notitia-text">${esc(String(latestBrief))}</div>
+      </div>
+      <div class="notitia-box">
+        <div class="notitia-title">Latest publication artifact</div>
+        <div class="notitia-text">${esc(String(latestPub))}</div>
+      </div>
+    </div>
+
+    <div class="state-box">
+      <div class="section-heading">Operator sequence</div>
+      <pre>1) Run cycle in Zeus Deck
+2) Validate brief + publication in this UI
+3) Trigger "Notitia Civica — Publish Brief" workflow in GitHub Actions</pre>
+      <p style="font-size:12px;color:var(--text-muted);margin-top:10px;">
+        This bridge keeps SPEC-1 analysis and Notitia Civica presentation synchronized through the official workflow.
+      </p>
+    </div>`;
 }
 
 // ── Brief panel ───────────────────────────────────────────────────────────────
@@ -2216,7 +2391,7 @@ function fallbackCopy(text) {
 
 (async function init() {
   await checkStatus();
-  loadLatestBrief();
+  loadZeusDeck();
   setInterval(checkStatus, 30000);
 
   const caseModal = document.getElementById('case-modal');
