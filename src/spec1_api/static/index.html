@@ -15,12 +15,32 @@
     --text-primary:   #FFFFFF;
     --text-secondary: #CCCCCC;
     --text-muted:     #666666;
+    --zeus-cyan:      #7df9ff;
+    --zeus-violet:    #b38cff;
+    --zeus-amber:     #ffd36e;
     --mono: 'IBM Plex Mono', 'Courier Prime', monospace;
   }
 
   html, body { height: 100%; background: var(--background); color: var(--text-primary); font-family: var(--mono); font-size: 14px; }
 
   #fol-bg { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+
+
+  .zeus-aurora {
+    position: fixed; inset: -20%; pointer-events: none; z-index: 0;
+    background:
+      radial-gradient(42% 35% at 18% 20%, rgba(125,249,255,.12), transparent 70%),
+      radial-gradient(35% 32% at 78% 18%, rgba(179,140,255,.12), transparent 72%),
+      radial-gradient(44% 38% at 52% 78%, rgba(255,211,110,.08), transparent 72%);
+    filter: blur(22px) saturate(110%);
+    animation: auroraDrift 20s ease-in-out infinite alternate;
+  }
+
+  @keyframes auroraDrift {
+    0%   { transform: translate3d(-2%, 0, 0) scale(1); }
+    50%  { transform: translate3d(2%, -1.5%, 0) scale(1.03); }
+    100% { transform: translate3d(0, 2%, 0) scale(1.01); }
+  }
 
   /* ── Layout ── */
   .layout { display: flex; flex-direction: column; height: 100vh; overflow: hidden; position: relative; z-index: 1; }
@@ -239,6 +259,10 @@
   .logo-top { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 15px; letter-spacing: .08em; }
   .logo-tagline { font-size: 10px; font-weight: 400; color: var(--text-muted); letter-spacing: .07em; }
 
+  .zeus-chrono { display:flex; align-items:center; gap:8px; font-size:10px; letter-spacing:.1em; color:var(--text-muted); }
+  .zeus-dot { width:6px; height:6px; border-radius:50%; border:1px solid rgba(255,255,255,.6); box-shadow:0 0 12px rgba(125,249,255,.4); }
+  body.api-live .zeus-dot { background: var(--zeus-cyan); }
+
   /* ── Mobile nav ── */
   .hamburger { display: none; background: transparent; border: 1px solid rgba(255,255,255,.3); color: var(--text-primary); cursor: pointer; font-size: 15px; padding: 3px 10px; font-family: var(--mono); line-height: 1; }
   .nav-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 99; }
@@ -313,12 +337,27 @@
 
   /* ── Zeus command deck ───────────────────────────────── */
   .zeus-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap:10px; margin-bottom:18px; }
-  .zeus-card { border:1px solid rgba(255,255,255,.25); background:rgba(10,10,10,.92); padding:12px 14px; }
+  .zeus-card {
+    border:1px solid rgba(255,255,255,.25);
+    background:linear-gradient(160deg, rgba(18,18,18,.92), rgba(8,8,8,.95));
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.03), 0 0 20px rgba(0,0,0,.25);
+    padding:12px 14px;
+  }
   .zeus-card-k { font-size:10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.1em; margin-bottom:6px; }
   .zeus-card-v { font-size:22px; font-weight:700; color:var(--text-primary); line-height:1; }
   .zeus-card-s { font-size:11px; color:var(--text-muted); margin-top:5px; }
   .zeus-strip { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
   .zeus-pill { border:1px solid rgba(255,255,255,.18); color:var(--text-secondary); padding:4px 9px; font-size:10px; letter-spacing:.08em; text-transform:uppercase; }
+  .zeus-hero { border:1px solid rgba(125,249,255,.35); background:linear-gradient(120deg, rgba(125,249,255,.06), rgba(179,140,255,.04)); padding:14px 16px; margin-bottom:14px; }
+  .zeus-hero-title { font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--zeus-cyan); margin-bottom:6px; }
+  .zeus-hero-text { font-size:12px; line-height:1.7; color:var(--text-secondary); }
+  .zeus-jumps { display:flex; gap:8px; flex-wrap:wrap; margin: 0 0 14px; }
+  .zeus-jump { border:1px solid rgba(255,255,255,.18); background:rgba(12,12,12,.85); color:var(--text-secondary); padding:5px 10px; font-size:11px; letter-spacing:.06em; cursor:pointer; }
+  .zeus-jump:hover { border-color: var(--zeus-cyan); color:var(--text-primary); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .zeus-aurora { animation: none; }
+  }
 
   /* ── Notitia desk ─────────────────────────────────────── */
   .notitia-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:10px; margin:12px 0 14px; }
@@ -372,6 +411,8 @@
   <rect width="100%" height="100%" fill="url(#fol-pattern)" opacity="0.05"/>
 </svg>
 
+<div class="zeus-aurora" aria-hidden="true"></div>
+
 <div class="layout">
 
   <!-- ── Header ── -->
@@ -382,6 +423,7 @@
         SPEC-1 Intelligence Engine
       </div>
       <div class="logo-tagline">Real-time OSINT · AI-powered by Claude · harvest → score → investigate → analyze</div>
+      <div class="zeus-chrono"><span class="zeus-dot"></span><span id="zeus-utc">UTC --:--:--</span><span id="zeus-local"></span></div>
     </div>
     <div id="api-status">
       <span class="status-geo offline" id="status-dot"></span>
@@ -495,6 +537,20 @@
           <span class="zeus-pill">REAL-TIME OSINT</span>
           <span class="zeus-pill">MULTI-MODULE COVERAGE</span>
           <span class="zeus-pill">PUBLISH-READY OUTPUT</span>
+          <span class="zeus-pill">AUGMENTED ANALYST LOOP</span>
+        </div>
+
+        <div class="zeus-hero">
+          <div class="zeus-hero-title">Operator Intelligence Surface</div>
+          <div class="zeus-hero-text">A single, cinematic control plane for intake, scoring, verification, publication, and civic narrative delivery.</div>
+        </div>
+
+        <div class="zeus-jumps">
+          <button class="zeus-jump" onclick="showPanel('panel-signals')">Signals</button>
+          <button class="zeus-jump" onclick="showPanel('panel-intel')">Intel</button>
+          <button class="zeus-jump" onclick="showPanel('panel-workbench')">Workbench</button>
+          <button class="zeus-jump" onclick="showPanel('panel-calibration')">Calibration</button>
+          <button class="zeus-jump" onclick="showPanel('panel-notitia')">Notitia Bridge</button>
         </div>
 
         <div id="zeus-grid"><div class="loading">Reading system pulse…</div></div>
@@ -1183,10 +1239,12 @@ async function checkStatus() {
     _online = true;
     dot.className = 'status-geo online';
     txt.textContent = 'API Live' + (data.version ? ' · v' + data.version : '');
+    document.body.classList.add('api-live');
   } else {
     _online = false;
     dot.className = 'status-geo offline';
     txt.innerHTML = 'API Offline &nbsp;<button class="start-btn" onclick="openOverlay()">Start API →</button>';
+    document.body.classList.remove('api-live');
   }
   return _online;
 }
@@ -2387,12 +2445,34 @@ function fallbackCopy(text) {
   document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
 }
 
+
+function tickZeusClock() {
+  const u = document.getElementById('zeus-utc');
+  const l = document.getElementById('zeus-local');
+  if (!u || !l) return;
+  const now = new Date();
+  const utc = now.toISOString().slice(11, 19);
+  u.textContent = `UTC ${utc}`;
+  l.textContent = now.toLocaleString('en-US', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit', hour12:false });
+}
+
+document.addEventListener('keydown', (e) => {
+  if (!e.altKey) return;
+  if (e.key === '1') showPanel('panel-zeus');
+  if (e.key === '2') showPanel('panel-signals');
+  if (e.key === '3') showPanel('panel-intel');
+  if (e.key === '4') showPanel('panel-workbench');
+  if (e.key === '5') showPanel('panel-notitia');
+});
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 
 (async function init() {
   await checkStatus();
   loadZeusDeck();
+  tickZeusClock();
   setInterval(checkStatus, 30000);
+  setInterval(tickZeusClock, 1000);
 
   const caseModal = document.getElementById('case-modal');
   if (caseModal) {
