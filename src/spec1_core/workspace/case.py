@@ -47,16 +47,27 @@ def _ensure_dirs():
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def _case_file_path(case_id: str) -> Path:
-    """Build a safe absolute path to a case JSON file for the given case_id."""
+def _case_storage_name(case_id: str, prefix: str, suffix: str) -> str:
+    """Build a validated storage name for a case-related file."""
     _validate_case_id(case_id)
+    return f"{prefix}_{case_id}{suffix}"
+
+
+def _case_file_path(case_id: str) -> Path:
+    """Find the safe absolute path to an existing case JSON file for the given case_id."""
     cases_root = CASES_DIR.resolve()
-    case_file = (cases_root / f"case_{case_id}.json").resolve()
-    try:
-        case_file.relative_to(cases_root)
-    except ValueError as exc:
-        raise ValueError(f"Invalid case path for case_id: {case_id!r}") from exc
-    return case_file
+    expected_name = _case_storage_name(case_id, "case", ".json")
+
+    for case_file in cases_root.glob("case_*.json"):
+        resolved_case_file = case_file.resolve()
+        try:
+            resolved_case_file.relative_to(cases_root)
+        except ValueError as exc:
+            raise ValueError(f"Invalid case path for case_id: {case_id!r}") from exc
+        if resolved_case_file.name == expected_name:
+            return resolved_case_file
+
+    raise FileNotFoundError(expected_name)
 
 
 def open_case(
@@ -100,7 +111,7 @@ def open_case(
     )
 
     # Write case file
-    case_file = CASES_DIR / f"case_{case_id}.json"
+    case_file = CASES_DIR / _case_storage_name(case_id, "case", ".json")
     with open(case_file, "w") as f:
         f.write(json.dumps(case.to_dict(), indent=2, default=str))
 
@@ -133,11 +144,11 @@ def update_case(
     Returns:
         Updated CaseFile
     """
-    _validate_case_id(case_id)
     _ensure_dirs()
 
-    case_file = CASES_DIR / f"case_{case_id}.json"
-    if not case_file.exists():
+    try:
+        case_file = _case_file_path(case_id)
+    except FileNotFoundError:
         raise ValueError(f"Case {case_id} not found")
 
     # Load case
@@ -172,7 +183,13 @@ def update_case(
     with open(case_file, "w") as f:
         f.write(json.dumps(case.to_dict(), indent=2, default=str))
 
-    logger.info(f"case_updated: case_id={case_id}, signals_added={len(new_signals)}, total_signals={len(case.signal_ids)}, findings={len(case.findings)}")
+    logger.info(
+        "case_updated: case_id=%s, signals_added=%s, total_signals=%s, findings=%s",
+        case_id,
+        len(new_signals),
+        len(case.signal_ids),
+        len(case.findings),
+    )
 
     return case
 
@@ -189,8 +206,9 @@ def close_case(case_id: str) -> CaseFile:
     """
     _ensure_dirs()
 
-    case_file = _case_file_path(case_id)
-    if not case_file.exists():
+    try:
+        case_file = _case_file_path(case_id)
+    except FileNotFoundError:
         raise ValueError(f"Case {case_id} not found")
 
     # Load case
@@ -205,7 +223,7 @@ def close_case(case_id: str) -> CaseFile:
         f.write(json.dumps(case.to_dict(), indent=2, default=str))
 
     # Generate report
-    report_path = REPORTS_DIR / f"report_{case_id}.md"
+    report_path = REPORTS_DIR / _case_storage_name(case.case_id, "report", ".md")
     report_md = _generate_report_md(case)
     with open(report_path, "w") as f:
         f.write(report_md)
@@ -252,8 +270,9 @@ def get_case(case_id: str) -> CaseFile:
     """Get a specific case by ID."""
     _ensure_dirs()
 
-    case_file = _case_file_path(case_id)
-    if not case_file.exists():
+    try:
+        case_file = _case_file_path(case_id)
+    except FileNotFoundError:
         raise ValueError(f"Case {case_id} not found")
 
     with open(case_file, "r") as f:
@@ -313,29 +332,29 @@ def _generate_report_md(case: CaseFile) -> str:
     """Generate a markdown report for a closed case."""
     lines = [
         f"# Case Report: {case.title}",
-        f"",
+        "",
         f"**Case ID:** `{case.case_id}`",
         f"**Status:** {case.status}",
         f"**Opened:** {case.opened_at.isoformat()}",
         f"**Closed:** {datetime.now(timezone.utc).isoformat()}",
         f"**Final Confidence:** {case.confidence:.1%}",
-        f"",
-        f"## Question",
+        "",
+        "## Question",
         f"{case.question}",
-        f"",
-        f"## Tags",
+        "",
+        "## Tags",
         f"{', '.join(f'`{tag}`' for tag in case.tags)}",
-        f"",
-        f"## Evidence",
+        "",
+        "## Evidence",
         f"**Signals Matched:** {len(case.signal_ids)}",
         f"**Research Cycles:** {case.research_runs}",
-        f"",
+        "",
     ]
 
     if case.findings:
         lines.extend([
-            f"## Findings",
-            f"",
+            "## Findings",
+            "",
         ])
         for i, finding in enumerate(case.findings, 1):
             lines.append(f"### Cycle {i}")
@@ -343,8 +362,8 @@ def _generate_report_md(case: CaseFile) -> str:
             lines.append("")
 
     lines.extend([
-        f"---",
-        f"*Generated by SPEC-1 workspace*",
+        "---",
+        "*Generated by SPEC-1 workspace*",
     ])
 
     return "\n".join(lines)

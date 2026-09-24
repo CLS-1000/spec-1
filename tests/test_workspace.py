@@ -136,6 +136,13 @@ def test_open_case_initializes_empty_signals_and_findings(temp_workspace):
     assert case.research_runs == 0
 
 
+def test_open_case_rejects_invalid_generated_case_id(temp_workspace):
+    """Test: open_case rejects malformed generated case IDs before writing files."""
+    with patch("spec1_core.workspace.case.ids.case_id", return_value="../../../etc/passwd"):
+        with pytest.raises(ValueError, match="Invalid case_id"):
+            open_case("Test", "Test question", ["test"])
+
+
 def test_list_cases_returns_all_open_cases(temp_workspace):
     """Test: list_cases returns all OPEN cases."""
     case1 = open_case("Case 1", "Question 1", ["tag1"])
@@ -191,6 +198,24 @@ def test_close_case_sets_status_and_generates_report(temp_workspace):
         assert "Test question?" in content
 
 
+def test_close_case_rejects_invalid_persisted_case_id_for_report_path(temp_workspace):
+    """Test: close_case rejects an invalid persisted case_id before report generation."""
+    case = open_case("Test", "Test question?", ["test"])
+    case_file = temp_workspace / "cases" / f"case_{case.case_id}.json"
+
+    with open(case_file) as f:
+        case_dict = json.load(f)
+    case_dict["case_id"] = "../../../etc/passwd"
+    with open(case_file, "w") as f:
+        json.dump(case_dict, f)
+
+    with pytest.raises(ValueError, match="Invalid case_id"):
+        close_case(case.case_id)
+
+    report_file = temp_workspace / "reports" / f"report_{case.case_id}.md"
+    assert not report_file.exists()
+
+
 def test_get_case_retrieves_case_by_id(temp_workspace):
     """Test: get_case retrieves a case by ID."""
     case = open_case("Retrieve Test", "Can we find it?", ["test"])
@@ -237,9 +262,13 @@ def test_get_case_raises_on_valid_format_but_absent(temp_workspace):
     "../../../etc/passwd",
     "case-../../../etc/shadow",
     "../../etc/hostname",
+    "",
+    "CASE-aabbccddeeff",
+    "case-AABBCCDDEEFF",
+    "case-toolongid12345",
 ])
 def test_close_case_rejects_path_traversal(temp_workspace, bad_id):
-    """Test: close_case raises ValueError for path-traversal case_id."""
+    """Test: close_case raises ValueError for invalid or traversal case_id."""
     with pytest.raises(ValueError, match="Invalid case_id"):
         close_case(bad_id)
 
@@ -248,9 +277,13 @@ def test_close_case_rejects_path_traversal(temp_workspace, bad_id):
     "../../../etc/passwd",
     "case-../../../etc/shadow",
     "../../etc/hostname",
+    "",
+    "CASE-aabbccddeeff",
+    "case-AABBCCDDEEFF",
+    "case-toolongid12345",
 ])
 def test_update_case_rejects_path_traversal(temp_workspace, bad_id, sample_signal):
-    """Test: update_case raises ValueError for path-traversal case_id."""
+    """Test: update_case raises ValueError for invalid or traversal case_id."""
     with pytest.raises(ValueError, match="Invalid case_id"):
         update_case(bad_id, [sample_signal], "finding")
 
