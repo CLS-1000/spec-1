@@ -1,43 +1,81 @@
 name: Run SPEC-1 cycle
 
+# Daily autonomous cycle. Code comes from `develop`; all run state and outputs
+# live on the orphan `data` branch (append-only history: one commit per cycle).
 on:
   schedule:
-    - cron: '0 13 * * *'
+    - cron: '0 13 * * *'   # 13:00 UTC = 06:00 PDT / 05:00 PST
   workflow_dispatch: {}
 
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: spec1-cycle
+  cancel-in-progress: false
 
 jobs:
   run-cycle:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: develop
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.11"
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip wheel setuptools
-        pip install -e ".[dev]"
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip wheel setuptools
+          pip install -e .
 
-    - name: Run SPEC-1 cycle
-      env:
-        PYTHONPATH: src
-        ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        SPEC1_STORE_PATH: spec1_intelligence.jsonl
-        SPEC1_ENVIRONMENT: production
-      run: python -m spec1_engine.app.cycle --store spec1_intelligence.jsonl --env production --timeout 15
+      - name: Restore state from data branch
+        run: |
+          git config user.name  "spec1-cycle[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git ls-remote --exit-code --heads origin data >/dev/null; then
+            git fetch --depth=1 origin data:refs/remotes/origin/data
+            git worktree add -B data _data origin/data
+          else
+            git worktree add --detach _data
+            git -C _data switch --orphan data
+          fi
+          # Bring prior state into the workspace so novelty/baselines see history.
+          for p in spec1_intelligence.jsonl data briefs logs; do
+            if [ -e "_data/$p" ]; then cp -a "_data/$p" . ; fi
+          done
 
-    - name: Upload cycle outputs
-      uses: actions/upload-artifact@v4
-      with:
-        name: spec1-cycle-output
-        path: |
-          spec1_intelligence.jsonl
-          briefs/
-        if-no-files-found: warn
+      - name: Run cycle
+        env:
+          PYTHONPATH: src
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SPEC1_ENVIRONMENT: production
+        run: |
+          mkdir -p logs
+          python -m spec1_core.app.cycle --store spec1_intelligence.jsonl --env production --timeout 15 \
+            2>&1 | tee "logs/cycle_$(date -u +%Y%m%dT%H%M%SZ).log"
+
+      - name: Commit outputs to data branch
+        run: |
+          for p in spec1_intelligence.jsonl data briefs logs; do
+            if [ -e "$p" ]; then rm -rf "_data/$p"; cp -a "$p" "_data/$p"; fi
+          done
+          if [ -d generated/briefs ]; then
+            mkdir -p _data/publications
+            cp -a generated/briefs/. _data/publications/
+          fi
+          cd _data
+          git add -f -A
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          RUN_ID=$(tail -n 1 spec1_intelligence.jsonl 2>/dev/null | python -c "import sys,json; print(json.loads(sys.stdin.read() or '{}').get('run_id','unknown'))" || echo unknown)
+          git commit -q -m "data: cycle ${RUN_ID} $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push origin data
