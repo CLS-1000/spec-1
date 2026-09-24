@@ -272,6 +272,20 @@ def test_close_case_rejects_resolved_path_outside_cases_dir(temp_workspace):
         close_case(case_id)
 
 
+def test_update_case_rejects_resolved_path_outside_cases_dir(temp_workspace, sample_signal):
+    """Test: update_case rejects a valid-looking case file symlink that escapes the cases dir."""
+    case_id = "case-aabbccddeeff"
+    cases_dir = temp_workspace / "cases"
+    cases_dir.mkdir()
+
+    escaped_file = temp_workspace.parent / "escaped_case.json"
+    escaped_file.write_text("{}", encoding="utf-8")
+    (cases_dir / f"case_{case_id}.json").symlink_to(escaped_file)
+
+    with pytest.raises(ValueError, match="Invalid case path"):
+        update_case(case_id, [sample_signal], "finding")
+
+
 @pytest.mark.parametrize("bad_id", [
     "../../../etc/passwd",
     "case-../../../etc/shadow",

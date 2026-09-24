@@ -80,7 +80,11 @@ def _open_case_file(case_file: Path, flags: int, mode: str):
     if not nofollow and case_file.is_symlink():
         raise ValueError(f"Invalid case path for case_id: {case_file.stem.removeprefix('case_')!r}")
     fd = os.open(case_file, flags | nofollow)
-    return os.fdopen(fd, mode)
+    try:
+        return os.fdopen(fd, mode)
+    except Exception:
+        os.close(fd)
+        raise
 
 
 def open_case(
