@@ -31,7 +31,7 @@ def _validate_case_id(case_id: str) -> None:
     Prevents path-traversal attacks when the ID is interpolated into file paths
     such as ``CASES_DIR / f"case_{case_id}.json"``.
     """
-    if not _CASE_ID_RE.match(case_id):
+    if not _CASE_ID_RE.fullmatch(case_id):
         raise ValueError(f"Invalid case_id: {case_id!r}")
 
 # Workspace directory at project root
@@ -52,7 +52,8 @@ def _case_file_path(case_id: str) -> Path:
     _validate_case_id(case_id)
 
     cases_root = CASES_DIR.resolve()
-    case_file = (cases_root / f"case_{case_id}.json").resolve()
+    case_name = Path(f"case_{case_id}.json").name
+    case_file = (cases_root / case_name).resolve()
     try:
         case_file.relative_to(cases_root)
     except ValueError as exc:
