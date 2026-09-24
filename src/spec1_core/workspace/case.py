@@ -57,17 +57,14 @@ def _case_file_path(case_id: str) -> Path:
     """Find the safe absolute path to an existing case JSON file for the given case_id."""
     cases_root = CASES_DIR.resolve()
     expected_name = _case_storage_name(case_id, "case", ".json")
-
-    for case_file in cases_root.glob("case_*.json"):
-        resolved_case_file = case_file.resolve()
-        try:
-            resolved_case_file.relative_to(cases_root)
-        except ValueError as exc:
-            raise ValueError(f"Invalid case path for case_id: {case_id!r}") from exc
-        if resolved_case_file.name == expected_name:
-            return resolved_case_file
-
-    raise FileNotFoundError(expected_name)
+    case_file = (cases_root / expected_name).resolve()
+    try:
+        case_file.relative_to(cases_root)
+    except ValueError as exc:
+        raise ValueError(f"Invalid case path for case_id: {case_id!r}") from exc
+    if not case_file.exists():
+        raise FileNotFoundError(expected_name)
+    return case_file
 
 
 def open_case(
