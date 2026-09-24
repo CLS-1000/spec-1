@@ -198,6 +198,24 @@ def test_close_case_sets_status_and_generates_report(temp_workspace):
         assert "Test question?" in content
 
 
+def test_close_case_rejects_invalid_persisted_case_id_for_report_path(temp_workspace):
+    """Test: close_case rejects an invalid persisted case_id before report generation."""
+    case = open_case("Test", "Test question?", ["test"])
+    case_file = temp_workspace / "cases" / f"case_{case.case_id}.json"
+
+    with open(case_file) as f:
+        case_dict = json.load(f)
+    case_dict["case_id"] = "../../../etc/passwd"
+    with open(case_file, "w") as f:
+        json.dump(case_dict, f)
+
+    with pytest.raises(ValueError, match="Invalid case_id"):
+        close_case(case.case_id)
+
+    report_file = temp_workspace / "reports" / f"report_{case.case_id}.md"
+    assert not report_file.exists()
+
+
 def test_get_case_retrieves_case_by_id(temp_workspace):
     """Test: get_case retrieves a case by ID."""
     case = open_case("Retrieve Test", "Can we find it?", ["test"])
