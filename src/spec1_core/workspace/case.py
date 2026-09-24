@@ -47,6 +47,18 @@ def _ensure_dirs():
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
 
+def _case_file_path(case_id: str) -> Path:
+    """Build a safe absolute path to a case JSON file for the given case_id."""
+    _validate_case_id(case_id)
+    cases_root = CASES_DIR.resolve()
+    case_file = (cases_root / f"case_{case_id}.json").resolve()
+    try:
+        case_file.relative_to(cases_root)
+    except ValueError as exc:
+        raise ValueError(f"Invalid case path for case_id: {case_id!r}") from exc
+    return case_file
+
+
 def open_case(
     title: str,
     question: str,
@@ -175,10 +187,9 @@ def close_case(case_id: str) -> CaseFile:
     Returns:
         Closed CaseFile
     """
-    _validate_case_id(case_id)
     _ensure_dirs()
 
-    case_file = CASES_DIR / f"case_{case_id}.json"
+    case_file = _case_file_path(case_id)
     if not case_file.exists():
         raise ValueError(f"Case {case_id} not found")
 
@@ -239,16 +250,9 @@ def list_cases(status: Optional[str] = None) -> list[CaseFile]:
 
 def get_case(case_id: str) -> CaseFile:
     """Get a specific case by ID."""
-    _validate_case_id(case_id)
     _ensure_dirs()
 
-    cases_root = CASES_DIR.resolve()
-    case_file = (cases_root / f"case_{case_id}.json").resolve()
-    try:
-        case_file.relative_to(cases_root)
-    except ValueError:
-        raise ValueError(f"Invalid case path for case_id: {case_id!r}")
-
+    case_file = _case_file_path(case_id)
     if not case_file.exists():
         raise ValueError(f"Case {case_id} not found")
 
