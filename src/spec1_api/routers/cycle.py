@@ -39,7 +39,7 @@ def run_cycle(request: CycleRequest, background_tasks: BackgroundTasks) -> Cycle
         )
     except Exception as exc:
         logger.exception("Cycle execution failed")
-        raise HTTPException(status_code=500, detail=f"Cycle execution failed: {exc}") from exc
+        raise HTTPException(status_code=500, detail="Cycle execution failed") from exc
     result = CycleResponse(
         run_id=stats["run_id"],
         started_at=stats["started_at"],
