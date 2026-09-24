@@ -85,27 +85,12 @@ def _open_case_file(case_file: Path, flags: int, mode: str):
     except Exception:
         os.close(fd)
         raise
+
+
 def _case_storage_name(case_id: str, prefix: str, suffix: str) -> str:
     """Build a validated storage name for a case-related file."""
     _validate_case_id(case_id)
     return f"{prefix}_{case_id}{suffix}"
-
-
-def _case_file_path(case_id: str) -> Path:
-    """Find the safe absolute path to an existing case JSON file for the given case_id."""
-    cases_root = CASES_DIR.resolve()
-    expected_name = _case_storage_name(case_id, "case", ".json")
-
-    for case_file in cases_root.glob("case_*.json"):
-        resolved_case_file = case_file.resolve()
-        try:
-            resolved_case_file.relative_to(cases_root)
-        except ValueError as exc:
-            raise ValueError(f"Invalid case path for case_id: {case_id!r}") from exc
-        if resolved_case_file.name == expected_name:
-            return resolved_case_file
-
-    raise FileNotFoundError(expected_name)
 
 
 def open_case(
@@ -185,10 +170,6 @@ def update_case(
     _ensure_dirs()
 
     case_file = _case_file_path(case_id)
-    try:
-        case_file = _case_file_path(case_id)
-    except FileNotFoundError:
-        raise ValueError(f"Case {case_id} not found")
 
     # Load case
     with _open_case_file(case_file, os.O_RDONLY, "r") as f:
@@ -246,10 +227,6 @@ def close_case(case_id: str) -> CaseFile:
     _ensure_dirs()
 
     case_file = _case_file_path(case_id)
-    try:
-        case_file = _case_file_path(case_id)
-    except FileNotFoundError:
-        raise ValueError(f"Case {case_id} not found")
 
     # Load case
     with _open_case_file(case_file, os.O_RDONLY, "r") as f:
@@ -311,10 +288,6 @@ def get_case(case_id: str) -> CaseFile:
     _ensure_dirs()
 
     case_file = _case_file_path(case_id)
-    try:
-        case_file = _case_file_path(case_id)
-    except FileNotFoundError:
-        raise ValueError(f"Case {case_id} not found")
 
     with _open_case_file(case_file, os.O_RDONLY, "r") as f:
         case_dict = json.load(f)
