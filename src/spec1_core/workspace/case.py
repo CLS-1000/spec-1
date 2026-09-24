@@ -57,18 +57,28 @@ def _case_file_path(case_id: str) -> Path:
 
     cases_root = CASES_DIR.resolve()
     case_name = f"case_{canonical_case_id}.json"
-    case_file = (cases_root / case_name).resolve()
-    try:
-        case_file.relative_to(cases_root)
-    except ValueError as exc:
-        raise ValueError(f"Invalid case path for case_id: {case_id!r}") from exc
+    for candidate in cases_root.iterdir():
+        if candidate.name != case_name:
+            continue
+        if candidate.is_symlink():
+            raise ValueError(f"Invalid case path for case_id: {case_id!r}")
 
-    return case_file
+        case_file = candidate.resolve()
+        try:
+            case_file.relative_to(cases_root)
+        except ValueError as exc:
+            raise ValueError(f"Invalid case path for case_id: {case_id!r}") from exc
+
+        return case_file
+
+    raise ValueError(f"Case {case_id} not found")
 
 
 def _open_case_file(case_file: Path, flags: int, mode: str):
     """Open a case file without following a symlink final path component."""
     nofollow = getattr(os, "O_NOFOLLOW", 0)
+    if not nofollow and case_file.is_symlink():
+        raise ValueError(f"Invalid case path for case_id: {case_file.stem.removeprefix('case_')!r}")
     fd = os.open(case_file, flags | nofollow)
     return os.fdopen(fd, mode)
 
@@ -147,12 +157,9 @@ def update_case(
     Returns:
         Updated CaseFile
     """
-    _validate_case_id(case_id)
     _ensure_dirs()
 
-    case_file = CASES_DIR / f"case_{case_id}.json"
-    if not case_file.exists():
-        raise ValueError(f"Case {case_id} not found")
+    case_file = _case_file_path(case_id)
 
     # Load case
     with _open_case_file(case_file, os.O_RDONLY, "r") as f:
@@ -204,8 +211,6 @@ def close_case(case_id: str) -> CaseFile:
     _ensure_dirs()
 
     case_file = _case_file_path(case_id)
-    if not case_file.exists():
-        raise ValueError(f"Case {case_id} not found")
 
     # Load case
     with _open_case_file(case_file, os.O_RDONLY, "r") as f:
@@ -215,7 +220,7 @@ def close_case(case_id: str) -> CaseFile:
     case.status = "CLOSED"
 
     # Write back
-    with open(case_file, "w") as f:
+    with _open_case_file(case_file, os.O_WRONLY | os.O_TRUNC, "w") as f:
         f.write(json.dumps(case.to_dict(), indent=2, default=str))
 
     # Generate report
@@ -267,10 +272,8 @@ def get_case(case_id: str) -> CaseFile:
     _ensure_dirs()
 
     case_file = _case_file_path(case_id)
-    if not case_file.exists():
-        raise ValueError(f"Case {case_id} not found")
 
-    with open(case_file, "r") as f:
+    with _open_case_file(case_file, os.O_RDONLY, "r") as f:
         case_dict = json.load(f)
 
     return _dict_to_case(case_dict)
