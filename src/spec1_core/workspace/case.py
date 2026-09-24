@@ -47,26 +47,27 @@ def _ensure_dirs():
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def _case_path(case_id: str, directory: Path, prefix: str, suffix: str) -> Path:
-    """Build a safe absolute path for a case-related file for the given case_id."""
+def _case_storage_name(case_id: str, prefix: str, suffix: str) -> str:
+    """Build a validated storage name for a case-related file."""
     _validate_case_id(case_id)
-    root = directory.resolve()
-    case_path = (root / f"{prefix}_{case_id}{suffix}").resolve()
-    try:
-        case_path.relative_to(root)
-    except ValueError as exc:
-        raise ValueError(f"Invalid case path for case_id: {case_id!r}") from exc
-    return case_path
+    return f"{prefix}_{case_id}{suffix}"
 
 
 def _case_file_path(case_id: str) -> Path:
-    """Build a safe absolute path to a case JSON file for the given case_id."""
-    return _case_path(case_id, CASES_DIR, "case", ".json")
+    """Find the safe absolute path to an existing case JSON file for the given case_id."""
+    cases_root = CASES_DIR.resolve()
+    expected_name = _case_storage_name(case_id, "case", ".json")
 
+    for case_file in cases_root.glob("case_*.json"):
+        resolved_case_file = case_file.resolve()
+        try:
+            resolved_case_file.relative_to(cases_root)
+        except ValueError as exc:
+            raise ValueError(f"Invalid case path for case_id: {case_id!r}") from exc
+        if resolved_case_file.name == expected_name:
+            return resolved_case_file
 
-def _report_file_path(case_id: str) -> Path:
-    """Build a safe absolute path to a case report file for the given case_id."""
-    return _case_path(case_id, REPORTS_DIR, "report", ".md")
+    raise FileNotFoundError(expected_name)
 
 
 def open_case(
@@ -110,7 +111,7 @@ def open_case(
     )
 
     # Write case file
-    case_file = _case_file_path(case_id)
+    case_file = CASES_DIR / _case_storage_name(case_id, "case", ".json")
     with open(case_file, "w") as f:
         f.write(json.dumps(case.to_dict(), indent=2, default=str))
 
@@ -145,8 +146,9 @@ def update_case(
     """
     _ensure_dirs()
 
-    case_file = _case_file_path(case_id)
-    if not case_file.exists():
+    try:
+        case_file = _case_file_path(case_id)
+    except FileNotFoundError:
         raise ValueError(f"Case {case_id} not found")
 
     # Load case
@@ -204,8 +206,9 @@ def close_case(case_id: str) -> CaseFile:
     """
     _ensure_dirs()
 
-    case_file = _case_file_path(case_id)
-    if not case_file.exists():
+    try:
+        case_file = _case_file_path(case_id)
+    except FileNotFoundError:
         raise ValueError(f"Case {case_id} not found")
 
     # Load case
@@ -220,7 +223,7 @@ def close_case(case_id: str) -> CaseFile:
         f.write(json.dumps(case.to_dict(), indent=2, default=str))
 
     # Generate report
-    report_path = _report_file_path(case_id)
+    report_path = REPORTS_DIR / _case_storage_name(case.case_id, "report", ".md")
     report_md = _generate_report_md(case)
     with open(report_path, "w") as f:
         f.write(report_md)
@@ -267,8 +270,9 @@ def get_case(case_id: str) -> CaseFile:
     """Get a specific case by ID."""
     _ensure_dirs()
 
-    case_file = _case_file_path(case_id)
-    if not case_file.exists():
+    try:
+        case_file = _case_file_path(case_id)
+    except FileNotFoundError:
         raise ValueError(f"Case {case_id} not found")
 
     with open(case_file, "r") as f:
