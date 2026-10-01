@@ -1,4 +1,4 @@
-# SPEC-1: Automated Research Engine
+# SPEC-1: engine reports intelligence 
 
 **Version:** 0.6.0 | **Status:** Production-Ready  
 **Organization:** EVASTARARCANA LLC • Portland, OR

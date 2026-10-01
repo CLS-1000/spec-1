@@ -47,7 +47,6 @@ generated/
 briefs/
 workspace/
 research/dossiers/
-.mcp.json
 
 # Loose runtime artifacts at root — exports, rendered HTML, kill files
 /spec1_intelligence_export.json
@@ -71,6 +70,16 @@ research/dossiers/
 
 # Rendered HTML copies in docs (source lives at root or src/spec1_api/static/)
 /docs/*.html
+
+# Generated coverage report — CI regenerates it, never commit
+coverage.xml
+
+# Scratch drafts superseded by src/cls_pdx1/ — do not resurrect at repo root
+/cls_pdx1/
+
+# Plan-mode leftovers and runtime analyst-loop output
+/Plans/
+/analyst_loop/
 
 # Literal ${HOME} directory — artifact of bad shell expansion in a git command
 ${HOME}/

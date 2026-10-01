@@ -38,7 +38,7 @@ from cls_founder_brain.triage import classify_fire
 
 def _make_situation_id(description: str) -> str:
     """Generate a unique (time-based) situation ID from description."""
-    ts = datetime.now(timezone.utc).strftime("%Y%m%d%H%M")
+    ts = datetime.now(timezone.utc).isoformat(timespec="microseconds")
     raw = f"{description[:50]}_{ts}"
     return f"sit_{hashlib.sha256(raw.encode()).hexdigest()[:12]}"
 
