@@ -29,15 +29,15 @@ def handle_agent_command():
         messages=[{'role': 'user', 'content': user_command}],
         tools=AGENT_TOOLS
     )
-    
+
     execution_results = []
-    
+
     # Execute the requested tools
     if action_response.get('message', {}).get('tool_calls'):
         for tool in action_response['message']['tool_calls']:
             func_name = tool['function']['name']
             func_args = tool['function']['arguments']
-            
+
             if func_name in FUNCTION_REGISTRY:
                 try:
                     raw_result = FUNCTION_REGISTRY[func_name](**func_args)
@@ -58,13 +58,13 @@ def handle_agent_command():
     # PASS 2: Observation & Reflection
     synthesis_prompt = f"""
     The user originally commanded: "{user_command}"
-    
+
     Raw system execution results:
     {json.dumps(execution_results, indent=2)}
-    
+
     Provide the final briefing to the user.
     """
-    
+
     final_response = ollama.chat(
         model='llama3.1',
         messages=[
@@ -72,5 +72,5 @@ def handle_agent_command():
             {'role': 'user', 'content': synthesis_prompt}
         ]
     )
-    
+
     return jsonify({"message": final_response['message']['content']})
