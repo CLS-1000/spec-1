@@ -53,11 +53,31 @@ _DEFAULT_TIMEOUT = 10
 
 def _get_urls() -> list[str]:
     raw = os.environ.get("SPEC1_WEBHOOK_URLS", "")
-    return [u.strip() for u in raw.split(",") if u.strip()]
+    urls = [u.strip() for u in raw.split(",") if u.strip()]
+    valid: list[str] = []
+    for url in urls:
+        if url.lower().startswith("https://"):
+            valid.append(url)
+        else:
+            logger.warning("Ignoring non-HTTPS webhook URL: %s", url)
+    return valid
 
 
 def _get_secret() -> Optional[str]:
     return os.environ.get("SPEC1_WEBHOOK_SECRET", "").strip() or None
+
+
+def _get_timeout() -> int:
+    raw = os.environ.get("SPEC1_WEBHOOK_TIMEOUT", str(_DEFAULT_TIMEOUT)).strip()
+    try:
+        timeout = int(raw)
+    except ValueError:
+        logger.warning("Invalid SPEC1_WEBHOOK_TIMEOUT=%r; using default=%s", raw, _DEFAULT_TIMEOUT)
+        return _DEFAULT_TIMEOUT
+    if timeout <= 0:
+        logger.warning("Non-positive SPEC1_WEBHOOK_TIMEOUT=%s; using default=%s", timeout, _DEFAULT_TIMEOUT)
+        return _DEFAULT_TIMEOUT
+    return timeout
 
 
 def _sign(payload_bytes: bytes, secret: str) -> str:
@@ -97,7 +117,7 @@ def fire_cycle_completed(stats: dict) -> None:
         return
 
     secret = _get_secret()
-    timeout = int(os.environ.get("SPEC1_WEBHOOK_TIMEOUT", str(_DEFAULT_TIMEOUT)))
+    timeout = _get_timeout()
 
     payload = {
         "event": "cycle.completed",

@@ -1,7 +1,7 @@
 # @domain:   citizens_source
 # @module:   watch_trimet
 # @loc:      gh_main
-# @status:   testing
+# @status:   stable
 # @depends:  NONE
 
 """TriMet watch module.

@@ -1,7 +1,7 @@
 # @domain:   citizens_source
 # @module:   models
 # @loc:      gh_main
-# @status:   testing
+# @status:   stable
 # @depends:  NONE
 
 """Core data models for cls_pdx1 (PDX-1i).

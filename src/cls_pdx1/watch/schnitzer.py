@@ -1,7 +1,7 @@
 # @domain:   citizens_source
 # @module:   watch_schnitzer
 # @loc:      gh_main
-# @status:   testing
+# @status:   stable
 # @depends:  NONE
 
 """Schnitzer family network watch module.

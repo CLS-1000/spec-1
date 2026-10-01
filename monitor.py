@@ -1,6 +1,6 @@
 # @domain:  spec-1
 # @module:  local_terminal_monitor
-# @loc:     _SCRATCH
+# @loc:     gh_main
 # @status:  stable
 
 import curses

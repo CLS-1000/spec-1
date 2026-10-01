@@ -1,7 +1,7 @@
-# @domain:   machine
+# @domain:   spec-1
 # @module:   spec1_dual_write_config
-# @loc:      _SCRATCH
-# @status:   drafting
+# @loc:      gh_main
+# @status:   stable
 # @depends:  NONE
 
 """Dual-write factory per module. Singleton pattern."""

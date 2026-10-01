@@ -1,7 +1,7 @@
 # @domain:   citizens_source
 # @module:   publication_newsletter
 # @loc:      gh_main
-# @status:   testing
+# @status:   stable
 # @depends:  NONE
 
 """Markdown + PDF newsletter renderer for Metro Citizens Brief."""

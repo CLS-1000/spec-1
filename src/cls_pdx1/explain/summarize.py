@@ -1,7 +1,7 @@
 # @domain:   citizens_source
 # @module:   explain_summarize
 # @loc:      gh_main
-# @status:   testing
+# @status:   stable
 # @depends:  NONE
 
 """Plain-language summarisation via Claude Sonnet with neutrality retry.

@@ -1,7 +1,7 @@
 # @domain:   citizens_source
 # @module:   sources_orestar
 # @loc:      gh_main
-# @status:   testing
+# @status:   stable
 # @depends:  NONE
 
 """ORESTAR adapter — Oregon SOS campaign finance records.

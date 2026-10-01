@@ -1,7 +1,7 @@
 # @domain:   citizens_source
 # @module:   triggers
 # @loc:      gh_main
-# @status:   testing
+# @status:   stable
 # @depends:  NONE
 
 """Publication trigger evaluation for Metro Citizens Brief.

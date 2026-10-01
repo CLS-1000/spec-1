@@ -1,7 +1,7 @@
 # @domain:   citizens_source
 # @module:   anomaly
 # @loc:      gh_main
-# @status:   testing
+# @status:   stable
 # @depends:  NONE
 
 """90-day rolling baseline anomaly detector for PDX-1i watch entities."""

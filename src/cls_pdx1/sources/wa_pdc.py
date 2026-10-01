@@ -1,7 +1,7 @@
 # @domain:   citizens_source
 # @module:   sources_wa_pdc
 # @loc:      gh_main
-# @status:   testing
+# @status:   stable
 # @depends:  NONE
 
 """WA PDC adapter — Washington Public Disclosure Commission.

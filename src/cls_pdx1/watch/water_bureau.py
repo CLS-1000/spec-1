@@ -1,7 +1,7 @@
 # @domain:   citizens_source
 # @module:   watch_water_bureau
 # @loc:      gh_main
-# @status:   testing
+# @status:   stable
 # @depends:  NONE
 
 """Portland Water Bureau watch module.

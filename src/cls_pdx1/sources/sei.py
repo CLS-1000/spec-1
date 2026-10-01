@@ -1,7 +1,7 @@
 # @domain:   citizens_source
 # @module:   sources_sei
 # @loc:      gh_main
-# @status:   testing
+# @status:   stable
 # @depends:  NONE
 
 """SEI adapter — Oregon Government Ethics Commission Statement of Economic Interest.

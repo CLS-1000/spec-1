@@ -87,6 +87,29 @@ class TestProtectedPaths:
         r = app_with_key.get("/api/v1/intel")
         assert "detail" in r.json()
 
+    def test_403_preserves_cors_headers(self):
+        with patch.dict(
+            os.environ,
+            {
+                "SPEC1_API_KEY": "test-secret-key",
+                "SPEC1_ENVIRONMENT": "production",
+                "SPEC1_CORS_ORIGINS": "https://example.test",
+            },
+            clear=False,
+        ):
+            with patch("spec1_api.scheduler.start_scheduler"), \
+                 patch("spec1_api.scheduler.stop_scheduler"), \
+                 patch("spec1_api.scheduler.maybe_run_on_start"):
+                from spec1_api.main import create_app
+                app = create_app()
+                with TestClient(app, raise_server_exceptions=False) as client:
+                    r = client.get(
+                        "/api/v1/intel",
+                        headers={"Origin": "https://example.test"},
+                    )
+        assert r.status_code == 403
+        assert r.headers.get("access-control-allow-origin") == "https://example.test"
+
 
 # ── No key configured → open access ───────────────────────────────────────────
 

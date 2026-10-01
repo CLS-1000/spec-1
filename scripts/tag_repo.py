@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # @domain:   spec-1
 # @module:   tag_repo
-# @loc:      _SCRATCH
-# @status:   drafting
+# @loc:      gh_main
+# @status:   stable
 # @depends:  NONE
 
 """

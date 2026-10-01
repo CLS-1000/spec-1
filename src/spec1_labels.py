@@ -1,7 +1,7 @@
-# @domain:   machine
+# @domain:   spec-1
 # @module:   spec1_labels
-# @loc:      _SCRATCH
-# @status:   drafting
+# @loc:      gh_main
+# @status:   stable
 # @depends:  NONE
 
 """Canonical label constants for SPEC-1.

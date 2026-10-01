@@ -1,7 +1,7 @@
 # @domain:   citizens_source
 # @module:   resolver
 # @loc:      gh_main
-# @status:   testing
+# @status:   stable
 # @depends:  NONE
 
 """Entity resolver for cls_pdx1.

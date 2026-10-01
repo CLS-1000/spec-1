@@ -1,7 +1,7 @@
 # @domain:   citizens_source
 # @module:   sources_olis
 # @loc:      gh_main
-# @status:   testing
+# @status:   stable
 # @depends:  NONE
 
 """OLIS adapter — Oregon Legislative Information System.

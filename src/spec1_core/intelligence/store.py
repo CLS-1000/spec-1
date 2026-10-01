@@ -72,6 +72,16 @@ class JsonlStore:
                 except json.JSONDecodeError:
                     continue
 
+    def signal_ids(self) -> set[str]:
+        """Return every signal_id already stored.
+
+        Used by the cycle to skip signals that earlier runs already scored and
+        stored. RSS feeds keep items live for days, so without this each daily
+        run re-appends the same articles (93% of records in the April export
+        were repeats of 329 distinct signals).
+        """
+        return {r["signal_id"] for r in self.read_all() if r.get("signal_id")}
+
     def count(self) -> int:
         """Count records in the store."""
         return sum(1 for _ in self.read_all())

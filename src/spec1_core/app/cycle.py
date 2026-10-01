@@ -15,6 +15,7 @@ Usage:
 
 from __future__ import annotations
 
+import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -132,14 +133,21 @@ def run_cycle(
     feeds: Optional[dict] = None,
     max_signals: Optional[int] = None,
     verbose: bool = True,
+    skip_seen: bool = True,
 ) -> dict:
-    """Execute one full SPEC-1 cycle and return a summary dict."""
+    """Execute one full SPEC-1 cycle and return a summary dict.
+
+    With ``skip_seen`` (the default), signals whose ``signal_id`` is already in
+    the store, or that appear twice in this harvest, are not scored or stored
+    again. Parsing and psyop scoring still see the full harvest so cross-outlet
+    narrative clustering is unaffected.
+    """
     run_id = run_id or new_run_id()
     if _DUAL_WRITE_AVAILABLE:
         from pathlib import Path as _Path
         store = _make_dual_writer(
             jsonl_path=store_path,
-            db_path=_Path("spec1.db"),
+            db_path=_Path(os.environ.get("SPEC1_DB_PATH", "spec1.db")),
             table="intelligence_records",
             pk_field="record_id",
         )
@@ -165,6 +173,7 @@ def run_cycle(
         "investigations_generated": 0,
         "outcomes_verified": 0,
         "records_stored": 0,
+        "signals_skipped_seen": 0,
         "errors": [],
     }
 
@@ -241,9 +250,21 @@ def run_cycle(
     if verbose:
         print("\n[3/7] Scoring through 4 gates (credibility/volume/velocity/novelty)...")
 
+    seen: set[str] = set()
+    if skip_seen:
+        try:
+            seen = JsonlStore(store_path).signal_ids()
+        except Exception as exc:
+            stats["errors"].append(f"dedup:{exc}")
+
     opportunities: list[tuple[Signal, ParsedSignal, Opportunity]] = []
     blocked = 0
     for sig, ps in zip(signals, parsed_signals):
+        if skip_seen:
+            if sig.signal_id in seen:
+                stats["signals_skipped_seen"] += 1
+                continue
+            seen.add(sig.signal_id)
         try:
             opp = score_signal(sig, ps, run_id=run_id)
             if opp is not None:
@@ -256,7 +277,8 @@ def run_cycle(
 
     stats["opportunities_found"] = len(opportunities)
     if verbose:
-        print(f"      Opportunities: {len(opportunities)} | Blocked: {blocked}")
+        print(f"      Opportunities: {len(opportunities)} | Blocked: {blocked}"
+              f" | Already stored: {stats['signals_skipped_seen']}")
         if opportunities:
             print("      Priority breakdown:")
             for prio in ("ELEVATED", "STANDARD", "MONITOR"):
@@ -441,6 +463,8 @@ if __name__ == "__main__":
     parser.add_argument("--env", default="production", help="Environment label")
     parser.add_argument("--timeout", type=int, default=15, help="Feed fetch timeout (seconds)")
     parser.add_argument("--max-signals", type=int, default=None, help="Cap signals processed")
+    parser.add_argument("--reprocess-seen", action="store_true",
+                        help="Score and store signals even if their signal_id is already in the store")
     args = parser.parse_args()
 
     summary = run_cycle(
@@ -449,6 +473,7 @@ if __name__ == "__main__":
         feed_timeout=args.timeout,
         max_signals=args.max_signals,
         verbose=True,
+        skip_seen=not args.reprocess_seen,
     )
 
     print("\nRun Summary:")

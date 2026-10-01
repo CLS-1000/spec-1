@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # @domain:   spec-1
 # @module:   check_hardcoded_labels
-# @loc:      _SCRATCH
-# @status:   drafting
+# @loc:      gh_main
+# @status:   stable
 # @depends:  NONE
 
 """Check for hardcoded label/enum strings in Python source files.
