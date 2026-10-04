@@ -1,9 +1,3 @@
-# @domain:   machine
-# @module:   migrate
-# @loc:      gh_main
-# @status:   stable
-# @depends:  NONE
-
 """Migration runner for cls_db SQLite schema."""
 from __future__ import annotations
 
