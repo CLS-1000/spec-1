@@ -11,7 +11,10 @@ from __future__ import annotations
 import logging
 import os
 import threading
+import time
 from pathlib import Path
+
+from spec1_core.core.ids import run_id as new_run_id
 
 logger = logging.getLogger(__name__)
 
@@ -27,20 +30,32 @@ def _run_cycle_job() -> None:
     if KILL_FILE.exists():
         logger.warning("Kill file present at %s — skipping scheduled cycle.", KILL_FILE)
         return
+    cycle_run_id = new_run_id()
+    started = time.perf_counter()
+    logger.info("Scheduled cycle started: run_id=%s stage=cycle", cycle_run_id)
     try:
         from spec1_core.app.cycle import run_cycle
         stats = run_cycle(
             store_path=Path(os.environ.get("SPEC1_STORE_PATH", "spec1_intelligence.jsonl")),
+            run_id=cycle_run_id,
             environment=os.environ.get("SPEC1_ENVIRONMENT", "production"),
             verbose=False,
         )
         logger.info(
-            "Scheduled cycle complete: %d records stored, %d errors",
+            "Scheduled cycle complete: run_id=%s duration_seconds=%.3f "
+            "%d records stored, %d errors",
+            cycle_run_id,
+            time.perf_counter() - started,
             stats["records_stored"],
             len(stats.get("errors", [])),
         )
     except Exception as exc:
-        logger.error("Scheduled cycle failed: %s", exc)
+        logger.exception(
+            "Scheduled cycle failed: run_id=%s stage=cycle duration_seconds=%.3f: %s",
+            cycle_run_id,
+            time.perf_counter() - started,
+            exc,
+        )
 
 
 def start_scheduler() -> None:
@@ -76,12 +91,16 @@ def stop_scheduler() -> None:
     """Stop the scheduler gracefully."""
     global _scheduler
     if _scheduler is not None:
+        started = time.perf_counter()
         try:
             _scheduler.shutdown(wait=False)
         except Exception:
-            pass
+            logger.exception(
+                "Scheduler shutdown failed: duration_seconds=%.3f",
+                time.perf_counter() - started,
+            )
         _scheduler = None
-        logger.info("Scheduler stopped")
+        logger.info("Scheduler stopped: duration_seconds=%.3f", time.perf_counter() - started)
 
 
 def get_scheduler():
