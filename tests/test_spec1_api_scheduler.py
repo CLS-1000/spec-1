@@ -47,10 +47,40 @@ def test_run_cycle_job_skips_when_kill_file_present(kill_file_in_tmp, caplog):
 
 def test_run_cycle_job_runs_engine_when_no_kill_file(kill_file_in_tmp):
     assert not kill_file_in_tmp.exists()
-    with patch("spec1_core.app.cycle.run_cycle") as mock_run:
+    with patch("spec1_api.scheduler.new_run_id", return_value="run-scheduled-test"), \
+         patch("spec1_core.app.cycle.run_cycle") as mock_run:
         mock_run.return_value = {"records_stored": 3, "errors": []}
         sched._run_cycle_job()
-        mock_run.assert_called_once()
+        mock_run.assert_called_once_with(
+            store_path=sched.Path("spec1_intelligence.jsonl"),
+            run_id="run-scheduled-test",
+            environment="production",
+            verbose=False,
+        )
+
+
+def test_run_cycle_job_logs_correlation_and_traceback_on_failure(kill_file_in_tmp, caplog):
+    with patch("spec1_api.scheduler.new_run_id", return_value="run-scheduled-error"), \
+         patch("spec1_core.app.cycle.run_cycle", side_effect=RuntimeError("cycle failed")):
+        sched._run_cycle_job()
+
+    assert "run_id=run-scheduled-error" in caplog.text
+    assert "stage=cycle" in caplog.text
+    assert "duration_seconds=" in caplog.text
+    assert any(record.exc_info for record in caplog.records)
+
+
+def test_stop_scheduler_logs_shutdown_failures(caplog):
+    mock_scheduler = MagicMock()
+    mock_scheduler.shutdown.side_effect = RuntimeError("shutdown failed")
+    sched._scheduler = mock_scheduler
+
+    sched.stop_scheduler()
+
+    assert sched._scheduler is None
+    assert "Scheduler shutdown failed" in caplog.text
+    assert "duration_seconds=" in caplog.text
+    assert any(record.exc_info for record in caplog.records)
 
 
 def test_run_cycle_job_swallows_engine_errors(kill_file_in_tmp, caplog):

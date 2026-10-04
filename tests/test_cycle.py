@@ -563,6 +563,34 @@ def test_run_cycle_parse_exception_handled(tmp_path):
     assert any("parse" in e for e in stats["errors"])
 
 
+def test_run_cycle_keeps_signal_and_parsed_data_aligned_after_parse_error(tmp_path):
+    """A skipped parse must not cause a later parsed signal to score against the wrong source."""
+    signals = [_make_rich_signal("sig-parse-fail"), _make_rich_signal("sig-parse-success")]
+    parsed_success = type("Parsed", (), {"keywords": [], "entities": []})()
+    mock_result = {"signals": signals, "errors": {}}
+
+    with patch("spec1_core.app.cycle.harvest_all", return_value=mock_result), \
+         patch(
+             "spec1_core.app.cycle.parse_signal",
+             side_effect=[RuntimeError("parse fail"), parsed_success],
+         ), \
+         patch("spec1_core.psyop.scorer.score_psyop", return_value={
+             "classification": "NONE",
+             "score": 0,
+             "patterns_fired": [],
+             "evidence_chains": [],
+         }), \
+         patch("spec1_core.app.cycle.score_signal", return_value=None) as mock_score:
+        stats = run_cycle(
+            store_path=tmp_path / "parse_alignment.jsonl",
+            verbose=False,
+            skip_seen=False,
+        )
+
+    mock_score.assert_called_once_with(signals[1], parsed_success, run_id=stats["run_id"])
+    assert stats["signals_parsed"] == 1
+
+
 def test_run_cycle_score_exception_handled(tmp_path):
     """Exception during score_signal is caught and blocked counter incremented."""
     signals = [
