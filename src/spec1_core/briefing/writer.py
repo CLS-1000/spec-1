@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import subprocess
 import sys
 import threading
@@ -20,6 +21,69 @@ logger = logging.getLogger(__name__)
 
 BRIEFS_DIR = Path("briefs")
 _lock = threading.Lock()
+
+PDF_INSTRUCTIONS_HEADING = "### PDF Conversion"
+
+_PLACEHOLDER_RE = re.compile(r"\{[A-Za-z_][A-Za-z0-9_ /\-]*\}")
+_HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)$")
+
+
+def _strip_unresolved_placeholders(brief: str) -> str:
+    """Remove template placeholders (e.g. ``{tone/language}``) left in a brief.
+
+    A "Communication" section containing placeholders is dropped entirely;
+    any other leftover placeholder is replaced with an em dash.
+    """
+    lines = brief.splitlines()
+    out: list[str] = []
+    in_fence = False
+    i = 0
+    while i < len(lines):
+        if lines[i].lstrip().startswith("```"):
+            in_fence = not in_fence
+        if in_fence or lines[i].lstrip().startswith("```"):
+            out.append(lines[i])
+            i += 1
+            continue
+        m = _HEADING_RE.match(lines[i].strip())
+        if m and m.group(2).strip().strip("*").lower().startswith("communication"):
+            level = len(m.group(1))
+            j = i + 1
+            while j < len(lines):
+                n = _HEADING_RE.match(lines[j].strip())
+                if n and len(n.group(1)) <= level:
+                    break
+                j += 1
+            if any(_PLACEHOLDER_RE.search(ln) for ln in lines[i:j]):
+                i = j
+                continue
+        out.append(_PLACEHOLDER_RE.sub("—", lines[i]))
+        i += 1
+    result = "\n".join(out)
+    return result + "\n" if brief.endswith("\n") else result
+
+
+def _pdf_instructions(md_name: str) -> str:
+    """Footer explaining how to convert the brief to PDF."""
+    stem = md_name[:-3] if md_name.endswith(".md") else md_name
+    return (
+        f"\n\n---\n\n{PDF_INSTRUCTIONS_HEADING}\n\n"
+        "This brief is Markdown. To produce a PDF:\n\n"
+        "1. Pandoc (recommended):\n\n"
+        "   ```\n"
+        f"   pandoc briefs/{md_name} -o briefs/{stem}.pdf --pdf-engine=xelatex\n"
+        "   ```\n\n"
+        "2. HTML export, then PDF (weasyprint or wkhtmltopdf):\n\n"
+        "   ```\n"
+        f"   pandoc briefs/{md_name} -s -o briefs/{stem}.html\n"
+        f"   weasyprint briefs/{stem}.html briefs/{stem}.pdf\n"
+        f"   wkhtmltopdf briefs/{stem}.html briefs/{stem}.pdf\n"
+        "   ```\n\n"
+        "3. SPEC-1 built-in renderer:\n\n"
+        "   ```\n"
+        f"   python -m spec1_core.tools.pdf_render --brief-md briefs/{md_name} --out briefs/{stem}.pdf\n"
+        "   ```\n"
+    )
 
 
 def _extract_prompts(brief: str) -> list[str]:
@@ -106,7 +170,7 @@ def write_brief(
     prompts_latest_path = BRIEFS_DIR / "spec1_prompts_latest.md"
     index_path = BRIEFS_DIR / "brief_index.jsonl"
 
-    word_count = len(brief.split())
+    brief = _strip_unresolved_placeholders(brief)
 
     # Extract and format investigation prompts from brief; fall back to raw payload
     extracted_prompts = _extract_prompts(brief)
@@ -119,6 +183,10 @@ def write_brief(
     else:
         prompts_doc = _build_prompts_doc([], date_str, timestamp)
         prompt_count = 0
+
+    word_count = len(brief.split())
+    if PDF_INSTRUCTIONS_HEADING not in brief:
+        brief = brief.rstrip("\n") + _pdf_instructions(dated_path.name)
 
     with _lock:
         dated_path.write_text(brief, encoding="utf-8")

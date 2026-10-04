@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+import re
 import json
 from datetime import datetime, timezone
 from pathlib import Path
@@ -325,7 +326,7 @@ def test_write_brief_creates_latest_file(tmp_path):
         writer.write_brief(SAMPLE_BRIEF, "run-001", "2026-04-11T06:00:00+00:00")
         latest = writer.BRIEFS_DIR / "spec1_brief_latest.md"
         assert latest.exists()
-        assert latest.read_text(encoding="utf-8") == SAMPLE_BRIEF
+        assert latest.read_text(encoding="utf-8").startswith(SAMPLE_BRIEF)
     finally:
         writer.BRIEFS_DIR = original_dir
 
@@ -337,7 +338,7 @@ def test_write_brief_dated_file_content(tmp_path):
     try:
         path = writer.write_brief(SAMPLE_BRIEF, "run-001", "2026-04-11T06:00:00+00:00")
         content = Path(path).read_text(encoding="utf-8")
-        assert content == SAMPLE_BRIEF
+        assert content.startswith(SAMPLE_BRIEF)
     finally:
         writer.BRIEFS_DIR = original_dir
 
@@ -1104,3 +1105,76 @@ def test_leg_user_prompt_template_has_required_placeholders():
     from spec1_core.briefing.templates import LEG_USER_PROMPT_TEMPLATE
     for placeholder in ("{run_id}", "{elevated_records}", "{standard_records}", "{date}"):
         assert placeholder in LEG_USER_PROMPT_TEMPLATE
+
+
+# ─── PDF instructions, placeholders, rule-based fallback ──────────────────────
+
+def _write(tmp_path, brief):
+    from spec1_core.briefing import writer
+    original_dir = writer.BRIEFS_DIR
+    writer.BRIEFS_DIR = tmp_path / "briefs"
+    try:
+        path = writer.write_brief(brief, "run-001", "2026-04-11T06:00:00+00:00")
+        return Path(path).read_text(encoding="utf-8")
+    finally:
+        writer.BRIEFS_DIR = original_dir
+
+
+def test_write_brief_includes_pdf_instructions(tmp_path):
+    content = _write(tmp_path, SAMPLE_BRIEF)
+    assert "### PDF Conversion" in content
+    assert "pandoc briefs/spec1_brief_2026-04-11.md -o briefs/spec1_brief_2026-04-11.pdf --pdf-engine=xelatex" in content
+    assert "weasyprint" in content and "wkhtmltopdf" in content
+
+
+def test_write_brief_pdf_instructions_not_duplicated(tmp_path):
+    first = _write(tmp_path, SAMPLE_BRIEF)
+    second = _write(tmp_path, first)
+    assert second.count("### PDF Conversion") == 1
+
+
+def test_write_brief_strips_communication_placeholders(tmp_path):
+    brief = (
+        SAMPLE_BRIEF
+        + "\n\n### Communication\n- Tone: {tone/language}\n- Type: {source_type}\n- Format: {format}\n"
+        + "\n### Extra\nKept {leftover} text.\n"
+    )
+    content = _write(tmp_path, brief)
+    assert "Communication" not in content
+    assert "{tone/language}" not in content
+    assert "{source_type}" not in content
+    assert "{format}" not in content
+    assert "{leftover}" not in content
+    assert "### Extra" in content
+
+
+def test_fallback_brief_canonical_layout():
+    from spec1_core.briefing.generator import _fallback_brief
+    records = [
+        make_record(classification="ESCALATE"),
+        make_record(classification="INVESTIGATE", source="rand"),
+    ]
+    result = _fallback_brief(make_cycle_stats(), records)
+    assert result.startswith("## SPEC-1 DAILY BRIEF — ")
+    for heading in (
+        "### Executive Summary", "### Elevated Signals", "### Domain Briefings",
+        "### Story Leads", "### Watch List — Tomorrow", "### Psyop Assessment",
+        "### Signal Notes",
+    ):
+        assert heading in result
+    assert "Brief generation failed" not in result
+    assert not re.search(r"\{[A-Za-z_][^}]*\}", result)
+
+
+def test_write_brief_keeps_placeholders_in_code_fences(tmp_path):
+    brief = SAMPLE_BRIEF + "\n\n```\npandoc {input} -o {output}\n```\n"
+    content = _write(tmp_path, brief)
+    assert "pandoc {input} -o {output}" in content
+
+
+def test_fallback_brief_empty_records_and_api_failure_reason():
+    from spec1_core.briefing.generator import _fallback_brief
+    result = _fallback_brief(make_cycle_stats(), [], reason="API call failed")
+    assert "API call failed" in result
+    assert "No signals cleared the elevated threshold this cycle." in result
+    assert "No leads this cycle." in result
