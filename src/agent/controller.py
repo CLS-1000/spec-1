@@ -11,15 +11,27 @@ from src.agent.prompts import AGENT_SYSTEM_PROMPT
 agent_api = Blueprint('agent_api', __name__)
 
 # Map the string names from the LLM to your actual Python functions
+# Neither tool is wired to the real pipeline yet. They report "not_implemented"
+# rather than a fabricated success, so the synthesis pass cannot tell the
+# operator that a harvest ran or a threshold changed when nothing happened.
+NOT_IMPLEMENTED = "not_implemented"
+
+
+def _not_implemented(action: str):
+    def handler(**_kwargs):
+        return {"status": NOT_IMPLEMENTED, "detail": f"{action} is not wired to the pipeline; nothing was executed"}
+    return handler
+
+
 FUNCTION_REGISTRY = {
-    # Mock functions to test the routing loop first:
-    "execute_harvest_pipeline": lambda force_refresh=False: {"status": "success", "items_processed": 142},
-    "update_provenance_threshold": lambda new_score: {"status": "success", "new_score": new_score}
+    "execute_harvest_pipeline": _not_implemented("execute_harvest_pipeline"),
+    "update_provenance_threshold": _not_implemented("update_provenance_threshold"),
 }
 
 @agent_api.route('/api/agent/command', methods=['POST'])
 def handle_agent_command():
-    user_command = request.json.get('command')
+    payload = request.get_json(silent=True) or {}
+    user_command = payload.get('command')
     if not user_command:
         return jsonify({"error": "No command provided"}), 400
 
@@ -43,7 +55,7 @@ def handle_agent_command():
                     raw_result = FUNCTION_REGISTRY[func_name](**func_args)
                     execution_results.append({
                         "action": func_name,
-                        "status": "success",
+                        "status": raw_result.get("status", "unknown"),
                         "output": raw_result
                     })
                 except Exception as e:
