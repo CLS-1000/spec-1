@@ -38,7 +38,10 @@ jobs:
     permissions:
       contents: read
     env:
-      NOTITIA_PAT: ${{ secrets.NOTITIA_PAT }}
+      # Only a boolean is exposed job-wide. The token itself is passed to the one
+      # step that needs it (the notitia-civica checkout), so dependency installs
+      # and the SPEC-1 cycle never see it.
+      PUBLISH_ENABLED: ${{ secrets.NOTITIA_PAT != '' }}
 
     steps:
       # ── 1. Checkout SPEC-1 ────────────────────────────────────────────────
@@ -88,16 +91,16 @@ jobs:
 
       # ── 6. Checkout notitia-civica ────────────────────────────────────────
       - name: Checkout notitia-civica
-        if: ${{ env.NOTITIA_PAT != '' }}
+        if: ${{ env.PUBLISH_ENABLED == 'true' }}
         uses: actions/checkout@v4
         with:
           repository: CLS-1000/notitia-civica
-          token: ${{ env.NOTITIA_PAT }}
+          token: ${{ secrets.NOTITIA_PAT }}
           path: notitia-civica
 
       # ── 7. Inject brief into print template ───────────────────────────────
       - name: Inject SPEC-1 brief into Notitia Civica print template
-        if: ${{ env.NOTITIA_PAT != '' }}
+        if: ${{ env.PUBLISH_ENABLED == 'true' }}
         env:
           PUB_DATE: ${{ steps.pub_date.outputs.date }}
           PYTHONPATH: spec-1/src
@@ -110,7 +113,7 @@ jobs:
 
       # ── 8. Copy brief Markdown files ──────────────────────────────────────
       - name: Copy brief Markdown files to notitia-civica
-        if: ${{ env.NOTITIA_PAT != '' }}
+        if: ${{ env.PUBLISH_ENABLED == 'true' }}
         env:
           PUB_DATE: ${{ steps.pub_date.outputs.date }}
         run: |
@@ -128,7 +131,7 @@ jobs:
 
       # ── 9. Commit and push to notitia-civica ──────────────────────────────
       - name: Commit and push to notitia-civica
-        if: ${{ env.NOTITIA_PAT != '' }}
+        if: ${{ env.PUBLISH_ENABLED == 'true' }}
         working-directory: notitia-civica
         env:
           PUB_DATE: ${{ steps.pub_date.outputs.date }}
@@ -165,7 +168,7 @@ jobs:
         env:
           PUB_DATE: ${{ steps.pub_date.outputs.date }}
         run: |
-          if [ -n "${NOTITIA_PAT:-}" ]; then
+          if [ "${PUBLISH_ENABLED:-false}" = "true" ]; then
             publish_status="enabled"
           else
             publish_status="skipped (NOTITIA_PAT secret not configured)"
