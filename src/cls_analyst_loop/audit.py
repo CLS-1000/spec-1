@@ -94,24 +94,14 @@ Analyst's report:
 Audit this report using the instructions above."""
 
     audit_text = client.complete(prompt, system=AUDIT_SYSTEM_PROMPT)
+    tier = client.get_active_tier()
+    audit_data = _parse_audit(audit_text, output_id, tier)
 
-    try:
-        audit_data = json.loads(audit_text)
-    except json.JSONDecodeError:
-        logger.error(f"Could not parse audit JSON for output {output_id}")
-        audit_data = {
-            "claims_confirmed": 0,
-            "claims_flagged": 0,
-            "claims_dropped": 0,
-            "confidence": 0.0,
-            "findings": [],
-        }
-
-    audit_id = AuditResult.make_id(output_id, "claude", datetime.now(timezone.utc))
+    audit_id = AuditResult.make_id(output_id, tier, datetime.now(timezone.utc))
     result = AuditResult(
         audit_id=audit_id,
         output_id=output_id,
-        audit_llm="claude",
+        audit_llm=tier,
         audit_prompt=prompt,
         claims_confirmed=audit_data.get("claims_confirmed", 0),
         claims_flagged=audit_data.get("claims_flagged", 0),
@@ -120,3 +110,47 @@ Audit this report using the instructions above."""
         confidence=audit_data.get("confidence", 0.0),
     )
     return result
+
+
+# Tier label FallbackLLMClient reports when neither Claude nor Ollama answered.
+_RULES_TIER = "mock"
+
+_AUDIT_KEYS = ("claims_confirmed", "claims_flagged", "claims_dropped", "confidence", "findings")
+
+
+def _null_audit(reason: str) -> dict:
+    """An audit record that says plainly no audit happened, at zero confidence."""
+    return {
+        "claims_confirmed": 0,
+        "claims_flagged": 0,
+        "claims_dropped": 0,
+        "confidence": 0.0,
+        "findings": [{
+            "claim": "(entire report)",
+            "problem": reason,
+            "severity": "HIGH",
+            "suggested_edit": "Retry audit",
+        }],
+    }
+
+
+def _parse_audit(audit_text: str, output_id: str, tier: str) -> dict:
+    """Parse model output into the audit shape, or return a zero-confidence null audit.
+
+    The rule-based tier returns verifier-schema JSON, which carries its own
+    ``confidence``. Accepting it would record a rule score as an audit result,
+    so a rules-tier response, unparseable text, or JSON without the audit keys
+    all become an explicit "no audit" record instead.
+    """
+    if tier == _RULES_TIER:
+        logger.error("No model tier answered the audit for output %s", output_id)
+        return _null_audit("No model audit ran: only the rule-based fallback tier was available.")
+    try:
+        data = json.loads(audit_text)
+    except json.JSONDecodeError:
+        logger.error("Could not parse audit JSON for output %s", output_id)
+        return _null_audit(f"Audit response from tier '{tier}' was not valid JSON.")
+    if not isinstance(data, dict) or not all(k in data for k in _AUDIT_KEYS):
+        logger.error("Audit JSON for output %s is missing required keys", output_id)
+        return _null_audit(f"Audit response from tier '{tier}' did not match the audit schema.")
+    return data
