@@ -47,7 +47,9 @@ jobs:
             git -C _data switch --orphan data
           fi
           # Bring prior state into the workspace so novelty/baselines see history.
-          for p in spec1_intelligence.jsonl data briefs logs; do
+          # spec1.db is the SQLite side of the dual-write; without it every run
+          # starts with an empty database even though the JSONL history survives.
+          for p in spec1_intelligence.jsonl spec1.db data briefs logs; do
             if [ -e "_data/$p" ]; then cp -a "_data/$p" . ; fi
           done
 
@@ -58,12 +60,14 @@ jobs:
           SPEC1_ENVIRONMENT: production
         run: |
           mkdir -p logs
+          LOG="logs/cycle_$(date -u +%Y%m%dT%H%M%SZ).log"
+          echo "CYCLE_LOG=$LOG" >> "$GITHUB_ENV"
           python -m spec1_core.app.cycle --store spec1_intelligence.jsonl --env production --timeout 15 \
-            2>&1 | tee "logs/cycle_$(date -u +%Y%m%dT%H%M%SZ).log"
+            2>&1 | tee "$LOG"
 
       - name: Commit outputs to data branch
         run: |
-          for p in spec1_intelligence.jsonl data briefs logs; do
+          for p in spec1_intelligence.jsonl spec1.db data briefs logs; do
             if [ -e "$p" ]; then rm -rf "_data/$p"; cp -a "$p" "_data/$p"; fi
           done
           if [ -d generated/briefs ]; then
@@ -76,6 +80,10 @@ jobs:
             echo "No changes to commit."
             exit 0
           fi
-          RUN_ID=$(tail -n 1 spec1_intelligence.jsonl 2>/dev/null | python -c "import sys,json; print(json.loads(sys.stdin.read() or '{}').get('run_id','unknown'))" || echo unknown)
+          # Take the run ID from this run's own log, not the store tail: a run where
+          # every signal was already seen appends nothing, so the last JSONL row
+          # would carry the previous run's ID.
+          RUN_ID=$(sed -n 's/^ *run_id *: *//p' "../$CYCLE_LOG" 2>/dev/null | head -n 1)
+          RUN_ID=${RUN_ID:-unknown}
           git commit -q -m "data: cycle ${RUN_ID} $(date -u +%Y-%m-%dT%H:%MZ)"
           git push origin data

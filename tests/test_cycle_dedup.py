@@ -99,6 +99,25 @@ def test_reprocess_seen_opt_out(tmp_path):
     assert JsonlStore(store_path).count() == 2 * first["records_stored"]
 
 
+def test_unreadable_store_fails_closed(tmp_path):
+    """If prior signal IDs can't be read, nothing is scored or stored, and the error is recorded."""
+    store_path = tmp_path / "intel.jsonl"
+    with patch.object(JsonlStore, "signal_ids", side_effect=OSError("disk read failed")):
+        stats = _run(store_path, _feed(*TWO_ITEMS), "run-dedup-fail")
+    assert stats["signals_harvested"] == 2
+    assert stats["records_stored"] == 0
+    assert stats["opportunities_found"] == 0
+    assert any(e.startswith("dedup:") for e in stats["errors"])
+    assert JsonlStore(store_path).count() == 0
+
+
+def test_missing_store_is_not_a_dedup_failure(tmp_path):
+    """A first run with no store yet must still score and store normally."""
+    stats = _run(tmp_path / "does-not-exist.jsonl", _feed(*TWO_ITEMS), "run-dedup-cold")
+    assert stats["records_stored"] > 0
+    assert not any(e.startswith("dedup:") for e in stats["errors"])
+
+
 def _snapshot(paths: list[Path]) -> dict[str, float]:
     snap = {}
     for base in paths:

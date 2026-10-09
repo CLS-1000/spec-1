@@ -253,15 +253,22 @@ def run_cycle(
         print("\n[3/7] Scoring through 4 gates (credibility/volume/velocity/novelty)...")
 
     seen: set[str] = set()
+    dedup_failed = False
     if skip_seen:
         try:
             seen = JsonlStore(store_path).signal_ids()
         except Exception as exc:
+            # Fail closed: with an empty `seen` set every live feed item would be
+            # re-scored and re-appended. A missing store is not an error here
+            # (read_all returns nothing), so this only fires on a real read failure.
             stats["errors"].append(f"dedup:{exc}")
+            dedup_failed = True
+            if verbose:
+                print(f"      [ERROR] Could not read stored signal IDs — skipping scoring and storage: {exc}")
 
     opportunities: list[tuple[Signal, ParsedSignal, Opportunity]] = []
     blocked = 0
-    for sig, ps in parsed_signal_pairs:
+    for sig, ps in ([] if dedup_failed else parsed_signal_pairs):
         if skip_seen:
             if sig.signal_id in seen:
                 stats["signals_skipped_seen"] += 1
