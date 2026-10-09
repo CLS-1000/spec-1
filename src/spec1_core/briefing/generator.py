@@ -20,6 +20,7 @@ if load_dotenv is not None:
     load_dotenv()
 
 import logging
+import re
 from datetime import datetime, timezone
 
 import anthropic
@@ -178,7 +179,27 @@ def _build_prompt(records: list[dict], cycle_stats: dict, mode: str = "standard"
     )
 
 
-def _fallback_brief(cycle_stats: dict) -> str:
+def _record_conf(record: dict) -> float:
+    try:
+        return float(record.get("confidence", record.get("outcome_confidence", 0.0)))
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _record_summary(record: dict, limit: int = 160) -> str:
+    """One-line human-readable summary of a record's pattern text."""
+    text = str(record.get("pattern", "—")).split(" | gates=")[0]
+    text = " ".join(re.sub(r"^\s*\[[A-Z]+\]\s*", "", text).split())
+    return text if len(text) <= limit else text[: limit - 1].rstrip() + "…"
+
+
+def _fallback_brief(
+    cycle_stats: dict,
+    records: list[dict] | None = None,
+    reason: str = "API key not configured",
+) -> str:
+    """Rule-based brief in the canonical layout. No LLM required."""
+    records = records or []
     date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     run_id = cycle_stats.get("run_id", "—")
     harvested = cycle_stats.get("signals_harvested", 0)
@@ -187,21 +208,101 @@ def _fallback_brief(cycle_stats: dict) -> str:
     errors = cycle_stats.get("errors", [])
     finished = cycle_stats.get("finished_at", "—")
 
-    error_block = ""
-    if errors:
-        error_lines = "\n".join(f"  - {e}" for e in errors)
-        error_block = f"\n\n**Harvest errors ({len(errors)}):**\n{error_lines}"
-
-    return (
-        f"## SPEC-1 DAILY BRIEF — {date_str}\n\n"
-        f"*AI brief unavailable — API key not configured. Cycle stats below.*\n\n"
-        f"**Run:** {run_id}  \n"
-        f"**Completed:** {finished}  \n"
-        f"**Signals harvested:** {harvested}  \n"
-        f"**Opportunities found:** {opportunities}  \n"
-        f"**Records stored:** {stored}"
-        f"{error_block}"
+    elevated = [
+        r for r in records
+        if r.get("outcome_classification", r.get("classification", "")) in (VERIF_CORROBORATED, "ESCALATE")
+    ]
+    remaining = sorted(
+        (r for r in records if r not in elevated), key=_record_conf, reverse=True
     )
+    geo = [r for r in remaining if _classify_domain(r) == "geo"][:5]
+    cyber = [r for r in remaining if _classify_domain(r) == "cyber"][:5]
+
+    def _bullet(r: dict) -> str:
+        url = r.get("signal_url", "")
+        url_str = f" <{url}>" if url else ""
+        return (
+            f"- **{str(r.get('signal_source', 'unknown')).upper()}** — {_record_summary(r)} "
+            f"(confidence {_record_conf(r):.2f}){url_str}"
+        )
+
+    lines = [
+        f"## SPEC-1 DAILY BRIEF — {date_str}",
+        "",
+        f"*AI brief unavailable — {reason}. Rule-based brief generated from cycle data.*",
+        "",
+        f"**Run:** {run_id}  ",
+        f"**Completed:** {finished}  ",
+        f"**Signals harvested:** {harvested}  ",
+        f"**Opportunities found:** {opportunities}  ",
+        f"**Records stored:** {stored}",
+        "",
+        "### Executive Summary",
+        f"The cycle harvested {harvested} signals, {opportunities} cleared all four gates "
+        f"and {stored} records were stored. {len(elevated)} record(s) were elevated "
+        "(CORROBORATED or ESCALATE). No narrative synthesis was performed; "
+        "treat every entry as unverified until reviewed.",
+        "",
+        "### Elevated Signals",
+    ]
+    if elevated:
+        lines += [_bullet(r) for r in sorted(elevated, key=_record_conf, reverse=True)]
+    else:
+        lines.append("No signals cleared the elevated threshold this cycle.")
+
+    lines += ["", "### Domain Briefings", "", "**Geopolitics**"]
+    lines += [_bullet(r) for r in geo] or ["No geopolitics signals this cycle."]
+    lines += ["", "**Cyber / Info Ops**"]
+    lines += [_bullet(r) for r in cyber] or ["No cyber / info-ops signals this cycle."]
+
+    patterns = cycle_stats.get("psyop_patterns_fired", [])
+    chains = cycle_stats.get("psyop_evidence_chains", [])
+    lines += ["", "**Psyop / Narrative Analysis**"]
+    if chains:
+        for ec in chains:
+            lines.append(
+                f"- {ec.get('pattern_name', '—')} "
+                f"(confidence {float(ec.get('confidence', 0.0)):.2f}): {ec.get('summary', '—')}"
+            )
+    else:
+        lines.append("No psyop patterns detected this cycle.")
+
+    lines += ["", "### Story Leads"]
+    lead_pool = (sorted(elevated, key=_record_conf, reverse=True) + remaining)[:3]
+    if lead_pool:
+        for r in lead_pool:
+            lines += [
+                "",
+                f"**LEAD: {_record_summary(r, 90)}**",
+                f"Signal: {r.get('signal_source', 'unknown')}, "
+                f"confidence {_record_conf(r):.2f}",
+                f"The question: {_record_summary(r, 200)}",
+                f"Documents to request: {r.get('signal_url') or '—'}",
+                f"Confidence: {'HIGH' if _record_conf(r) >= 0.7 else 'MEDIUM' if _record_conf(r) >= 0.4 else 'LOW'}",
+            ]
+    else:
+        lines.append("No leads this cycle.")
+
+    lines += ["", "### Watch List — Tomorrow"]
+    watch = (sorted(elevated, key=_record_conf, reverse=True) + remaining)[:3]
+    lines += [f"- {r.get('signal_source', 'unknown')}: {_record_summary(r, 100)}" for r in watch] \
+        or ["- Nothing to monitor."]
+
+    lines += [
+        "",
+        "### Psyop Assessment",
+        f"Classification: {cycle_stats.get('psyop_classification', '—')} · "
+        f"Score: {cycle_stats.get('psyop_score', '—')} · "
+        f"Patterns fired: {', '.join(patterns) if patterns else 'none'}",
+        "",
+        "### Signal Notes",
+    ]
+    if errors:
+        lines.append(f"**Harvest errors ({len(errors)}):**")
+        lines += [f"  - {e}" for e in errors]
+    else:
+        lines.append("No harvest errors this cycle.")
+    return "\n".join(lines)
 
 
 def generate_brief(records: list[dict], cycle_stats: dict, mode: str = "standard") -> tuple[str, str]:
@@ -222,7 +323,7 @@ def generate_brief(records: list[dict], cycle_stats: dict, mode: str = "standard
     if not api_key:
         print("[briefing] ANTHROPIC_API_KEY not set in environment — returning fallback brief")
         logger.warning("ANTHROPIC_API_KEY not set — returning fallback brief")
-        return _fallback_brief(cycle_stats), ""
+        return _fallback_brief(cycle_stats, records), ""
 
     if mode == "geopolitics":
         sys_prompt = GEO_SYSTEM_PROMPT
@@ -248,4 +349,4 @@ def generate_brief(records: list[dict], cycle_stats: dict, mode: str = "standard
     except Exception as exc:
         print(f"[briefing] API call failed: {type(exc).__name__}: {exc}")
         logger.error("Brief generation failed: %s", exc)
-        return _fallback_brief(cycle_stats), prompts_text
+        return _fallback_brief(cycle_stats, records, reason="API call failed"), prompts_text

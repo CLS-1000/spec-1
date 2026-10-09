@@ -215,10 +215,12 @@ def run_cycle(
         print(f"\n[2/7] Parsing {len(signals)} signals...")
 
     parsed_signals: list[ParsedSignal] = []
+    parsed_signal_pairs: list[tuple[Signal, ParsedSignal]] = []
     for sig in signals:
         try:
             ps = parse_signal(sig)
             parsed_signals.append(ps)
+            parsed_signal_pairs.append((sig, ps))
         except Exception as exc:
             stats["errors"].append(f"parse:{sig.signal_id}:{exc}")
 
@@ -259,7 +261,7 @@ def run_cycle(
 
     opportunities: list[tuple[Signal, ParsedSignal, Opportunity]] = []
     blocked = 0
-    for sig, ps in zip(signals, parsed_signals):
+    for sig, ps in parsed_signal_pairs:
         if skip_seen:
             if sig.signal_id in seen:
                 stats["signals_skipped_seen"] += 1
