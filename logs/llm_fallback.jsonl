@@ -652,3 +652,5 @@
 {"ts": "2026-10-09T18:42:42Z", "session": "a37f0afa", "tier": "mock", "latency_ms": 0, "char_count": 147, "success": true}
 {"ts": "2026-10-09T18:42:42Z", "session": "8659b4cb", "tier": "mock", "latency_ms": 0, "char_count": 147, "success": true}
 {"ts": "2026-10-09T18:42:42Z", "session": "253d320a", "tier": "mock", "latency_ms": 0, "char_count": 147, "success": true}
+{"ts": "2026-10-10T17:43:05Z", "session": "eeea3705", "tier": "mock", "latency_ms": 13, "char_count": 147, "success": true}
+{"ts": "2026-10-10T17:43:05Z", "session": "218f7681", "tier": "mock", "latency_ms": 0, "char_count": 147, "success": true}
