@@ -12,7 +12,8 @@ VERIFIED / INFERRED / SPECULATION tiers, and produces a PublicWeeklyBrief.
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+import re
+from datetime import date, datetime, timedelta, timezone
 from typing import Sequence
 
 from cls_weekly_brief.schemas import (
@@ -33,6 +34,26 @@ def _week_id_from_date(dt: datetime) -> str:
     """Generate week ID in YYYY-W## format."""
     year, week, _ = _get_iso_week(dt)
     return f"{year:04d}-W{week:02d}"
+
+
+_WEEK_ID = re.compile(r"^(\d{4})-W(\d{2})$")
+
+
+def _week_start_from_id(week_id: str) -> datetime:
+    """Monday 00:00 UTC of an ISO week given as "YYYY-W##".
+
+    Raises ValueError for a malformed id or a week that does not exist
+    (e.g. W54, or W53 in a 52-week year).
+    """
+    match = _WEEK_ID.match(week_id or "")
+    if not match:
+        raise ValueError(f"week_id must look like 2026-W34, got {week_id!r}")
+    year, week = int(match.group(1)), int(match.group(2))
+    try:
+        monday = date.fromisocalendar(year, week, 1)
+    except ValueError as exc:
+        raise ValueError(f"{week_id!r} is not a real ISO week: {exc}") from exc
+    return datetime(monday.year, monday.month, monday.day, tzinfo=timezone.utc)
 
 
 def _week_start_from_date(dt: datetime) -> datetime:
@@ -59,13 +80,41 @@ def _is_in_week(record_ts: str, week_start: datetime) -> bool:
         return False
 
 
+def _record_ts(record: dict) -> str:
+    return (
+        record.get("written_at")
+        or record.get("created_at")
+        or record.get("published_at")
+        or ""
+    )
+
+
+def _record_url(record: dict) -> str:
+    # Live IntelligenceRecords carry `signal_url`; older/hand-made rows may use `url`.
+    return record.get("signal_url") or record.get("url") or record.get("doc_url") or ""
+
+
+def _record_source(record: dict) -> str:
+    return record.get("signal_source") or _record_url(record)
+
+
+def _notes(record: dict) -> str:
+    parts = [f"Classification: {record.get('classification', 'UNKNOWN')}"]
+    source = record.get("signal_source")
+    if source:
+        parts.append(f"Source: {source}")
+    return "; ".join(parts)
+
+
 def _classify_evidence(record: dict) -> EvidenceTier:
     """Classify record confidence into VERIFIED / INFERRED / SPECULATION."""
     confidence = record.get("confidence", 0.5)
     classification = record.get("classification", "").upper()
     source_weight = record.get("source_weight", 0.5)
 
-    # VERIFIED: High confidence + Corroborated classification + credible source
+    # VERIFIED: the verifier classified the record CORROBORATED, with high confidence,
+    # from a credible source. This module does not count independent sources itself;
+    # the methodology note says exactly this rather than claiming more.
     if confidence >= 0.8 and "CORROBORATED" in classification and source_weight >= 0.7:
         return EvidenceTier.VERIFIED
 
@@ -135,9 +184,11 @@ def produce_weekly_brief(
 
     if week_id is None:
         week_id = _week_id_from_date(reference_date)
-
-    week_start = _week_start_from_date(reference_date)
-    week_end = week_start + timedelta(days=7)
+        week_start = _week_start_from_date(reference_date)
+    else:
+        # The requested week decides which records are read -- not today's date.
+        week_start = _week_start_from_id(week_id)
+    week_last_day = week_start + timedelta(days=6)  # Sunday, for display
 
     # Filter records to this week
     records_list = list(records)
@@ -145,7 +196,7 @@ def produce_weekly_brief(
         r
         for r in records_list
         if _is_in_week(
-            r.get("written_at") or r.get("created_at") or r.get("published_at", ""),
+            _record_ts(r),
             week_start,
         )
     ]
@@ -186,9 +237,9 @@ def produce_weekly_brief(
                     tier=tier,
                     source_ids=[rec.get("record_id", rec.get("signal_id", ""))],
                     confidence=confidence,
-                    published_at=rec.get("written_at", rec.get("created_at", "")),
-                    source_url=rec.get("url", rec.get("doc_url", "")),
-                    analyst_notes=f"Classification: {rec.get('classification', 'UNKNOWN')}",
+                    published_at=_record_ts(rec),
+                    source_url=_record_url(rec),
+                    analyst_notes=_notes(rec),
                 )
 
                 if tier == EvidenceTier.VERIFIED:
@@ -213,12 +264,15 @@ def produce_weekly_brief(
     methodology_note = (
         f"This brief aggregates {len(week_records)} intelligence signals from "
         f"{len(by_category)} domains over one week. Evidence is classified as follows:\n\n"
-        f"• **VERIFIED** ({verified_total} items): Corroborated across ≥2 credible sources, "
-        f"high confidence (≥0.8)\n"
-        f"• **INFERRED** ({inferred_total} items): Analysis from credible signals, "
-        f"medium-high confidence (0.65–0.79)\n"
-        f"• **SPECULATION** ({speculation_total} items): Preliminary hypotheses requiring validation\n\n"
-        f"All claims link to source records (IDs). Timestamps reflect UTC publication/receipt."
+        f"• **VERIFIED** ({verified_total} items): The automated verifier marked the record "
+        f"CORROBORATED, with confidence ≥0.8 and source weight ≥0.7. Each item is one record "
+        f"from one source; this brief does not independently count corroborating sources.\n"
+        f"• **INFERRED** ({inferred_total} items): Confidence ≥0.65 and source weight ≥0.6, "
+        f"not marked CORROBORATED.\n"
+        f"• **SPECULATION** ({speculation_total} items): Everything else -- preliminary, "
+        f"requires validation.\n\n"
+        f"Every item lists its source record ID and, where available, its source and link. "
+        f"Timestamps are UTC."
     )
 
     # Build summary
@@ -238,7 +292,7 @@ def produce_weekly_brief(
         brief_id=brief_id,
         week_id=week_id,
         week_start=week_start.strftime("%Y-%m-%d"),
-        week_end=week_end.strftime("%Y-%m-%d"),
+        week_end=week_last_day.strftime("%Y-%m-%d"),
         executive_summary=summary,
         methodology_note=methodology_note,
         sections=sections,
@@ -250,6 +304,6 @@ def produce_weekly_brief(
         metadata={
             "week_id": week_id,
             "categories": active_categories,
-            "source_count": len(set(r.get("url", r.get("doc_url", "")) for r in week_records)),
+            "source_count": len({s for s in (_record_source(r) for r in week_records) if s}),
         },
     )

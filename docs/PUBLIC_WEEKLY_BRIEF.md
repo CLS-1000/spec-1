@@ -30,7 +30,7 @@ src/cls_weekly_brief/
 
 Three-tier evidence classification:
 
-- **VERIFIED** — Corroborated across ≥2 credible sources, confidence ≥ 0.8
+- **VERIFIED** — Verifier classified the record CORROBORATED, confidence ≥ 0.8, source weight ≥ 0.7 (one record, one source — independent sources are not counted)
 - **INFERRED** — Analysis from credible signals, confidence 0.65–0.79
 - **SPECULATION** — Preliminary hypothesis, requires validation (confidence < 0.65)
 
@@ -77,7 +77,7 @@ Return the most recently produced weekly brief (summary view).
   "brief_id": "pwb_abc123def456",
   "week_id": "2026-W34",
   "week_start": "2026-08-17",
-  "week_end": "2026-08-24",
+  "week_end": "2026-08-23",
   "records_analyzed": 42,
   "verified_count": 12,
   "inferred_count": 18,
@@ -113,7 +113,7 @@ Return complete brief for a specific ISO week (e.g., `2026-W34`).
   "brief_id": "pwb_abc123def456",
   "week_id": "2026-W34",
   "week_start": "2026-08-17",
-  "week_end": "2026-08-24",
+  "week_end": "2026-08-23",
   "executive_summary": "...",
   "methodology_note": "...",
   "sections": [
@@ -175,7 +175,7 @@ PYTHONPATH=src python -m spec1_core.tools.generate_weekly_brief \
 
 **Arguments:**
 - `--intel` — Path to IntelligenceRecord JSONL store (default: `spec1_intelligence.jsonl`)
-- `--week` — ISO week "YYYY-W##" (default: current week)
+- `--week` — ISO week "YYYY-W##" (default: current week). The brief covers exactly that Monday–Sunday; a malformed or non-existent week is an error.
 - `--out-dir` — Output directory (default: `generated/weekly_briefs`)
 
 **Output:**
@@ -237,7 +237,7 @@ All other signals (low confidence, unverified sources, preliminary hypotheses).
 ```markdown
 # SPEC-1 Public Weekly Intelligence Brief — 2026-W34
 
-**Week of 2026-08-17 to 2026-08-24**
+**Week of 2026-08-17 to 2026-08-23**
 
 *Produced: 2026-08-24 23:00 UTC*
 
@@ -245,7 +245,7 @@ All other signals (low confidence, unverified sources, preliminary hypotheses).
 
 This brief aggregates 42 intelligence signals from 5 domains over one week. Evidence is classified as follows:
 
-• **VERIFIED** (12 items): Corroborated across ≥2 credible sources, high confidence (≥0.8)
+• **VERIFIED** (12 items): Verifier marked CORROBORATED, confidence ≥0.8, source weight ≥0.7
 • **INFERRED** (18 items): Analysis from credible signals, medium-high confidence (0.65–0.79)
 • **SPECULATION** (12 items): Preliminary hypotheses requiring validation
 

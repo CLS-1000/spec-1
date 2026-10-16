@@ -8,9 +8,7 @@
 
 from __future__ import annotations
 
-import json
-import tempfile
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -128,7 +126,7 @@ class TestProduceWeeklyBrief:
         assert brief.speculation_count == 0
 
     def test_produce_brief_with_verified_records(self):
-        now = datetime.now(timezone.utc)
+        now = datetime(2026, 8, 19, 12, 0, tzinfo=timezone.utc)  # inside 2026-W34
         records = [
             {
                 "record_id": "rec_1",
@@ -145,7 +143,7 @@ class TestProduceWeeklyBrief:
         assert brief.verified_count == 1
 
     def test_produce_brief_with_inferred_records(self):
-        now = datetime.now(timezone.utc)
+        now = datetime(2026, 8, 19, 12, 0, tzinfo=timezone.utc)  # inside 2026-W34
         records = [
             {
                 "record_id": "rec_2",
@@ -161,7 +159,7 @@ class TestProduceWeeklyBrief:
         assert brief.inferred_count == 1
 
     def test_produce_brief_categorization(self):
-        now = datetime.now(timezone.utc)
+        now = datetime(2026, 8, 19, 12, 0, tzinfo=timezone.utc)  # inside 2026-W34
         records = [
             {
                 "record_id": "rec_military",
@@ -272,6 +270,7 @@ class TestWeeklyBriefStore:
     def test_store_creation(self, tmp_path: Path):
         store_path = tmp_path / "weekly_briefs.jsonl"
         store = WeeklyBriefStore(store_path)
+        assert store.path == store_path
         assert not store_path.exists()
 
     def test_store_save_and_read(self, tmp_path: Path):
@@ -385,7 +384,7 @@ class TestWeeklyBriefStore:
 class TestIntegration:
     def test_full_workflow(self, tmp_path: Path):
         # Create some test records
-        now = datetime.now(timezone.utc)
+        now = datetime(2026, 8, 19, 12, 0, tzinfo=timezone.utc)  # inside 2026-W34
         records = [
             {
                 "record_id": "rec_1",
@@ -423,3 +422,78 @@ class TestIntegration:
         md = to_markdown(brief)
         assert len(md) > 0
         assert "Military" in md or "military" in md.lower()
+
+
+class TestWeekSelection:
+    """Regression tests: the requested week decides which records are read."""
+
+    def _rec(self, rid: str, ts: str, **extra) -> dict:
+        return {"record_id": rid, "pattern": "NATO exercise", "written_at": ts,
+                "confidence": 0.7, "source_weight": 0.7, **extra}
+
+    def test_explicit_week_reads_that_week_not_today(self):
+        records = [
+            self._rec("in_w34", "2026-08-19T10:00:00+00:00"),
+            self._rec("in_w42", "2026-10-14T10:00:00+00:00"),
+        ]
+        brief = produce_weekly_brief(
+            records, week_id="2026-W34",
+            reference_date=datetime(2026, 10, 16, tzinfo=timezone.utc),
+        )
+        assert brief.week_start == "2026-08-17"
+        assert brief.week_end == "2026-08-23"
+        assert brief.records_analyzed == 1
+        ids = [i.source_ids[0] for s in brief.sections
+               for i in s.verified_items + s.inferred_items + s.speculation_items]
+        assert ids == ["in_w34"]
+
+    def test_week_bounds_are_monday_to_sunday(self):
+        records = [
+            self._rec("sun_before", "2026-08-16T23:59:59+00:00"),
+            self._rec("monday", "2026-08-17T00:00:00+00:00"),
+            self._rec("sunday", "2026-08-23T23:59:59+00:00"),
+            self._rec("next_monday", "2026-08-24T00:00:00+00:00"),
+        ]
+        brief = produce_weekly_brief(records, week_id="2026-W34")
+        assert brief.records_analyzed == 2
+
+    def test_default_week_still_follows_reference_date(self):
+        brief = produce_weekly_brief(
+            [], reference_date=datetime(2026, 10, 16, tzinfo=timezone.utc)
+        )
+        assert brief.week_id == "2026-W42"
+        assert brief.week_start == "2026-10-12"
+        assert brief.week_end == "2026-10-18"
+
+    @pytest.mark.parametrize("bad", ["2026-34", "W34", "2026-W5", "2026-W54", "2025-W53", ""])
+    def test_malformed_or_nonexistent_week_is_rejected(self, bad):
+        # 2025 has 52 ISO weeks, so 2025-W53 does not exist (2026 does have a W53).
+        with pytest.raises(ValueError):
+            produce_weekly_brief([], week_id=bad)
+
+
+class TestSourceAttribution:
+    """Live records carry signal_url / signal_source, not url."""
+
+    def test_live_record_fields_reach_the_brief(self):
+        rec = {
+            "record_id": "rec-097e59b6fbca",
+            "pattern": "Reporting on North Korean GPS jamming",
+            "classification": "INVESTIGATE",
+            "confidence": 0.7,
+            "source_weight": 0.85,
+            "signal_source": "nk_news",
+            "signal_url": "https://www.nknews.org/2026/10/example",
+            "written_at": "2026-10-14T17:14:26+00:00",
+        }
+        brief = produce_weekly_brief([rec], week_id="2026-W42")
+        item = brief.sections[0].inferred_items[0]
+        assert item.source_url == "https://www.nknews.org/2026/10/example"
+        assert "nk_news" in item.analyst_notes
+        assert brief.metadata["source_count"] == 1
+        assert "Link: https://www.nknews.org/2026/10/example" in to_markdown(brief)
+
+    def test_methodology_does_not_claim_multi_source_counting(self):
+        brief = produce_weekly_brief([], week_id="2026-W42")
+        assert "≥2" not in brief.methodology_note
+        assert "does not independently count" in brief.methodology_note

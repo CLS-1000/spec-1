@@ -8,7 +8,7 @@
 
 from __future__ import annotations
 
-from cls_weekly_brief.schemas import PublicWeeklyBrief, EvidenceTier
+from cls_weekly_brief.schemas import PublicWeeklyBrief
 
 
 def to_markdown(brief: PublicWeeklyBrief) -> str:
@@ -65,6 +65,8 @@ def to_markdown(brief: PublicWeeklyBrief) -> str:
                 )
                 if item.source_ids:
                     lines.append(f"  - Source: {', '.join(item.source_ids)}")
+                if item.source_url:
+                    lines.append(f"  - Link: {item.source_url}")
                 if item.published_at:
                     lines.append(f"  - Date: {item.published_at}")
                 if item.analyst_notes:
@@ -81,6 +83,8 @@ def to_markdown(brief: PublicWeeklyBrief) -> str:
                 )
                 if item.source_ids:
                     lines.append(f"  - Basis: {', '.join(item.source_ids)}")
+                if item.source_url:
+                    lines.append(f"  - Link: {item.source_url}")
                 if item.published_at:
                     lines.append(f"  - Date: {item.published_at}")
                 if item.analyst_notes:
@@ -97,6 +101,8 @@ def to_markdown(brief: PublicWeeklyBrief) -> str:
                 )
                 if item.source_ids:
                     lines.append(f"  - Source: {', '.join(item.source_ids)}")
+                if item.source_url:
+                    lines.append(f"  - Link: {item.source_url}")
                 if item.published_at:
                     lines.append(f"  - Date: {item.published_at}")
                 lines.append("")

@@ -28,7 +28,6 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from datetime import datetime, timezone
 from pathlib import Path
 
 from cls_weekly_brief import (
@@ -91,7 +90,11 @@ def main():
     print(f"[generate_weekly_brief] Loaded {len(records)} records from {args.intel}")
 
     # Generate brief
-    brief = produce_weekly_brief(records, week_id=args.week)
+    try:
+        brief = produce_weekly_brief(records, week_id=args.week)
+    except ValueError as exc:
+        print(f"[generate_weekly_brief] {exc}", file=sys.stderr)
+        sys.exit(2)
 
     print(f"[generate_weekly_brief] Generated brief {brief.brief_id}")
     print(f"  Week: {brief.week_id} ({brief.week_start} to {brief.week_end})")

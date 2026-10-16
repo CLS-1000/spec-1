@@ -107,10 +107,13 @@ def generate_weekly_brief(
     Persists to JSONL store and returns summary.
     """
     records = list(intel_store.read_all())
-    brief = produce_weekly_brief(records, week_id=week_id)
+    try:
+        brief = produce_weekly_brief(records, week_id=week_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     store = _get_store()
-    entry = store.save(brief, write_markdown=True)
+    store.save(brief, write_markdown=True)
 
     return {
         "status": "success",

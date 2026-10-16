@@ -12,13 +12,12 @@ import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Literal
 
 
 class EvidenceTier(str, Enum):
     """Classification of evidence quality for public brief."""
 
-    VERIFIED = "VERIFIED"  # Corroborated across ≥2 credible sources, high confidence
+    VERIFIED = "VERIFIED"  # Verifier-CORROBORATED, high confidence, credible source
     INFERRED = "INFERRED"  # Analysis from credible signals, medium-high confidence
     SPECULATION = "SPECULATION"  # Preliminary hypothesis, requires validation
 
