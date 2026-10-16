@@ -24,6 +24,11 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Check out cls_civica sibling (proc_track replay; gpcanon is vendored)
+      run: |
+        git clone --depth 1 https://github.com/CLS-1000/proc_track.git "$RUNNER_TEMP/proc_track"
+        echo "SPEC1_PROC_TRACK_HOME=$RUNNER_TEMP/proc_track" >> "$GITHUB_ENV"
+
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
       with:
@@ -35,6 +40,7 @@ jobs:
         pip install -e ".[dev]"
         pip install ruff bandit[toml] coverage pytest-cov
         pip install "tzlocal>=4.0"
+        pip install cryptography  # cls_civica sealing (Gatepost Ed25519)
 
     - name: Check hardcoded labels
       run: python .github/scripts/check_hardcoded_labels.py
