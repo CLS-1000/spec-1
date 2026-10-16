@@ -22,5 +22,10 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+      - name: cls_civica sibling, as its README documents (gpcanon is vendored)
+        run: |
+          git clone --depth 1 https://github.com/CLS-1000/proc_track.git "$RUNNER_TEMP/proc_track"
+          pip install cryptography
+          echo "SPEC1_PROC_TRACK_HOME=$RUNNER_TEMP/proc_track" >> "$GITHUB_ENV"
       - name: Full test suite on the fresh install
         run: python -m pytest tests/ -q

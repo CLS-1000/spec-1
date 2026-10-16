@@ -35,6 +35,7 @@ where = ["src"]
 "spec1_core" = ["core/prompts/*.md"]
 "spec1_analytics" = ["**/*.py"]
 "spec1_api" = ["static/*.html"]
+"cls_civica" = ["templates/*.html"]
 
 [tool.pytest.ini_options]
 minversion = "7.0"
@@ -69,6 +70,7 @@ exclude = [".venv", ".git", "build", "dist"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["E501"]   # long XML/string literals in test fixtures are acceptable
+"src/cls_civica/vendor/verify_bundle.py" = ["F811"]   # byte-identical copy of gatepost bin/verify.py (generated bundle); never edit
 
 [tool.bandit]
 severity_level = "medium"

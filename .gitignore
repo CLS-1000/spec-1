@@ -104,3 +104,9 @@ generated/
 docs/launch_prep/
 docs/scalability_tracker.md
 AUDIT_REPORT.md
+
+# Signing keys and build output never enter the repo
+*.pem
+*.key
+DEMO_KEY.pem
+out/
