@@ -1,62 +1,62 @@
-## SPEC-1 DAILY BRIEF — 2026-10-15
+## SPEC-1 DAILY BRIEF — 2026-10-16
 
 *AI brief unavailable — API key not configured. Rule-based brief generated from cycle data.*
 
-**Run:** run-d0a42e33d408  
-**Completed:** 2026-10-15T17:40:46.679957+00:00  
-**Signals harvested:** 689  
-**Opportunities found:** 30  
-**Records stored:** 30
+**Run:** run-3bb4e19ea193  
+**Completed:** 2026-10-16T17:14:26.535180+00:00  
+**Signals harvested:** 683  
+**Opportunities found:** 23  
+**Records stored:** 23
 
 ### Executive Summary
-The cycle harvested 689 signals, 30 cleared all four gates and 30 records were stored. 1 record(s) were elevated (CORROBORATED or ESCALATE). No narrative synthesis was performed; treat every entry as unverified until reviewed.
+The cycle harvested 683 signals, 23 cleared all four gates and 23 records were stored. 0 record(s) were elevated (CORROBORATED or ESCALATE). No narrative synthesis was performed; treat every entry as unverified until reviewed.
 
 ### Elevated Signals
-- **38_NORTH** — The reporting from 38 North concerning Nuclear Stockpile Uncertainty Amidst, Con (confidence 0.72) <https://www.38north.org/2026/10/nuclear-stockpile-uncertainty-amidst-a-continuing-strategic-missile-launch-drought/>
+No signals cleared the elevated threshold this cycle.
 
 ### Domain Briefings
 
 **Geopolitics**
-- **38_NORTH** — The reporting from 38 North concerning North Korea, New Party Rules, Limits rega (confidence 0.62) <https://www.38north.org/2026/10/north-koreas-new-party-rules-and-the-limits-of-delegated-authority/>
-- **38_NORTH** — The reporting from 38 North concerning North Korea, Expanding Military Capabilit (confidence 0.62) <https://www.38north.org/2026/10/north-koreas-expanding-military-capabilities-across-domains/>
-- **38_NORTH** — The reporting from 38 North concerning Closer, China, Russia regarding closer; c (confidence 0.62) <https://www.38north.org/2026/10/closer-to-china-and-russia-firm-on-nuclear-status/>
-- **38_NORTH** — The reporting from 38 North concerning The Korean, Verification Problem, October (confidence 0.62) <https://www.38north.org/2026/10/the-korean-dmz-has-a-verification-problem/>
-- **38_NORTH** — The reporting from 38 North concerning Private Cars, State Lotteries, North Kore (confidence 0.62) <https://www.38north.org/2026/10/private-cars-and-state-lotteries-in-north-korea/>
+- **RAND** — The reporting from Rand concerning Better Way, Use Criminal Records, Hiring Empl (confidence 0.62) <https://www.rand.org/pubs/commentary/2026/10/a-better-way-to-use-criminal-records-in-hiring.html>
+- **NK_NEWS** — The reporting from Nk News concerning Chinese, North Korea Chinese, North Korea (confidence 0.61) <https://www.nknews.org/2026/10/on-chinese-social-media-users-hail-opening-of-new-bridge-to-north-korea/>
+- **NK_NEWS** — The reporting from Nk News concerning North Korean, North Korea, South Korea reg (confidence 0.61) <https://www.nknews.org/2026/10/north-korean-gps-jamming-along-border-has-plummeted-this-year-data-shows/>
+- **NK_NEWS** — The reporting from Nk News concerning Ukraine, North Korea, Russia regarding ukr (confidence 0.61) <https://www.nknews.org/2026/10/ukraine-blames-smuggling-scheme-on-man-tied-to-north-korea-russia-arms-sales/>
+- **WAR_ON_THE_ROCKS** — The reporting from War On The Rocks concerning China, Strategic Reassessment, In (confidence 0.60) <https://warontherocks.com/chinas-strategic-reassessment-of-india/>
 
 **Cyber / Info Ops**
-- **CIPHER_BRIEF** — The reporting from Cipher Brief concerning What Beijing Calls Open, Washington S (confidence 0.62) <https://www.thecipherbrief.com/what-beijing-calls-open-washington-should-call-an-operation-2678089778>
-- **CIPHER_BRIEF** — The reporting from Cipher Brief concerning Washington Cannot Outsource Saudi Sec (confidence 0.62) <https://www.thecipherbrief.com/washington-cannot-outsource-saudi-security-to-the-mecca-pact>
-- **CIPHER_BRIEF** — The reporting from Cipher Brief concerning The Next War, Attrition, Yemen Battle (confidence 0.61) <https://www.thecipherbrief.com/the-next-war-of-attrition-is-in-yemen>
-- **JUST_SECURITY** — The reporting from Just Security concerning The Mythos, Digital Sovereignty, Ant (confidence 0.55) <https://www.justsecurity.org/157445/anthropic-mythos-digital-sovereignty/?utm_source=rss&utm_medium=rss&utm_campaign=anthropic-mythos-digital-sovereignty>
-- **JUST_SECURITY** — The reporting from Just Security concerning Early Edition, October, Sign regardi (confidence 0.54) <https://www.justsecurity.org/160924/early-edition-october-15-2026/?utm_source=rss&utm_medium=rss&utm_campaign=early-edition-october-15-2026>
+- **CIPHER_BRIEF** — The reporting from Cipher Brief concerning Who Really Makes Decisions, Tehran, A (confidence 0.62) <https://www.thecipherbrief.com/who-really-makes-decisions-in-tehran>
+- **CIPHER_BRIEF** — The reporting from Cipher Brief concerning The Soviet Roots, Russia, Modern Disi (confidence 0.61) <https://www.thecipherbrief.com/the-soviet-roots-of-russias-modern-disinformation-war>
+- **CIPHER_BRIEF** — The reporting from Cipher Brief concerning Europe, Changing Politics, Future reg (confidence 0.61) <https://www.thecipherbrief.com/europes-changing-politics-and-the-future-of-u-s-leadership>
+- **JUST_SECURITY** — The reporting from Just Security concerning Guantanamo Dispatches, Four Possible (confidence 0.56) <https://www.justsecurity.org/161003/guantanamo-dispatches-four-possible-obstacles-to-jury-selection-in-the-uss-cole-case-at-guantanamo-bay/?utm_source=rss&utm_medium=rss&utm_campaign=guantanamo-dispatches-four-possible-obstacles-to-jury-selection-in-the-uss-cole-case-at-guantanamo-bay>
+- **JUST_SECURITY** — The reporting from Just Security concerning Secretary Rubio, Demand Freedom, Uzb (confidence 0.55) <https://www.justsecurity.org/161025/secretary-rubio-demand-freedom-uzbekistan-political-prisoners/?utm_source=rss&utm_medium=rss&utm_campaign=secretary-rubio-demand-freedom-uzbekistan-political-prisoners>
 
 **Psyop / Narrative Analysis**
 - NARRATIVE_CLUSTER (confidence 0.95): 9 sources published north assessments — pattern: NARRATIVE_CLUSTER, confidence: 0.95
 
 ### Story Leads
 
-**LEAD: The reporting from 38 North concerning Nuclear Stockpile Uncertainty Amidst, Con**
-Signal: 38_north, confidence 0.72
-The question: The reporting from 38 North concerning Nuclear Stockpile Uncertainty Amidst, Con
-Documents to request: https://www.38north.org/2026/10/nuclear-stockpile-uncertainty-amidst-a-continuing-strategic-missile-launch-drought/
-Confidence: HIGH
-
-**LEAD: The reporting from 38 North concerning North Korea, New Party Rules, Limits rega**
-Signal: 38_north, confidence 0.62
-The question: The reporting from 38 North concerning North Korea, New Party Rules, Limits rega
-Documents to request: https://www.38north.org/2026/10/north-koreas-new-party-rules-and-the-limits-of-delegated-authority/
+**LEAD: The reporting from Rand concerning Better Way, Use Criminal Records, Hiring Empl**
+Signal: rand, confidence 0.62
+The question: The reporting from Rand concerning Better Way, Use Criminal Records, Hiring Empl
+Documents to request: https://www.rand.org/pubs/commentary/2026/10/a-better-way-to-use-criminal-records-in-hiring.html
 Confidence: MEDIUM
 
-**LEAD: The reporting from 38 North concerning North Korea, Expanding Military Capabilit**
-Signal: 38_north, confidence 0.62
-The question: The reporting from 38 North concerning North Korea, Expanding Military Capabilit
-Documents to request: https://www.38north.org/2026/10/north-koreas-expanding-military-capabilities-across-domains/
+**LEAD: The reporting from Cipher Brief concerning Who Really Makes Decisions, Tehran, A**
+Signal: cipher_brief, confidence 0.62
+The question: The reporting from Cipher Brief concerning Who Really Makes Decisions, Tehran, A
+Documents to request: https://www.thecipherbrief.com/who-really-makes-decisions-in-tehran
+Confidence: MEDIUM
+
+**LEAD: The reporting from Cipher Brief concerning The Soviet Roots, Russia, Modern Disi**
+Signal: cipher_brief, confidence 0.61
+The question: The reporting from Cipher Brief concerning The Soviet Roots, Russia, Modern Disi
+Documents to request: https://www.thecipherbrief.com/the-soviet-roots-of-russias-modern-disinformation-war
 Confidence: MEDIUM
 
 ### Watch List — Tomorrow
-- 38_north: The reporting from 38 North concerning Nuclear Stockpile Uncertainty Amidst, Con
-- 38_north: The reporting from 38 North concerning North Korea, New Party Rules, Limits rega
-- 38_north: The reporting from 38 North concerning North Korea, Expanding Military Capabilit
+- rand: The reporting from Rand concerning Better Way, Use Criminal Records, Hiring Empl
+- cipher_brief: The reporting from Cipher Brief concerning Who Really Makes Decisions, Tehran, A
+- cipher_brief: The reporting from Cipher Brief concerning The Soviet Roots, Russia, Modern Disi
 
 ### Psyop Assessment
 Classification: NOISE · Score: 2 · Patterns fired: NARRATIVE_CLUSTER
@@ -74,19 +74,19 @@ This brief is Markdown. To produce a PDF:
 1. Pandoc (recommended):
 
    ```
-   pandoc briefs/spec1_brief_2026-10-15.md -o briefs/spec1_brief_2026-10-15.pdf --pdf-engine=xelatex
+   pandoc briefs/spec1_brief_2026-10-16.md -o briefs/spec1_brief_2026-10-16.pdf --pdf-engine=xelatex
    ```
 
 2. HTML export, then PDF (weasyprint or wkhtmltopdf):
 
    ```
-   pandoc briefs/spec1_brief_2026-10-15.md -s -o briefs/spec1_brief_2026-10-15.html
-   weasyprint briefs/spec1_brief_2026-10-15.html briefs/spec1_brief_2026-10-15.pdf
-   wkhtmltopdf briefs/spec1_brief_2026-10-15.html briefs/spec1_brief_2026-10-15.pdf
+   pandoc briefs/spec1_brief_2026-10-16.md -s -o briefs/spec1_brief_2026-10-16.html
+   weasyprint briefs/spec1_brief_2026-10-16.html briefs/spec1_brief_2026-10-16.pdf
+   wkhtmltopdf briefs/spec1_brief_2026-10-16.html briefs/spec1_brief_2026-10-16.pdf
    ```
 
 3. SPEC-1 built-in renderer:
 
    ```
-   python -m spec1_core.tools.pdf_render --brief-md briefs/spec1_brief_2026-10-15.md --out briefs/spec1_brief_2026-10-15.pdf
+   python -m spec1_core.tools.pdf_render --brief-md briefs/spec1_brief_2026-10-16.md --out briefs/spec1_brief_2026-10-16.pdf
    ```
