@@ -34,7 +34,12 @@ from spec1_core.schemas.models import (
 )
 from spec1_core.signal.harvester import harvest_all, DEFAULT_FEEDS
 from spec1_core.signal.parser import parse_signal
-from spec1_core.signal.scorer import score_signal
+from spec1_core.signal.scorer import evaluate_gates, score_signal
+from spec1_core.signal.gate_log import (
+    GateDecisionLog,
+    build_decision,
+    default_gate_log_path,
+)
 from spec1_core.investigation.generator import generate_investigation
 from spec1_core.investigation.verifier import verify_investigation
 from spec1_core.intelligence.analyzer import analyze
@@ -268,6 +273,9 @@ def run_cycle(
 
     opportunities: list[tuple[Signal, ParsedSignal, Opportunity]] = []
     blocked = 0
+    gate_log = GateDecisionLog(default_gate_log_path(store_path))
+    stats["gate_decisions_logged"] = 0
+    stats["gate_log_path"] = str(gate_log.path)
     for sig, ps in ([] if dedup_failed else parsed_signal_pairs):
         if skip_seen:
             if sig.signal_id in seen:
@@ -283,6 +291,16 @@ def run_cycle(
         except Exception as exc:
             stats["errors"].append(f"score:{sig.signal_id}:{exc}")
             blocked += 1
+            continue
+        # Log every gate decision — passed and blocked — append-only.
+        try:
+            gate_log.append(build_decision(
+                sig, evaluate_gates(sig, ps), run_id,
+                opportunity_id=opp.opportunity_id if opp is not None else None,
+            ))
+            stats["gate_decisions_logged"] += 1
+        except Exception as exc:
+            stats["errors"].append(f"gate_log:{sig.signal_id}:{exc}")
 
     stats["opportunities_found"] = len(opportunities)
     if verbose:
