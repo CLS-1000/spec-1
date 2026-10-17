@@ -769,3 +769,13 @@
 {"ts": "2026-10-16T17:14:26Z", "session": "70b68149", "tier": "mock", "latency_ms": 0, "char_count": 147, "success": true}
 {"ts": "2026-10-16T17:14:26Z", "session": "e521ae1e", "tier": "mock", "latency_ms": 0, "char_count": 147, "success": true}
 {"ts": "2026-10-16T17:14:26Z", "session": "a0309270", "tier": "mock", "latency_ms": 0, "char_count": 147, "success": true}
+{"ts": "2026-10-17T16:13:08Z", "session": "fe0afc29", "tier": "mock", "latency_ms": 20, "char_count": 147, "success": true}
+{"ts": "2026-10-17T16:13:08Z", "session": "f0a56796", "tier": "mock", "latency_ms": 1, "char_count": 147, "success": true}
+{"ts": "2026-10-17T16:13:08Z", "session": "66af63f0", "tier": "mock", "latency_ms": 1, "char_count": 147, "success": true}
+{"ts": "2026-10-17T16:13:08Z", "session": "914ab8b2", "tier": "mock", "latency_ms": 0, "char_count": 147, "success": true}
+{"ts": "2026-10-17T16:13:08Z", "session": "e3b17d79", "tier": "mock", "latency_ms": 0, "char_count": 147, "success": true}
+{"ts": "2026-10-17T16:13:08Z", "session": "0adabde2", "tier": "mock", "latency_ms": 0, "char_count": 147, "success": true}
+{"ts": "2026-10-17T16:13:08Z", "session": "0a88c739", "tier": "mock", "latency_ms": 0, "char_count": 147, "success": true}
+{"ts": "2026-10-17T16:13:08Z", "session": "04bbf2ba", "tier": "mock", "latency_ms": 0, "char_count": 147, "success": true}
+{"ts": "2026-10-17T16:13:08Z", "session": "8d6cb4c0", "tier": "mock", "latency_ms": 0, "char_count": 147, "success": true}
+{"ts": "2026-10-17T16:13:08Z", "session": "81c9ae2a", "tier": "mock", "latency_ms": 0, "char_count": 147, "success": true}
