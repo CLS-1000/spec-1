@@ -2,8 +2,8 @@
 
 *AI brief unavailable — API key not configured. Rule-based brief generated from cycle data.*
 
-**Run:** run-004b9f40d4c3  
-**Completed:** 2026-10-17T19:17:42.854838+00:00  
+**Run:** run-78a657d6eec0  
+**Completed:** 2026-10-17T19:18:24.661278+00:00  
 **Signals harvested:** 688  
 **Opportunities found:** 0  
 **Records stored:** 0
