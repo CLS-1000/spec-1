@@ -57,8 +57,10 @@ Signals that pass are cross-referenced, scored with a confidence level, and pass
 | Tier | Backend | Notes |
 |------|---------|-------|
 | 1 | Anthropic Claude | Default; fastest |
-| 2 | Local Ollama | Zero-cost local fallback |
+| 2 | Local model | Ollama or any OpenAI-compatible server (Foundry Local, vLLM, LM Studio); zero cost |
 | 3 | Deterministic rules | Always available; no API required |
+
+Tiers are routed per task. A typical setup runs the cycle's analysis on a local model (`SPEC1_LLM_ROUTE_ANALYZE=local,mock`) and reserves Claude for writing the brief. Every call is logged with its task and the backend that answered.
 
 ---
 
