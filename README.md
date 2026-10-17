@@ -1,6 +1,6 @@
 # SPEC-1: engine reports intelligence 
 
-**Version:** 0.6.0 | **Status:** Production-Ready  
+**Version:** 0.6.0 | **Status:** Beta  
 **Organization:** EVASTARARCANA LLC • Portland, OR
 
 ---
@@ -17,7 +17,7 @@ SPEC-1 does the triage work automatically so you can focus on the reporting.
 
 ## What SPEC-1 Is
 
-SPEC-1 is an automated open-source research engine. It monitors 40+ curated public sources, filters every signal through a deterministic four-gate pipeline, and produces structured research reports written to the standard of serious long-form journalism.
+SPEC-1 is an automated open-source research engine. It monitors 40+ curated public sources, filters every signal through a deterministic four-gate pipeline, and produces structured research reports built on the discipline of long-form investigative work: sourced, hedged, and auditable.
 
 The engine writes the first draft. You filter length and tone. You decide what to publish.
 
@@ -33,12 +33,16 @@ Every signal passes through four independent gates. All four must pass or the si
 
 | Gate | What It Checks |
 |------|---------------|
-| **Source credibility** | Known source with a verified track record |
-| **Substance** | Enough content to be meaningful |
-| **Freshness** | Recent enough to act on |
+| **Source credibility** | Source weight from the operator-maintained credibility table |
+| **Substance** | Enough content to be meaningful (length-weighted score) |
+| **Freshness** | Recency score: decays with age |
 | **Novelty** | Contains indicators of something new or unusual |
 
-Every gate decision is logged. You can see exactly why a signal passed or was discarded. No black box, no hidden scoring.
+Thresholds live in one file, `src/spec1_core/config/calibration.py`, set by the operator and never tuned by the system.
+
+Every gate decision, pass or discard, is written to an append-only log: the decision, the gates that failed, and for each gate the measured value and the threshold it was held to. You can see exactly why a signal passed or was discarded. No black box, no hidden scoring.
+
+The log lands next to the intelligence store (`<store>_gate_decisions.jsonl`), or wherever `SPEC1_GATE_LOG_PATH` points.
 
 ### The Pipeline
 
@@ -61,7 +65,7 @@ Signals that pass are cross-referenced, scored with a confidence level, and pass
 ## What You Get
 
 ### Daily Research Brief
-A structured first-draft report written to the standard of NYT, Washington Post, ProPublica. Every claim is sourced. Confidence is stated explicitly — not as adjectives, but as tier labels: *confirmed by two independent sources*, *single-source unconfirmed*, *insufficient signal*. The human edits length and tone before anything goes out.
+A structured first draft, held to the rules a serious investigative desk works by. Every claim is sourced. Confidence is stated explicitly — not as adjectives, but as tier labels: *confirmed by two independent sources*, *single-source unconfirmed*, *insufficient signal*. The human edits length and tone before anything goes out.
 
 ### Story Leads
 Not summaries. Each lead is a dispatch package: the specific anomaly, who has the answer, what documents to request (with FOIA language pre-written), and a Claude prompt pre-loaded with context for immediate use.
@@ -104,7 +108,7 @@ File verdicts on any report — correct, incorrect, partial, unclear. The calibr
 ## Getting Started
 
 ```bash
-git clone https://github.com/mjlak1000/spec-1.git
+git clone https://github.com/CLS-1000/spec-1.git
 cd spec-1
 pip install -e ".[dev]"
 cp .env.example .env
@@ -128,6 +132,7 @@ See [docs/runbook.md](docs/runbook.md) for production deployment and [docs/quick
 |----------|---------|---------|
 | `ANTHROPIC_API_KEY` | Enables Claude (Tier 1 LLM) | unset → Tier 3 |
 | `SPEC1_STORE_PATH` | JSONL output file | `spec1_intelligence.jsonl` |
+| `SPEC1_GATE_LOG_PATH` | Gate-decision log (every pass and discard) | `<store>_gate_decisions.jsonl` |
 | `SPEC1_API_PORT` | API server port | `8000` |
 | `SPEC1_API_KEY` | API authentication (opt-in) | unset → open |
 | `SPEC1_DEV_MODE` | Skip Claude, use local Ollama | `false` |
