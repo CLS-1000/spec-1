@@ -75,6 +75,22 @@ class TestOutcome:
     def test_committee_is_stopped(self):
         assert outcome_of("HB", {"H": "committee"}, False) == L.OUTCOME_STOPPED
 
+    def test_line_item_veto_is_law(self):
+        assert outcome_of("SB", {"S": "line_item_veto_sustained", "H": "signed_by_presiding"}, False) == L.OUTCOME_LAW
+        assert outcome_of("SB", {"S": "enacted_line_item_veto"}, False) == L.OUTCOME_LAW
+
+    def test_override_is_law(self):
+        assert outcome_of("SB", {"S": "veto_overridden", "H": "veto_overridden"}, False) == L.OUTCOME_LAW
+
+    def test_tabled_after_veto_is_vetoed(self):
+        hist = (("2021-08-06T10:40:45", "S", "signed_by_presiding", "vetoed", "governor_vetoed"),
+                ("2021-09-20T10:41:00", "S", "vetoed", "tabled", "motion_to_table"))
+        assert outcome_of("SB", {"S": "tabled", "H": "signed_by_presiding"}, False, hist) == L.OUTCOME_VETOED
+
+    def test_tabled_without_veto_is_not_vetoed(self):
+        hist = (("2025-04-01T10:00:00", "H", "passed", "tabled", "tabled_simple"),)
+        assert outcome_of("HB", {"H": "tabled"}, False, hist) == L.OUTCOME_STOPPED
+
 
 class TestTopics:
     def test_joint_resolution_is_ballot(self):
