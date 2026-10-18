@@ -34,6 +34,7 @@ _STEP_WORDS = {
     "signed_by_presiding": "Signed by the {po}",
     "vetoed": "Vetoed by the Governor",
     "veto_sustained": "Veto stood: the Legislature did not override it",
+    "line_item_veto_sustained": "The vetoed parts stayed out: the Legislature did not override them",
     "overridden": "Legislature overrode the Governor's veto",
     "enacted": "Signed into law by the Governor",
 }
@@ -50,6 +51,7 @@ _RULE_WORDS = {
     "subsequent_referral": "Sent to another {ch} committee",
     "repass_notwithstanding": "{ch} voted to pass it over the Governor's veto",
     "veto_overridden": "Legislature overrode the Governor's veto",
+    "motion_to_table:line_item_veto_message_tabled": "{ch} set aside the Governor's line-item veto message; the law stands",
     "line_item_veto": "Governor vetoed part of it (line-item veto)",
     "enacted_line_item_veto": "Signed into law, with part of it vetoed (line-item veto)",
     "governor_signed_line_item": "Signed into law, with part of it vetoed (line-item veto)",
@@ -121,13 +123,24 @@ def source_query(session: str, prefix: str, number: int) -> str:
     )
 
 
-def outcome_of(prefix: str, states: dict[str, str], halted: bool) -> str:
+# proc_track end states, by what they mean for the measure.
+_LAW_STATES = {"enacted", "enacted_line_item_veto", "line_item_veto_sustained", "veto_overridden"}
+_VETO_STATES = {"vetoed", "veto_sustained"}
+
+
+def outcome_of(prefix: str, states: dict[str, str], halted: bool, history: tuple = ()) -> str:
+    """history: proc_track Item.history rows (occurred_at, chamber, from, to, rule_id).
+
+    A line-item veto is still a law. "tabled" after a veto means the veto stood
+    (SB 721, 2021R1); "tabled" without one is a bill set aside, not a veto.
+    """
     if halted:
         return L.OUTCOME_HALTED
     vals = set(states.values())
-    if "enacted" in vals or "overridden" in vals:
+    if vals & _LAW_STATES:
         return L.OUTCOME_LAW
-    if "veto_sustained" in vals or "vetoed" in vals:
+    was_vetoed = any(h[3] == "vetoed" for h in history)
+    if vals & _VETO_STATES or ("tabled" in vals and was_vetoed):
         return L.OUTCOME_VETOED
     if "adopted" in vals:
         return L.OUTCOME_ADOPTED
@@ -193,7 +206,7 @@ def build_card(
     prefix, number = _split(measure_id)
     measure = f"{prefix} {number}"
     halted = halt is not None
-    outcome = outcome_of(prefix, states, halted)
+    outcome = outcome_of(prefix, states, halted, tuple(history))
     by_date: dict[str, list[int]] = {}
     for r in rows:
         by_date.setdefault(r["ActionDate"][:19], []).append(int(r["MeasureHistoryId"]))
