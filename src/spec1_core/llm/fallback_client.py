@@ -47,6 +47,14 @@ _VALID_BACKENDS = ("claude", "local", "mock")
 _BACKEND_ALIASES = {"ollama": "local", "rules": "mock", "tier3": "mock"}
 
 
+def strip_reasoning(text: str) -> str:
+    """Remove <think>…</think> blocks that reasoning models (Qwen3, DeepSeek-R1) emit."""
+    text = re.sub(r"<think>.*?</think>", "", text or "", flags=re.DOTALL)
+    if "<think>" in text:  # unterminated block: nothing usable follows
+        text = ""
+    return text.strip()
+
+
 def resolve_route(task: str = "default", dev_mode: bool = False) -> list[str]:
     """Return the ordered backends for *task*. ``mock`` is always last."""
     env = os.environ.get
@@ -221,8 +229,10 @@ class FallbackLLMClient:
             return self._claude_complete(prompt, system)
         if backend == "local":
             if self._local_backend == "ollama":
-                return self._ollama_complete(prompt, system)
-            return self._openai_compat_complete(prompt, system)
+                raw = self._ollama_complete(prompt, system)
+            else:
+                raw = self._openai_compat_complete(prompt, system)
+            return strip_reasoning(raw)
         raise ValueError(f"unknown backend {backend!r}")
 
     def _openai_compat_complete(self, prompt: str, system: str) -> str:
@@ -249,10 +259,6 @@ class FallbackLLMClient:
         )
         resp.raise_for_status()
         text = resp.json()["choices"][0]["message"]["content"] or ""
-        # Reasoning models (Qwen3, DeepSeek-R1) prefix answers with <think>…</think>.
-        text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL)
-        if "<think>" in text:  # unterminated block: keep only what follows it
-            text = text.split("</think>")[-1] if "</think>" in text else ""
         self._active_tier = "local"
         return text.strip()
 
