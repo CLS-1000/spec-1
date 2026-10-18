@@ -349,3 +349,49 @@ class TestWaPdcAdapter:
         adapter = WaPdcAdapter()
         result = adapter.fetch()
         assert len(result.errors) > 0
+
+
+# Shape of a real row from the OLIS ``Measures`` entity (OLOData model):
+# prefix and number are separate, there is no CurrentStatus / RelatingClause /
+# ChiefSponsor / Chamber, and status lives in Vetoed / ChapterNumber / CurrentLocation.
+_LIVE_MEASURES = [
+    {"SessionKey": "2025R1", "MeasurePrefix": "HB", "MeasureNumber": 2001,
+     "CatchLine": "Relating to housing; declaring an emergency.",
+     "CurrentLocation": "In committee upon adjournment", "Vetoed": False, "ChapterNumber": None},
+    {"SessionKey": "2025R1", "MeasurePrefix": "SB", "MeasureNumber": 2001,
+     "CatchLine": "Relating to wildfire.", "CurrentLocation": "Governor's desk",
+     "Vetoed": False, "ChapterNumber": "Chapter 412"},
+    {"SessionKey": "2025R1", "MeasurePrefix": "SB", "MeasureNumber": 976,
+     "CatchLine": "Relating to cosmetics.", "CurrentLocation": "Governor's desk",
+     "Vetoed": True, "ChapterNumber": None},
+]
+
+
+class TestOlisLiveShape:
+    def _bills(self):
+        return OlisAdapter(bill_data=_LIVE_MEASURES, session_key="2025R1").fetch().records
+
+    def test_same_number_in_both_chambers_does_not_collide(self):
+        bills = self._bills()
+        assert [b.external_id for b in bills] == ["HB 2001", "SB 2001", "SB 976"]
+        assert len({b.bill_id for b in bills}) == 3
+
+    def test_title_comes_from_catchline(self):
+        assert self._bills()[0].title == "Relating to housing; declaring an emergency."
+
+    def test_status_uses_structured_fields(self):
+        hb, sb_law, sb_veto = self._bills()
+        assert hb.status == BillStatus.IN_COMMITTEE
+        assert sb_law.status == BillStatus.SIGNED
+        assert sb_veto.status == BillStatus.VETOED
+
+    def test_chamber_from_prefix_and_url_to_measure(self):
+        hb = self._bills()[0]
+        assert hb.chamber == "House"
+        assert hb.source_url == (
+            "https://olis.oregonlegislature.gov/liz/2025R1/Measures/Overview/HB2001")
+
+    def test_legacy_fixture_ids_unchanged(self):
+        # Pre-fix fixture rows keep the same external_id, so stored bill_ids stay stable.
+        legacy = OlisAdapter(bill_data=_OLIS_BILLS[:1]).fetch().records[0]
+        assert legacy.external_id == "HB 1234"
