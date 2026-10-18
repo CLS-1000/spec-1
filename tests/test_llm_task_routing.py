@@ -131,3 +131,23 @@ def test_think_block_is_stripped_from_local_answers(monkeypatch, tmp_path):
     assert json.loads(text)["classification"] == "MONITOR"
     assert client.get_active_tier() == "local"
     assert post.call_args.kwargs["json"]["chat_template_kwargs"] == {"enable_thinking": False}
+
+
+def test_think_block_is_stripped_on_ollama_backend_too(monkeypatch, tmp_path):
+    monkeypatch.setenv("SPEC1_LLM_ROUTE_ANALYZE", "local")
+    monkeypatch.setenv("SPEC1_LOCAL_BACKEND", "ollama")
+    monkeypatch.setenv("OLLAMA_MODEL", "qwen3:8b")
+    reply = '<think>\nreasoning\n</think>\n{"classification": "ESCALATE", "confidence": 0.7}'
+    with patch("spec1_core.llm.ollama_manager.is_running", return_value=True), \
+         patch("spec1_core.llm.ollama_manager.ensure_model", return_value=True), \
+         patch("spec1_core.llm.ollama_manager.chat", return_value=reply):
+        client = FallbackLLMClient(task="analyze", log_path=tmp_path / "llm.jsonl")
+        text = client.complete("prompt")
+    assert json.loads(text)["classification"] == "ESCALATE"
+    assert client.get_active_tier() == "ollama"
+
+
+def test_strip_reasoning_handles_unterminated_block():
+    from spec1_core.llm.fallback_client import strip_reasoning
+    assert strip_reasoning("<think>never closed") == ""
+    assert strip_reasoning('{"a": 1}') == '{"a": 1}'
