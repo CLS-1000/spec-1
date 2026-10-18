@@ -118,3 +118,16 @@ def test_verifier_runs_under_analyze_task(monkeypatch):
     except Exception:
         pass
     assert seen.get("task") == "analyze"
+
+
+def test_think_block_is_stripped_from_local_answers(monkeypatch, tmp_path):
+    monkeypatch.setenv("SPEC1_LLM_ROUTE_ANALYZE", "local")
+    monkeypatch.setenv("SPEC1_LOCAL_BACKEND", "openai")
+    monkeypatch.setenv("SPEC1_LOCAL_MODEL", "/models/Qwen3.5-4B.gguf")
+    body = '<think>\nlet me reason about this\n</think>\n{"classification": "MONITOR", "confidence": 0.4}'
+    with patch("requests.post", return_value=_openai_response(body)) as post:
+        client = FallbackLLMClient(task="analyze", log_path=tmp_path / "llm.jsonl")
+        text = client.complete("prompt")
+    assert json.loads(text)["classification"] == "MONITOR"
+    assert client.get_active_tier() == "local"
+    assert post.call_args.kwargs["json"]["chat_template_kwargs"] == {"enable_thinking": False}
