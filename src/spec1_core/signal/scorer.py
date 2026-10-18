@@ -121,30 +121,52 @@ def _priority(score: float) -> str:
         return "MONITOR"
 
 
+def evaluate_gates(signal: Signal, parsed: ParsedSignal) -> dict:
+    """Evaluate the 4 gates and return every score, threshold and result.
+
+    Deterministic and side-effect free. ``score_signal`` uses this, and the
+    cycle logs it for every signal — passed or blocked — so a reader can see
+    exactly why an item was surfaced or discarded.
+    """
+    credibility = _score_credibility(signal.source)
+    volume = _score_volume(parsed.word_count)
+    velocity = _score_velocity(signal)
+    novelty_score, novelty_hits = _score_novelty(parsed.cleaned_text, parsed.keywords)
+
+    gates = {
+        "credibility": {"value": credibility, "threshold": CREDIBILITY_THRESHOLD,
+                        "passed": credibility >= CREDIBILITY_THRESHOLD},
+        "volume": {"value": volume, "threshold": VOLUME_THRESHOLD,
+                   "passed": volume >= VOLUME_THRESHOLD},
+        "velocity": {"value": velocity, "threshold": VELOCITY_THRESHOLD,
+                     "passed": velocity >= VELOCITY_THRESHOLD},
+        "novelty": {"value": novelty_hits, "threshold": NOVELTY_THRESHOLD,
+                    "passed": novelty_hits >= NOVELTY_THRESHOLD,
+                    "score": novelty_score},
+    }
+    return {
+        "gates": gates,
+        "passed": all(g["passed"] for g in gates.values()),
+        "failed_gates": [name for name, g in gates.items() if not g["passed"]],
+    }
+
+
 def score_signal(
     signal: Signal,
     parsed: ParsedSignal,
     run_id: str = "",
 ) -> Optional[Opportunity]:
     """Score a signal through 4 gates. Returns Opportunity if all pass, else None."""
-    credibility = _score_credibility(signal.source)
-    volume = _score_volume(parsed.word_count)
-    velocity = _score_velocity(signal)
-    novelty_score, novelty_hits = _score_novelty(parsed.cleaned_text, parsed.keywords)
+    ev = evaluate_gates(signal, parsed)
+    g = ev["gates"]
+    credibility = g["credibility"]["value"]
+    volume = g["volume"]["value"]
+    velocity = g["velocity"]["value"]
+    novelty_score = g["novelty"]["score"]
 
-    gate_credibility = credibility >= CREDIBILITY_THRESHOLD
-    gate_volume = volume >= VOLUME_THRESHOLD
-    gate_velocity = velocity >= VELOCITY_THRESHOLD
-    gate_novelty = novelty_hits >= NOVELTY_THRESHOLD
+    gate_results = {name: gate["passed"] for name, gate in g.items()}
 
-    gate_results = {
-        "credibility": gate_credibility,
-        "volume": gate_volume,
-        "velocity": gate_velocity,
-        "novelty": gate_novelty,
-    }
-
-    if not all(gate_results.values()):
+    if not ev["passed"]:
         return None
 
     # Composite score

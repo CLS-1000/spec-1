@@ -4,14 +4,22 @@
 # @status:   stable
 # @depends:  NONE
 
-"""Three-tier LLM fallback client.
+"""Task-routed LLM client with per-task fallback.
 
-Tier 1: Anthropic Claude (ANTHROPIC_API_KEY)
-Tier 2: Local Ollama + Llama3 / Mistral
-Tier 3: Rule-based mock (tier3_rules)
+Backends:
+  claude — Anthropic Claude (ANTHROPIC_API_KEY)
+  local  — a local model: Ollama, or any OpenAI-compatible server such as
+           Foundry Local / AI Toolkit, vLLM, LM Studio (SPEC1_LOCAL_BACKEND)
+  mock   — rule-based Tier 3 (tier3_rules); always available
+
+Each task has a route — the ordered list of backends it may use. Routes come
+from SPEC1_LLM_ROUTE_<TASK> (e.g. SPEC1_LLM_ROUTE_ANALYZE=local,mock), then
+SPEC1_LLM_ROUTE, else the historical order claude,local,mock (local,mock in
+SPEC1_DEV_MODE). The cycle's analysis can run on a local model while Claude is
+reserved for writing.
 
 All public methods are exception-safe — they never propagate errors to callers.
-Every LLM call is logged to logs/llm_fallback.jsonl.
+Every LLM call is logged to logs/llm_fallback.jsonl with its task and backend.
 """
 
 from __future__ import annotations
@@ -34,6 +42,25 @@ logger = logging.getLogger(__name__)
 
 _DEFAULT_CLAUDE_MODEL = "claude-haiku-4-5-20251001"
 _DEFAULT_OLLAMA_URL = "http://localhost:11434"
+_DEFAULT_OPENAI_COMPAT_URL = "http://localhost:5272/v1"   # Foundry Local / AI Toolkit
+_VALID_BACKENDS = ("claude", "local", "mock")
+_BACKEND_ALIASES = {"ollama": "local", "rules": "mock", "tier3": "mock"}
+
+
+def resolve_route(task: str = "default", dev_mode: bool = False) -> list[str]:
+    """Return the ordered backends for *task*. ``mock`` is always last."""
+    env = os.environ.get
+    raw = env(f"SPEC1_LLM_ROUTE_{task.upper()}") or env("SPEC1_LLM_ROUTE")
+    if raw:
+        route = []
+        for part in raw.split(","):
+            name = _BACKEND_ALIASES.get(part.strip().lower(), part.strip().lower())
+            if name in _VALID_BACKENDS and name not in route:
+                route.append(name)
+    else:
+        route = ["local"] if dev_mode else ["claude", "local"]
+    route = [b for b in route if b != "mock"] + ["mock"]
+    return route
 _DEFAULT_LOG_PATH = Path("logs/llm_fallback.jsonl")
 
 # Rough cost per 1 K tokens (Haiku pricing)
@@ -61,8 +88,10 @@ class FallbackLLMClient:
         ollama_model: str | None = None,
         ollama_url: str | None = None,
         log_path: Path | None = None,
+        task: str = "default",
     ) -> None:
         env = os.environ.get
+        self._task = task
         self._ollama_url = ollama_url or env("SPEC1_OLLAMA_URL", _DEFAULT_OLLAMA_URL)
         self._ollama_model = (
             ollama_model
@@ -74,6 +103,10 @@ class FallbackLLMClient:
         self._active_tier = "claude"
         self._session_cost: float = 0.0
         self._session_id = uuid.uuid4().hex[:8]
+        self._local_backend = env("SPEC1_LOCAL_BACKEND", "ollama").lower()
+        self._local_url = env("SPEC1_LOCAL_URL", _DEFAULT_OPENAI_COMPAT_URL)
+        self._local_model = env("SPEC1_LOCAL_MODEL", "")
+        self._route = resolve_route(task, self._dev_mode)
 
         if self._dev_mode:
             print(
@@ -85,27 +118,18 @@ class FallbackLLMClient:
     # ── Public API ────────────────────────────────────────────────────────────
 
     def complete(self, prompt: str, system: str = "") -> str:
-        """Return raw LLM text from the first available tier. Never raises."""
+        """Return raw LLM text from the first backend on this task's route. Never raises."""
         t0 = time.monotonic()
-
-        # Tier 1 (skipped in dev mode)
-        if not self._dev_mode:
+        for backend in self._route:
+            if backend == "mock":
+                break
             try:
-                text = self._claude_complete(prompt, system)
-                self._record("claude", t0, len(prompt + text), success=True)
+                text = self._backend_complete(backend, prompt, system)
+                self._record(self._tier_name(backend), t0, len(prompt + text), success=True)
                 return text
             except Exception as exc:
-                logger.warning("Tier 1 (Claude) failed: %s — trying Ollama", exc)
+                logger.warning("%s backend failed for task %s: %s", backend, self._task, exc)
 
-        # Tier 2
-        try:
-            text = self._ollama_complete(prompt, system)
-            self._record("ollama", t0, len(prompt + text), success=True)
-            return text
-        except Exception as exc:
-            logger.warning("Tier 2 (Ollama) failed: %s — using rule-based Tier 3", exc)
-
-        # Tier 3
         text = tier3_rules.to_verifier_json(prompt)
         self._active_tier = "mock"
         self._record("mock", t0, len(text), success=True)
@@ -114,31 +138,21 @@ class FallbackLLMClient:
     def analyze(self, prompt: str, system: str = "") -> dict[str, Any]:
         """Run analysis and return the standard output dict. Never raises."""
         t0 = time.monotonic()
-
-        # Tier 1 (skipped in dev mode)
-        if not self._dev_mode:
+        for backend in self._route:
+            if backend == "mock":
+                break
             try:
-                raw = self._claude_complete(prompt, system)
-                result = self._parse_to_spec(raw, "claude")
+                raw = self._backend_complete(backend, prompt, system)
+                tier = self._tier_name(backend)
+                result = self._parse_to_spec(raw, tier)
                 latency_ms = int((time.monotonic() - t0) * 1000)
-                cost = self._estimate_cost(prompt, raw)
+                cost = self._estimate_cost(prompt, raw) if backend == "claude" else 0.0
                 self._session_cost += cost
                 result.update(latency_ms=latency_ms, cost_estimate_usd=cost)
-                self._record("claude", t0, len(prompt + raw), success=True)
+                self._record(tier, t0, len(prompt + raw), success=True)
                 return result
             except Exception as exc:
-                logger.warning("Tier 1 (Claude) failed: %s — trying Ollama", exc)
-
-        # Tier 2
-        try:
-            raw = self._ollama_complete(prompt, system)
-            result = self._parse_to_spec(raw, "ollama")
-            latency_ms = int((time.monotonic() - t0) * 1000)
-            result.update(latency_ms=latency_ms, cost_estimate_usd=0.0)
-            self._record("ollama", t0, len(prompt + raw), success=True)
-            return result
-        except Exception as exc:
-            logger.warning("Tier 2 (Ollama) failed: %s — using rule-based Tier 3", exc)
+                logger.warning("%s backend failed for task %s: %s", backend, self._task, exc)
 
         # Tier 3
         verdict, confidence, analysis = tier3_rules.score(prompt)
@@ -163,6 +177,10 @@ class FallbackLLMClient:
             '"assessment": str, "confidence": float}'
         )
         return self.analyze(prompt=query, system=system)
+
+    def get_route(self) -> list[str]:
+        """Return this task's ordered backends."""
+        return list(self._route)
 
     def get_active_tier(self) -> str:
         """Return the tier used for the most recent call."""
@@ -191,6 +209,52 @@ class FallbackLLMClient:
         )
         self._active_tier = "claude"
         return message.content[0].text.strip()
+
+    def _tier_name(self, backend: str) -> str:
+        """Name logged/returned for a backend (keeps 'ollama' for the Ollama local)."""
+        if backend == "local":
+            return "ollama" if self._local_backend == "ollama" else "local"
+        return backend
+
+    def _backend_complete(self, backend: str, prompt: str, system: str) -> str:
+        if backend == "claude":
+            return self._claude_complete(prompt, system)
+        if backend == "local":
+            if self._local_backend == "ollama":
+                return self._ollama_complete(prompt, system)
+            return self._openai_compat_complete(prompt, system)
+        raise ValueError(f"unknown backend {backend!r}")
+
+    def _openai_compat_complete(self, prompt: str, system: str) -> str:
+        """Call an OpenAI-compatible /chat/completions server (Foundry Local, vLLM, LM Studio)."""
+        import requests  # already a core dependency
+
+        if not self._local_model:
+            raise RuntimeError("SPEC1_LOCAL_MODEL not set for the OpenAI-compatible backend")
+        messages = ([{"role": "system", "content": system}] if system else []) + [
+            {"role": "user", "content": prompt}
+        ]
+        headers = {}
+        key = os.environ.get("SPEC1_LOCAL_API_KEY", "").strip()
+        if key:
+            headers["Authorization"] = f"Bearer {key}"
+        resp = requests.post(
+            self._local_url.rstrip("/") + "/chat/completions",
+            json={"model": self._local_model, "messages": messages,
+                  "temperature": 0.0, "max_tokens": 512,
+                  # Ask reasoning models to answer directly (ignored by others).
+                  "chat_template_kwargs": {"enable_thinking": False}},
+            headers=headers,
+            timeout=float(os.environ.get("SPEC1_LOCAL_TIMEOUT", "120")),
+        )
+        resp.raise_for_status()
+        text = resp.json()["choices"][0]["message"]["content"] or ""
+        # Reasoning models (Qwen3, DeepSeek-R1) prefix answers with <think>…</think>.
+        text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL)
+        if "<think>" in text:  # unterminated block: keep only what follows it
+            text = text.split("</think>")[-1] if "</think>" in text else ""
+        self._active_tier = "local"
+        return text.strip()
 
     def _ollama_complete(self, prompt: str, system: str) -> str:
         auto_spawn = os.environ.get("OLLAMA_AUTO_SPAWN", "true").lower() != "false"
@@ -282,6 +346,7 @@ class FallbackLLMClient:
             entry = json.dumps({
                 "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                 "session": self._session_id,
+                "task": self._task,
                 "tier": tier,
                 "latency_ms": latency_ms,
                 "char_count": char_count,

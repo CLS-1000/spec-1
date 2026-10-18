@@ -74,7 +74,7 @@ def verify_investigation(investigation: Investigation) -> Outcome:
     from spec1_core.llm.fallback_client import FallbackLLMClient
 
     try:
-        llm = FallbackLLMClient()
+        llm = FallbackLLMClient(task="analyze")
         raw = llm.complete(
             prompt=_build_user_prompt(investigation),
             system=_SYSTEM_PROMPT,
