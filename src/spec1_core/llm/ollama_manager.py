@@ -136,6 +136,7 @@ def chat(
     payload = json.dumps({
         "model": model,
         "stream": False,
+        "think": False,  # reasoning models answer directly; ignored by others
         "messages": [
             {"role": "system", "content": system},
             {"role": "user", "content": prompt},
