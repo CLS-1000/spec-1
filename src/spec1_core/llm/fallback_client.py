@@ -241,14 +241,20 @@ class FallbackLLMClient:
         resp = requests.post(
             self._local_url.rstrip("/") + "/chat/completions",
             json={"model": self._local_model, "messages": messages,
-                  "temperature": 0.0, "max_tokens": 512},
+                  "temperature": 0.0, "max_tokens": 512,
+                  # Ask reasoning models to answer directly (ignored by others).
+                  "chat_template_kwargs": {"enable_thinking": False}},
             headers=headers,
             timeout=float(os.environ.get("SPEC1_LOCAL_TIMEOUT", "120")),
         )
         resp.raise_for_status()
-        text = resp.json()["choices"][0]["message"]["content"]
+        text = resp.json()["choices"][0]["message"]["content"] or ""
+        # Reasoning models (Qwen3, DeepSeek-R1) prefix answers with <think>…</think>.
+        text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL)
+        if "<think>" in text:  # unterminated block: keep only what follows it
+            text = text.split("</think>")[-1] if "</think>" in text else ""
         self._active_tier = "local"
-        return (text or "").strip()
+        return text.strip()
 
     def _ollama_complete(self, prompt: str, system: str) -> str:
         auto_spawn = os.environ.get("OLLAMA_AUTO_SPAWN", "true").lower() != "false"
