@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Oregon Legislature, Verified</title>
+<meta name="description" content="Every bill in Oregon's {{SESSION}} session, in plain language, with a record anyone can check.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;600&family=Courier+Prime:wght@400;700&display=swap">
+<style>
+:root{
+  /* Notitia Civica, Civic Intelligence Brief. Layout: one reading column on warm paper, masthead rule, ledger-style bill list. */
+  --bg:#F7F4EE; --fg:#1F1C16; --muted:#3D3830; --faint:#6B655C; --line:#D2CDC3; --soft:#EDE8DE;
+  --pass:#266662; --caution:#B83820; --accent:#266662; --focus:#1A2D50;
+  --serif:"Libre Caslon Text","Iowan Old Style",Georgia,serif;
+  --sans:"Inter",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  --mono:"Courier Prime","Courier New",Courier,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#1A1813; --fg:#F2EEE6; --muted:#D6D0C4; --faint:#A8A196; --line:#3D3830; --soft:#24211B;
+    --pass:#6FB5AE; --caution:#E58A6E; --accent:#6FB5AE; --focus:#9DB4E0; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1A1813; --fg:#F2EEE6; --muted:#D6D0C4; --faint:#A8A196; --line:#3D3830; --soft:#24211B;
+  --pass:#6FB5AE; --caution:#E58A6E; --accent:#6FB5AE; --focus:#9DB4E0; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{font-size:112.5%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);line-height:1.6}
+a{color:inherit;text-underline-offset:3px}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.skip{position:absolute;left:-999px;top:0;background:var(--fg);color:var(--bg);padding:.6rem 1rem;z-index:9}
+.skip:focus{left:1rem}
+.wrap{max-width:62rem;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.site{border-bottom:3px double var(--fg);padding-block:1.4rem 1.3rem}
+.mast{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;flex-wrap:wrap;border-bottom:1px solid var(--fg);padding-bottom:.5rem;margin-bottom:1.1rem}
+.mast .name{font-family:var(--serif);font-weight:700;letter-spacing:.14em;text-transform:uppercase;font-size:1rem;margin:0}
+.mast .series{font-family:var(--mono);font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin:0}
+.kicker{font-family:var(--mono);font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin:0}
+h1,h2,h3{text-wrap:balance}
+h1,h2,h3{font-family:var(--serif);font-weight:700}
+h1{font-size:clamp(2rem,5.5vw,3.2rem);line-height:1.08;margin:.2rem 0 .7rem;letter-spacing:-.01em}
+.lede{font-size:1.08rem;max-width:44rem;margin:0}
+.demo{border:2px solid var(--caution);padding:.8rem 1rem;margin:1.2rem 0 0}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(9.5rem,1fr));gap:0;border:1px solid var(--line);margin:1.6rem 0}
+.stat{padding:1rem;border-right:1px solid var(--line)}
+.stat:last-child{border-right:0}
+.stat b{display:block;font-family:var(--serif);font-size:2.2rem;line-height:1.1;font-variant-numeric:tabular-nums}
+.stat span{color:var(--muted);font-size:.92rem}
+.ballot{background:var(--soft);border-top:3px solid var(--accent);padding:1.1rem 1.2rem;margin:0 0 2rem}
+.ballot h2{margin:0 0 .3rem;font-size:1.3rem}
+.ballot p{margin:0}
+section{margin:2.2rem 0}
+h2{font-size:1.45rem;margin:0 0 .8rem}
+.controls{display:grid;grid-template-columns:2fr 1fr 1fr;gap:.8rem;align-items:end}
+@media (max-width:640px){.controls{grid-template-columns:1fr}.stat{border-right:0;border-bottom:1px solid var(--line)}}
+label{display:block;font-weight:600;font-size:.92rem;margin-bottom:.25rem}
+input,select,button{font:inherit;color:var(--fg);background:var(--bg);border:2px solid var(--fg);border-radius:0;padding:.55rem .7rem;width:100%}
+button{cursor:pointer;font-weight:600}
+button.more{width:auto;margin:1.2rem 0;padding:.6rem 1.3rem}
+.count{margin:.9rem 0 .4rem;color:var(--muted)}
+ol.cards{list-style:none;padding:0;margin:0}
+.card{border-top:1px solid var(--line);padding:1.2rem 0}
+.card h3{font-size:1.15rem;margin:0 0 .15rem;line-height:1.35}
+.card .title{margin:0 0 .4rem;color:var(--muted)}
+.tag{display:inline-block;font-family:var(--mono);font-size:.74rem;letter-spacing:.04em;text-transform:uppercase;border:1px solid var(--fg);padding:.05rem .45rem;margin:0 .35rem .35rem 0}
+.tag.law{border-color:var(--pass);color:var(--pass)}
+.tag.vetoed,.tag.unverified{border-color:var(--caution);color:var(--caution)}
+.card ul.claims{margin:.4rem 0 .5rem;padding-left:1.2rem}
+.card ul.claims li{margin:.15rem 0}
+details{margin:.3rem 0}
+summary{cursor:pointer;font-weight:600}
+ol.tl{margin:.5rem 0 .2rem;padding-left:1.4rem}
+ol.tl li{margin:.1rem 0}
+ol.tl time{font-variant-numeric:tabular-nums;color:var(--muted);margin-right:.4rem}
+.rec{font-family:var(--mono);font-size:.8rem;color:var(--faint);margin:.4rem 0 0;overflow-wrap:anywhere}
+.ok{color:var(--pass);font-weight:600}
+.no{color:var(--caution);font-weight:600}
+.howto ol{padding-left:1.3rem}
+.howto li{margin:.4rem 0}
+code{font-family:var(--mono);font-size:.85em;overflow-wrap:anywhere;word-break:break-all}
+pre{font-family:var(--mono);font-size:.82rem;background:var(--soft);border:1px solid var(--line);padding:.8rem;overflow-x:auto;white-space:pre-wrap;overflow-wrap:anywhere}
+.limits{border:1px solid var(--line);padding:1rem 1.2rem}
+footer{border-top:1px solid var(--line);padding:1.4rem 0 2.4rem;color:var(--muted);font-size:.9rem}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<a class="skip" href="#bills">Skip to the list of bills</a>
+<header class="site"><div class="wrap">
+  <div class="mast"><p class="name">Notitia Civica</p><p class="series">Civic Intelligence Brief · Oregon {{SESSION}}</p></div>
+  <h1>Oregon Legislature, Verified</h1>
+  <p class="lede">Every bill from Oregon's {{YEAR}} legislative session, explained in plain words. Each one comes with a record you can check yourself, so you don't have to take our word for it.</p>
+  {{DEMO_BANNER}}
+</div></header>
+
+<main class="wrap" id="main">
+  <div class="stats" role="list" aria-label="Session totals">
+    <div class="stat" role="listitem"><b>{{TOTAL}}</b><span>bills and resolutions</span></div>
+    <div class="stat" role="listitem"><b>{{LAW}}</b><span>became law</span></div>
+    <div class="stat" role="listitem"><b>{{VETOED}}</b><span>vetoed by the Governor</span></div>
+    <div class="stat" role="listitem"><b>{{STOPPED}}</b><span>did not pass</span></div>
+  </div>
+
+  <aside class="ballot" aria-labelledby="ballot-h">
+    <h2 id="ballot-h">Will any of this be on your ballot?</h2>
+    <p>{{BALLOT_LINE}} <a href="#bills" data-filter-topic="ballot">See all {{CA_PROPOSED}}</a>.</p>
+  </aside>
+
+  <section id="bills" aria-labelledby="bills-h">
+    <h2 id="bills-h">Find a bill</h2>
+    <form class="controls" role="search" onsubmit="return false">
+      <div><label for="q">Search by bill number or words</label>
+        <input id="q" type="search" placeholder="e.g. SB 976, vetoed, constitution" autocomplete="off"></div>
+      <div><label for="outcome">What happened</label>
+        <select id="outcome"><option value="">Anything</option></select></div>
+      <div><label for="topic">Topic</label>
+        <select id="topic"><option value="">All topics</option></select></div>
+    </form>
+    <p class="count" id="count" aria-live="polite"></p>
+    <ol class="cards" id="list"></ol>
+    <button class="more" id="more" type="button">Show more bills</button>
+  </section>
+
+  <section class="howto" id="check" aria-labelledby="check-h">
+    <h2 id="check-h">How to check this yourself</h2>
+    <p>Every statement on this site was recorded, with the Legislature's own data behind it, before it was published. The whole record is sealed with the publisher's digital signature. If anyone changes, adds, removes or reorders a single line afterward, the check below fails.</p>
+    <ol>
+      <li><strong>Where the facts come from.</strong> Each bill's official action history, from the Oregon Legislature's public data service ({{ROWS}} recorded steps). The data file's fingerprint is <code>{{CACHE_SHA}}…</code>.</li>
+      <li><strong>How each history was checked.</strong> Every step was replayed against Oregon's chamber procedure. A move that isn't allowed, or text the checker doesn't understand, stops the replay. That bill is then marked <em>Not verified</em> instead of guessed at. Not verified this session: {{UNVERIFIED}}.</li>
+      <li><strong>The publication gate.</strong> A bill's page is published only if every sentence on it points to official records sealed alongside it. Withheld by the gate: {{WITHHELD}}.</li>
+      <li><strong>Check it on your own computer.</strong> No internet or special software needed, just Python. Download <a href="verify/chain.zip">the record</a>, <a href="verify/verify.py">verify.py</a>, <a href="verify/anchor.json">anchor.json</a> and <a href="verify/civica_publish_card_policy.py">the gate's rules</a>, then run:
+<pre>unzip chain.zip
+python3 verify.py chain --pubkey {{PUBKEY}} --anchor anchor.json --policy civica.publish_card=civica_publish_card_policy.py</pre>
+      A result of <code>exit 0</code> means nothing was changed after it was recorded. Copy the public key from <a href="{{KEY_SOURCE}}">the publisher's key page</a>, not from this page: a copied or fake version of this site can show any key it likes, but it can't produce a seal that passes with the real one. Key id <code>{{KEY_ID}}</code>, record ends at entry {{ANCHOR_SEQ}} (<code>{{ANCHOR_H}}</code>).</li>
+    </ol>
+    <div class="limits">
+      <h3>What this does and doesn't prove</h3>
+      <p>It proves that what you see here matches what was recorded from the Legislature's public data, and that nothing was changed afterward. It does not prove the Legislature's own data is error-free. When we have found errors, we reported them. This site is about the public record of laws, including the laws about elections. It is not part of how ballots are cast or counted; that is run by county elections offices and the Oregon Secretary of State.</p>
+    </div>
+  </section>
+</main>
+<footer><div class="wrap">
+  Built {{BUILT}} with SPEC-1, proc_track and Gatepost. Official bill pages: <a href="https://olis.oregonlegislature.gov/">olis.oregonlegislature.gov</a>.
+</div></footer>
+
+<script>
+(function(){
+  var DATA = {{DATA}};
+  var LABELS = {{LABELS}};
+  // Lead with what residents most want to know: vetoes, then new laws. Stable within a group.
+  var RANK = {vetoed:0, law:1, unverified:2, passed_legislature:3, adopted:4, failed:5, stopped:6};
+  DATA.forEach(function(d,i){ d._i=i; });
+  DATA.sort(function(a,b){ return ((RANK[a.o]||9)-(RANK[b.o]||9)) || (a._i-b._i); });
+  var PAGE = 40, shown = PAGE;
+  var q = document.getElementById('q'), so = document.getElementById('outcome'), st = document.getElementById('topic');
+  var list = document.getElementById('list'), count = document.getElementById('count'), more = document.getElementById('more');
+  var oc = {}, tc = {};
+  DATA.forEach(function(d){ oc[d.o]=(oc[d.o]||0)+1; d.tp.forEach(function(t){ tc[t]=(tc[t]||0)+1; });
+    d._s = (d.m+' '+d.id+' '+d.t+' '+d.h+' '+d.c.join(' ')+' '+(LABELS.o[d.o]||'')).toLowerCase(); });
+  Object.keys(LABELS.o).forEach(function(k){ if(oc[k]){ var o=document.createElement('option'); o.value=k; o.textContent=LABELS.o[k]+' ('+oc[k].toLocaleString()+')'; so.appendChild(o);} });
+  Object.keys(LABELS.t).forEach(function(k){ if(tc[k]){ var o=document.createElement('option'); o.value=k; o.textContent=LABELS.t[k]+' ('+tc[k].toLocaleString()+')'; st.appendChild(o);} });
+  function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function card(d){
+    var tags = '<span class="tag '+esc(d.o)+'">'+esc(LABELS.o[d.o]||d.o)+'</span>' + d.tp.filter(function(t){return t!=='veto';}).map(function(t){return '<span class="tag">'+esc(LABELS.t[t]||t)+'</span>';}).join('');
+    var claims = '<ul class="claims">'+d.c.map(function(c){return '<li>'+esc(c)+'</li>';}).join('')+'</ul>';
+    var tl = d.tl.length ? '<details><summary>Every step, in order ('+d.tl.length+')</summary><ol class="tl">'+d.tl.map(function(s){return '<li><time>'+esc(s[0])+'</time>'+esc(s[1])+'</li>';}).join('')+'</ol></details>' : '';
+    var v = d.v ? '<span class="ok">Checked: every step was a legal move.</span>' : '<span class="no">Not verified: shown as recorded.</span>';
+    return '<li class="card" id="'+esc(d.id)+'"><h3>'+esc(d.h)+'</h3>'+(d.t?'<p class="title">'+esc(d.t)+'</p>':'')+tags+claims+tl+
+      '<p>'+v+' <a href="'+esc(d.u)+'">Official page for '+esc(d.m)+'</a> · <a href="'+esc(d.s)+'">raw data</a></p>'+
+      '<p class="rec">record #'+esc(d.r[0])+' · '+esc(d.r[1])+' · evidence '+esc(d.r[2])+'… · '+d.n+' official steps</p></li>';
+  }
+  function matches(){
+    var s = q.value.trim().toLowerCase().replace(/\s+/g,' '), o = so.value, t = st.value;
+    var sn = s.replace(/\s/g,'');
+    return DATA.filter(function(d){
+      if(o && d.o!==o) return false;
+      if(t && d.tp.indexOf(t)<0) return false;
+      if(!s) return true;
+      if(d.id.toLowerCase()===sn) return true;
+      return s.split(' ').every(function(w){ return d._s.indexOf(w)>=0; });
+    });
+  }
+  function render(reset){
+    if(reset) shown = PAGE;
+    var m = matches();
+    list.innerHTML = m.slice(0, shown).map(card).join('');
+    count.textContent = m.length ? ('Showing '+Math.min(shown,m.length).toLocaleString()+' of '+m.length.toLocaleString()+' matching bills.') : 'No bills match. Try a bill number like SB 976.';
+    more.hidden = shown >= m.length;
+  }
+  q.addEventListener('input', function(){ render(true); });
+  so.addEventListener('change', function(){ render(true); });
+  st.addEventListener('change', function(){ render(true); });
+  more.addEventListener('click', function(){ shown += PAGE; render(false); });
+  document.querySelectorAll('[data-filter-topic]').forEach(function(a){ a.addEventListener('click', function(){ st.value=a.getAttribute('data-filter-topic'); so.value=''; q.value=''; render(true); }); });
+  if(location.hash && location.hash.length>1){ var h=decodeURIComponent(location.hash.slice(1)); if(/^[A-Z]+\d+$/.test(h)){ q.value=h; } }
+  render(true);
+})();
+</script>
+</body>
+</html>
