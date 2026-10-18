@@ -16,6 +16,7 @@ SOURCE_CREDIBILITY: dict[str, float] = {
     "cipher_brief":     0.88,
     "lawfare":          0.87,
     "rand":             0.90,
+    "just_security":    0.85,
     "atlantic_council": 0.82,
     "defense_one":      0.83,
     "38_north":         0.89,
@@ -30,9 +31,9 @@ SOURCE_CREDIBILITY: dict[str, float] = {
 }
 
 DEFAULT_CREDIBILITY:    float = 0.60
-CREDIBILITY_THRESHOLD:  float = 0.60
+CREDIBILITY_THRESHOLD:  float = 0.65   # above DEFAULT_CREDIBILITY: unlisted sources are blocked
 VOLUME_THRESHOLD:       float = 0.30
-VELOCITY_THRESHOLD:     float = 0.0
+VELOCITY_THRESHOLD:     float = 0.50   # 0.50 = published within 72h (was 0.0: never blocked)
 NOVELTY_THRESHOLD:      int   = 1
 ARCHIVE_THRESHOLD:      float = 0.40
 PRIORITY_ELEVATED:      float = 0.75

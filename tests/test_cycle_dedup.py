@@ -16,6 +16,9 @@ import feedparser
 from spec1_core.app.cycle import run_cycle
 from spec1_core.intelligence.store import JsonlStore
 
+from datetime import datetime, timedelta, timezone
+from email.utils import format_datetime
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 _ITEM = """
@@ -25,12 +28,14 @@ _ITEM = """
       <description>Analysis of Russian military intelligence operations in Ukraine. NATO alliance
       defense strategy and nuclear deterrence reviewed. Cyber warfare threat assessment confirmed by
       Pentagon officials in a detailed security report on alliance operations.</description>
-      <pubDate>Thu, 10 Apr 2025 12:00:00 +0000</pubDate>
+      <pubDate>{pub}</pubDate>
     </item>"""
 
 
 def _feed(*items: tuple[str, str]):
-    body = "".join(_ITEM.format(title=t, link=l) for t, l in items)
+    # Fresh, from a listed source: the fixture must clear the real gates.
+    pub = format_datetime(datetime.now(timezone.utc) - timedelta(hours=1))
+    body = "".join(_ITEM.format(title=t, link=l, pub=pub) for t, l in items)
     xml = f'<?xml version="1.0"?><rss version="2.0"><channel><title>T</title>{body}</channel></rss>'
     return feedparser.parse(xml)
 
@@ -42,7 +47,7 @@ TWO_ITEMS = (("Russia Military Intelligence Update", "https://example.com/a1"),
 def _run(store_path: Path, parsed, run_id: str, **kw) -> dict:
     with patch("spec1_core.signal.harvester.feedparser.parse", return_value=parsed):
         return run_cycle(store_path=store_path, run_id=run_id, environment="test",
-                         feeds={"test_feed": "https://example.com/feed"}, verbose=False, **kw)
+                         feeds={"rand": "https://example.com/feed"}, verbose=False, **kw)
 
 
 def test_store_signal_ids(tmp_path):
