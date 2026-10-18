@@ -1,180 +1,135 @@
-# SPEC-1: engine reports intelligence 
+# SPEC-1
 
-**Version:** 0.6.0 | **Status:** Beta  
-**Organization:** EVASTARARCANA LLC • Portland, OR
+**Status:** Beta · **Version:** 0.6.0 · EVASTARARCANA LLC, Portland, Oregon
 
----
+SPEC-1 reads public sources on a schedule, decides which items deserve a closer look, and writes up what it found. Every decision it makes along the way is written down, including the decision to throw something out.
 
-## The Problem
-
-Public information is everywhere. Finding the signal inside it is the job.
-
-Every day, credible reporting flows from dozens of authoritative public sources — congressional records, FARA filings, think tank publications, newswires, civic databases. The problem isn't access. It's triage. By the time a journalist or researcher manually works through the week's feeds, the story has moved.
-
-SPEC-1 does the triage work automatically so you can focus on the reporting.
+That last part is the point. Most monitoring software tells you what it surfaced. SPEC-1 also tells you what it discarded, which test the item failed, the score it received and the score it needed. The record is kept in an append-only file that the system never rewrites.
 
 ---
 
-## What SPEC-1 Is
+## What happens in a cycle
 
-SPEC-1 is an automated open-source research engine. It monitors 40+ curated public sources, filters every signal through a deterministic four-gate pipeline, and produces structured research reports built on the discipline of long-form investigative work: sourced, hedged, and auditable.
+A cycle runs in seven steps: harvest, parse, score, investigate, verify, analyze, store.
 
-The engine writes the first draft. You filter length and tone. You decide what to publish.
+**Harvest.** The default cycle pulls ten RSS feeds: War on the Rocks, The Cipher Brief, Just Security, RAND, the Atlantic Council, Defense One, 38 North, NK News, CSIS's Korea Chair and Yonhap. The feed list is a single dictionary in `src/spec1_core/signal/harvester.py`.
 
-**Built for:** journalists, investigative reporters, nonprofit researchers, policy analysts, students, and small organizations doing civic and public-interest work.
+**Score.** Each item is measured against four gates. It must clear all four to go on.
+
+| Gate | What it measures | Must reach |
+|---|---|---|
+| Credibility | The source's weight in the operator's credibility table. Unlisted sources get 0.60. | 0.65 |
+| Volume | Length, in tiers from under 30 words to over 500 | 0.30 (about 30 words) |
+| Velocity | Age. The score steps down from 1.0 (under six hours) to 0.75, 0.50, 0.25 and finally 0.10 (over a week). | 0.50 (under 72 hours) |
+| Novelty | The number of terms that signal something new: arrests, charges, classified material, corruption and similar | 1 term |
+
+Because the credibility gate sits just above the default weight, a source that is not in the table does not get through. The thresholds live in one file, `src/spec1_core/config/calibration.py`. A person sets them. The system does not adjust them.
+
+**Log.** Every scored item, passed or blocked, gets one line in the gate log: the decision, the gates it failed, and each gate's measured value beside its threshold. The file sits next to the intelligence store as `<store>_gate_decisions.jsonl`, or wherever `SPEC1_GATE_LOG_PATH` points.
+
+**Investigate, verify, analyze.** Items that pass become hypotheses, which a language model checks and classifies as Corroborated, Escalate, Investigate, Monitor, Conflicted or Archive, with a confidence score. The analyzer blends that result with the source's weight into a final record.
+
+**Store.** Records are appended to a JSONL file, which is the system of record, and mirrored into SQLite so they can be queried. Nothing is updated in place. If the SQLite copy is lost, it can be rebuilt from the JSONL.
 
 ---
 
-## How It Works
+## Which model does what
 
-### The Four-Gate Filter
+Every model call goes through one client, and each task follows its own route: an ordered list of backends to try.
 
-Every signal passes through four independent gates. All four must pass or the signal is discarded. Nothing reaches a report that hasn't cleared every gate.
+| Backend | What it is |
+|---|---|
+| `claude` | Anthropic's API (`ANTHROPIC_API_KEY`) |
+| `local` | A model on your own machine: Ollama, or any server that speaks the OpenAI chat API, such as llama.cpp, vLLM or LM Studio |
+| `mock` | Deterministic rules. No model, no network, always available |
 
-| Gate | What It Checks |
-|------|---------------|
-| **Source credibility** | Source weight from the operator-maintained credibility table |
-| **Substance** | Enough content to be meaningful (length-weighted score) |
-| **Freshness** | Recency score: decays with age |
-| **Novelty** | Contains indicators of something new or unusual |
+With no routing configured, every task tries Claude, then the local model, then the rules. A common arrangement sends the cycle's analysis to the local model and leaves Claude to write the brief:
 
-Thresholds live in one file, `src/spec1_core/config/calibration.py`, set by the operator and never tuned by the system.
-
-Every gate decision, pass or discard, is written to an append-only log: the decision, the gates that failed, and for each gate the measured value and the threshold it was held to. You can see exactly why a signal passed or was discarded. No black box, no hidden scoring.
-
-The log lands next to the intelligence store (`<store>_gate_decisions.jsonl`), or wherever `SPEC1_GATE_LOG_PATH` points.
-
-### The Pipeline
-
+```bash
+SPEC1_LLM_ROUTE_ANALYZE=local,mock
+SPEC1_LOCAL_BACKEND=ollama          # or "openai" for llama.cpp, vLLM, LM Studio
+OLLAMA_MODEL=qwen2.5:7b
 ```
-Harvest → Filter (4 gates) → Investigate → Verify → Analyze → Report
-```
 
-Signals that pass are cross-referenced, scored with a confidence level, and passed to the report generator. The pipeline never crashes — if the language model is unavailable, it falls back to a local model, then to deterministic rules. A report always comes out.
+Under that route, analysis falls back to rules, never to Claude. Reasoning models that wrap their answers in `<think>` blocks are handled: the blocks are stripped before the answer is read.
 
-### Three-Tier Language Model Fallback
-
-| Tier | Backend | Notes |
-|------|---------|-------|
-| 1 | Anthropic Claude | Default; fastest |
-| 2 | Local model | Ollama or any OpenAI-compatible server (Foundry Local, vLLM, LM Studio); zero cost |
-| 3 | Deterministic rules | Always available; no API required |
-
-Tiers are routed per task. A typical setup runs the cycle's analysis on a local model (`SPEC1_LLM_ROUTE_ANALYZE=local,mock`) and reserves Claude for writing the brief. Every call is logged with its task and the backend that answered.
+Every call is logged to `logs/llm_fallback.jsonl` with its task and the backend that answered, so a weak result can be traced to the model that produced it. When no model is available, the cycle still finishes and the brief says so on its first line: *Rule-based brief generated from cycle data.*
 
 ---
 
-## What You Get
+## What comes out
 
-### Daily Research Brief
-A structured first draft, held to the rules a serious investigative desk works by. Every claim is sourced. Confidence is stated explicitly — not as adjectives, but as tier labels: *confirmed by two independent sources*, *single-source unconfirmed*, *insufficient signal*. The human edits length and tone before anything goes out.
+**A daily brief.** A structured first draft built from the stored records. Confidence is stated as a tier, such as *confirmed by two independent sources*, *single-source unconfirmed* or *insufficient signal*, rather than left to adjectives. A person edits it before it goes anywhere.
 
-### Story Leads
-Not summaries. Each lead is a dispatch package: the specific anomaly, who has the answer, what documents to request (with FOIA language pre-written), and a Claude prompt pre-loaded with context for immediate use.
+**Leads.** Records worth pursuing, each with the anomaly that flagged it, the records that support it, and a drafted list of documents to request.
 
-### Influence Operation Detection
-Narrative anomaly scoring across harvested signals — coordinated framing detection, consensus velocity analysis, origin traceability checks.
+**Influence-pattern scoring.** Fourteen named framing patterns, among them fear amplification, manufactured consensus, coordinated amplification and whataboutism, checked across a cycle's harvest.
 
-### Topic Dossiers (Research Mode)
-Define a research topic with keywords, entities, and sub-questions. Run it repeatedly. Each cycle adds to the dossier. Accumulates across runs without LLM calls or gate filtering — this mode is for deep research, not daily triage.
+**Research mode.** A standing dossier on a topic you define by keywords, entities and questions. Each run adds to it. Research mode skips the gates and makes no model calls.
 
-### Portland Metro Civic Brief (PDX-1i)
-Local civic intelligence for the Portland bi-state metro: campaign finance anomalies, legislative bill tracking, infrastructure monitoring, entity relationship mapping. The architectural template for future regional modules.
+**PDX-1i, the Portland metro module.** Campaign finance from ORESTAR and Washington's Public Disclosure Commission, bills from Oregon's legislative API, statements of economic interest, and watchers on seven local institutions: OHSU, the Portland Police Bureau, TriMet, PGE, NW Natural, Schnitzer and the Water Bureau. Officials are tracked as seats rather than as named people, and a section cannot be published unless it cites records the system holds.
 
-### Legislative & Judicial Desk
-Federal and state legislative tracking, FARA filing analysis, judicial record monitoring, stated-purpose vs. beneficiary analysis.
+**The legislative and judicial desk.** Federal and state legislative records, FARA filings and court records, with a section that sets each measure's stated purpose beside who benefits from it.
 
-### Feedback Loop
-File verdicts on any report — correct, incorrect, partial, unclear. The calibration system surfaces drift over time. You decide whether thresholds need adjustment. Nothing auto-tunes.
+**Verdicts.** Anyone reviewing a record can mark it correct, incorrect, partial or unclear. The calibration report shows where the system's confidence and the verdicts disagree. It proposes threshold changes and applies none of them.
 
 ---
 
-## Interfaces
+## Running it
 
-| Interface | What It Does |
-|-----------|-------------|
-| **REST API** | 15+ endpoints under `/api/v1/` |
-| **MCP Server** | 16 tools exposed to Claude Desktop |
-| **CLI Workspace** | Case file management from the terminal |
-| **PDF Export** | Formatted reports for distribution |
-| **Verdict UI** | Browser form for filing feedback at `/verdicts/` |
-
----
-
-## Data Sources
-
-40+ public sources including: War on the Rocks, The Cipher Brief, Just Security, RAND, Atlantic Council, Defense One, 38 North, NK News, CSIS Korea Chair, Yonhap, Reuters, AP, ProPublica, congressional records, FARA filings, Oregon and Washington state legislative databases, Portland civic records.
-
----
-
-## Getting Started
+SPEC-1 needs Python 3.11 or newer.
 
 ```bash
 git clone https://github.com/CLS-1000/spec-1.git
 cd spec-1
 pip install -e ".[dev]"
-cp .env.example .env
-# Add ANTHROPIC_API_KEY to .env (optional — system works without it via Tier 3)
+cp .env.example .env        # add ANTHROPIC_API_KEY, or leave it out and run on rules
 ```
 
 ```bash
-make cycle        # Run a full research cycle
-make run          # Start the API server
-make test         # Run the test suite
-python -m cls_congress.api.main   # Run standalone Congress Brief API surface
+make cycle      # one full cycle
+make run        # the HTTP API
+make mcp        # the MCP server (17 tools)
+make test       # the test suite
 ```
 
-See [docs/runbook.md](docs/runbook.md) for production deployment and [docs/quickstart.md](docs/quickstart.md) for a guided first run.
+The API serves records, leads, briefs, verdicts and calibration under `/api/v1/`, with a browser form for filing verdicts at `/verdicts/`. Authentication is off until `SPEC1_API_KEY` is set.
+
+[docs/quickstart.md](docs/quickstart.md) walks through a first run. [docs/runbook.md](docs/runbook.md) covers deployment.
+
+### Settings you are most likely to change
+
+| Variable | What it does | Default |
+|---|---|---|
+| `ANTHROPIC_API_KEY` | Enables the `claude` backend | unset |
+| `SPEC1_LLM_ROUTE_<TASK>` | Route for one task, such as `ANALYZE` | `claude,local,mock` |
+| `SPEC1_LOCAL_BACKEND` | `ollama`, or `openai` for other local servers | `ollama` |
+| `SPEC1_LOCAL_URL`, `SPEC1_LOCAL_MODEL` | Address and model name for the `openai` backend | none |
+| `OLLAMA_MODEL`, `SPEC1_OLLAMA_URL` | Model and address for the `ollama` backend | `llama3` with 8 GB of RAM or more, otherwise `mistral`; `localhost:11434` |
+| `SPEC1_STORE_PATH` | The JSONL system of record | `spec1_intelligence.jsonl` |
+| `SPEC1_GATE_LOG_PATH` | The gate log | `<store>_gate_decisions.jsonl` |
+| `SPEC1_API_KEY` | Turns on API authentication | unset |
+
+The full list is in [.env.example](.env.example).
 
 ---
 
-## Key Environment Variables
+## Rules the code keeps
 
-| Variable | Purpose | Default |
-|----------|---------|---------|
-| `ANTHROPIC_API_KEY` | Enables Claude (Tier 1 LLM) | unset → Tier 3 |
-| `SPEC1_STORE_PATH` | JSONL output file | `spec1_intelligence.jsonl` |
-| `SPEC1_GATE_LOG_PATH` | Gate-decision log (every pass and discard) | `<store>_gate_decisions.jsonl` |
-| `SPEC1_API_PORT` | API server port | `8000` |
-| `SPEC1_API_KEY` | API authentication (opt-in) | unset → open |
-| `SPEC1_DEV_MODE` | Skip Claude, use local Ollama | `false` |
+The machine sorts; a person decides. SPEC-1 filters, scores and drafts. What runs, what is cut and how it is framed are left to the person reading the draft.
 
-Full variable reference in [.env.example](.env.example).
+Records are written once. Signals, records, verdicts and gate decisions are appended and never overwritten.
+
+Thresholds change only by hand. The calibration report can show that a gate is too loose or too tight. Only an operator can change it.
+
+A failure is recorded, not hidden. A stage that cannot run logs the error and the cycle continues. A brief written without a model says so.
 
 ---
 
-## Design Principles
+## Tests
 
-**The system does mechanical work. You make the judgment.**  
-SPEC-1 filters noise, scores signals, and writes the first draft of a research brief. What to publish, what to spike, how to frame — that's yours.
+1,665 tests across 75 files. Two suites, `test_olis_live.py` and `test_orestar_resolver.py`, call live government services and are skipped in offline runs. The Civica tests expect the [proc_track](https://github.com/CLS-1000/proc_track) repository beside this one, or at `SPEC1_PROC_TRACK_HOME`.
 
-**Every claim traces to a source.**  
-Confidence is explicit. The difference between *confirmed*, *assessed*, and *unverified* is stated in every report, not implied.
-
-**Thresholds never auto-change.**  
-The four gate thresholds are set by the operator. The calibration system surfaces drift. A human decides whether to act on it.
-
-**All data is append-only.**  
-Every signal, report, and verdict is written once, never overwritten. The full history is always available.
-
-**The pipeline never crashes.**  
-Every stage is failure-first — log the error, continue the cycle. A Tier 3 rule-based report is noted as such in the output.
-
----
-
-## Performance
-
-| Metric | Value |
-|--------|-------|
-| Harvest cycle | ~30 seconds |
-| Filter latency | <100ms per gate |
-| Brief generation | <5s (Tier 1) |
-| API response | <100ms |
-| Test suite | 64 test files, Python 3.9–3.12 |
-
----
-
-**SPEC-1** — Automated Research Engine  
-Built by EVASTARARCANA in Portland, OR
-
-The system handles the triage. You do the reporting.
+```bash
+pytest tests/ --ignore=tests/test_olis_live.py --ignore=tests/test_orestar_resolver.py
+```
