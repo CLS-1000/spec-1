@@ -69,26 +69,78 @@ def _map_status(raw: str) -> BillStatus:
     return BillStatus.INTRODUCED
 
 
-def _parse_bill(raw: dict[str, Any], fetched_at: datetime) -> Optional[Bill]:
-    try:
-        external_id = raw.get("MeasureNumber", raw.get("bill_id", ""))
-        title = raw.get("RelatingClause", raw.get("title", ""))
-        status_raw = raw.get("CurrentStatus", raw.get("status", "introduced"))
-        sponsor = raw.get("ChiefSponsor", raw.get("sponsor", ""))
-        source_url = raw.get("source_url", _SOURCE_URI)
+_CHAMBER_BY_PREFIX = {"H": "House", "S": "Senate"}
+_MEASURE_URL = "https://olis.oregonlegislature.gov/liz/{session}/Measures/Overview/{prefix}{number}"
 
+
+def _first(raw: dict[str, Any], *keys: str, default: Any = "") -> Any:
+    """First non-empty value among ``keys``."""
+    for key in keys:
+        value = raw.get(key)
+        if value not in (None, ""):
+            return value
+    return default
+
+
+def _external_id(raw: dict[str, Any]) -> str:
+    """'HB 2001'. The live feed splits prefix and number; older fixtures don't.
+
+    Using MeasureNumber alone would give HB 2001 and SB 2001 the same bill_id.
+    """
+    number = raw.get("MeasureNumber")
+    prefix = (raw.get("MeasurePrefix") or "").strip()
+    if number in (None, ""):
+        return str(raw.get("bill_id") or "").strip()
+    number = str(number).strip()
+    return f"{prefix} {number}" if prefix else number
+
+
+def _live_status(raw: dict[str, Any]) -> BillStatus:
+    """Status from the fields the Measures entity actually has.
+
+    Vetoed and ChapterNumber are structured; CurrentLocation is free text and
+    only used when neither settles it.
+    """
+    if raw.get("Vetoed") is True:
+        return BillStatus.VETOED
+    if raw.get("ChapterNumber") not in (None, ""):
+        return BillStatus.SIGNED
+    return _map_status(str(raw.get("CurrentLocation") or "introduced"))
+
+
+def _parse_bill(
+    raw: dict[str, Any], fetched_at: datetime, session_key: Optional[str] = None
+) -> Optional[Bill]:
+    try:
+        external_id = _external_id(raw)
         if not external_id:
             return None
+
+        prefix = (raw.get("MeasurePrefix") or "").strip()
+        title = _first(raw, "RelatingClause", "CatchLine", "RelatingToFull", "RelatingTo", "title")
+        if "CurrentStatus" in raw or "status" in raw:
+            status = _map_status(str(_first(raw, "CurrentStatus", "status", default="introduced")))
+        else:
+            status = _live_status(raw)
+        sponsor = _first(raw, "ChiefSponsor", "sponsor")
+        chamber = _first(raw, "Chamber", "chamber",
+                         default=_CHAMBER_BY_PREFIX.get(prefix[:1].upper(), "Unknown"))
+        session = raw.get("SessionKey") or session_key
+        default_url = (
+            _MEASURE_URL.format(session=session, prefix=prefix, number=raw["MeasureNumber"])
+            if prefix and session else _SOURCE_URI
+        )
+        source_url = raw.get("source_url") or default_url
 
         bill_id = _make_id("bill", str(int(Jurisdiction.STATE_OREGON)), external_id)
         return Bill(
             bill_id=bill_id,
             external_id=external_id,
-            title=title or external_id,
+            title=str(title).strip() or external_id,
             jurisdiction=Jurisdiction.STATE_OREGON,
-            chamber=raw.get("Chamber", raw.get("chamber", "Unknown")),
+            chamber=chamber,
             sponsor=sponsor or None,
-            status=_map_status(status_raw),
+            status=status,
             source_url=source_url,
             tags=raw.get("tags", []),
             provenance=Provenance(
@@ -194,10 +246,10 @@ class OlisAdapter(BaseAdapter):
         records: list[Bill] = []
         errors: list[str] = []
         for raw in data:
-            bill = _parse_bill(raw, fetched_at)
+            bill = _parse_bill(raw, fetched_at, self._session_key)
             if bill:
                 records.append(bill)
             else:
-                errors.append(f"failed to parse: {raw.get('MeasureNumber', raw.get('bill_id', '?'))}")
+                errors.append(f"failed to parse: {_external_id(raw) or '?'}")
         logger.info("OLIS: parsed %d bills, %d errors", len(records), len(errors))
         return AdapterResult(records=records, errors=errors, source_name=self.source_name)
