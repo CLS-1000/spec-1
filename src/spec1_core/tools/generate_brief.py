@@ -165,6 +165,11 @@ def build_argparser() -> argparse.ArgumentParser:
         help="Skip Claude and use the rule-based producer directly",
     )
     p.add_argument(
+        "--handoff",
+        action="store_true",
+        help="Write a handoff file for writing the brief in Claude by hand (no API key needed) and stop",
+    )
+    p.add_argument(
         "--mode",
         default="standard",
         choices=["standard", "geopolitics", "legislative"],
@@ -186,6 +191,14 @@ def main(argv: list[str] | None = None) -> int:
     groups = _group_by_run_id(records)
     run_id, run_records = _pick_run(groups, args.run_id)
     cycle_stats = _cycle_stats_for(run_id, run_records)
+
+    if args.handoff:
+        from spec1_core.briefing.generator import handoff_doc
+        out_dir.mkdir(parents=True, exist_ok=True)
+        path = out_dir / f"spec1_handoff_{run_id}.md"
+        path.write_text(handoff_doc(run_records, cycle_stats, mode=args.mode), encoding="utf-8")
+        print(f"run_id={run_id} records={len(run_records)} handoff -> {path}")
+        return 0
 
     brief_md = ""
     prompts = ""
