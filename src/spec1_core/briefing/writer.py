@@ -237,3 +237,17 @@ def write_brief_pdf(brief_md_path: Path, out_pdf_path: Path) -> Path:
             f"PDF render failed (exit {result.returncode}): {result.stderr.strip() or result.stdout.strip()}"
         )
     return out_pdf_path
+
+
+def write_handoff(doc: str, timestamp: str) -> str:
+    """Write briefs/spec1_handoff_{date}.md (+ _latest) and return the dated path."""
+    BRIEFS_DIR.mkdir(parents=True, exist_ok=True)
+    try:
+        dt = datetime.fromisoformat(timestamp)
+    except Exception:
+        dt = datetime.now(timezone.utc)
+    dated = BRIEFS_DIR / f"spec1_handoff_{dt.strftime('%Y-%m-%d')}.md"
+    with _lock:
+        dated.write_text(doc, encoding="utf-8")
+        (BRIEFS_DIR / "spec1_handoff_latest.md").write_text(doc, encoding="utf-8")
+    return str(dated)

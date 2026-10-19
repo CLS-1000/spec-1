@@ -215,7 +215,8 @@ def test_generate_brief_no_api_key_returns_fallback():
         brief, prompts = generate_brief(records, stats)
     assert "## SPEC-1 DAILY BRIEF" in brief
     assert "API key not configured" in brief
-    assert prompts == ""
+    # Prompts are still built without a key, so the brief can be written in Claude by hand.
+    assert "## SYSTEM PROMPT" in prompts
 
 
 def test_generate_brief_fallback_contains_date():

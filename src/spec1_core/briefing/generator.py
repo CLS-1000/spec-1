@@ -23,7 +23,6 @@ import logging
 import re
 from datetime import datetime, timezone
 
-import anthropic
 
 from spec1_labels import VERIF_CORROBORATED
 from spec1_core.briefing.templates import (
@@ -305,6 +304,37 @@ def _fallback_brief(
     return "\n".join(lines)
 
 
+def build_brief_prompts(records: list[dict], cycle_stats: dict, mode: str = "standard") -> tuple[str, str]:
+    """(system prompt, filled user prompt) for a run — exactly what the API would get."""
+    if mode == "geopolitics":
+        sys_prompt = GEO_SYSTEM_PROMPT
+    elif mode == "legislative":
+        sys_prompt = LEG_SYSTEM_PROMPT
+    else:
+        sys_prompt = BRIEF_SYSTEM
+    return sys_prompt, _build_prompt(records, cycle_stats, mode=mode)
+
+
+def handoff_doc(records: list[dict], cycle_stats: dict, mode: str = "standard") -> str:
+    """One file to hand to Claude by hand (chat, not API) to write the brief.
+
+    Contains the same system and user prompt the API path sends, so a brief
+    written from it follows the same house rules. No API key needed.
+    """
+    sys_prompt, user_prompt = build_brief_prompts(records, cycle_stats, mode=mode)
+    run_id = cycle_stats.get("run_id", "unknown")
+    return (
+        f"# SPEC-1 brief handoff — {run_id}\n\n"
+        f"Records: {len(records)} · Mode: {mode}\n\n"
+        "How to use: give this whole file to Claude and ask for the brief. "
+        "Section 1 is the standing instruction set; section 2 is this run's data.\n\n"
+        "---\n\n"
+        f"## 1. Instructions\n\n{sys_prompt.strip()}\n\n"
+        "---\n\n"
+        f"## 2. This run\n\n{user_prompt.strip()}\n"
+    )
+
+
 def generate_brief(records: list[dict], cycle_stats: dict, mode: str = "standard") -> tuple[str, str]:
     """Generate the daily intelligence brief via Claude.
 
@@ -319,23 +349,22 @@ def generate_brief(records: list[dict], cycle_stats: dict, mode: str = "standard
           Legislative mode is triggered by cls_legislative when that module
           feeds into the brief pipeline. Not yet auto-triggered by cycle.py.
     """
+    try:
+        sys_prompt, user_prompt = build_brief_prompts(records, cycle_stats, mode=mode)
+        prompts_text = f"## SYSTEM PROMPT\n\n{sys_prompt.strip()}\n\n---\n\n## USER PROMPT\n\n{user_prompt.strip()}\n"
+    except Exception as exc:
+        logger.error("Brief prompt build failed: %s", exc)
+        return _fallback_brief(cycle_stats, records, reason="prompt build failed"), ""
+
     api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip().lstrip('\ufeff')
     if not api_key:
         print("[briefing] ANTHROPIC_API_KEY not set in environment — returning fallback brief")
         logger.warning("ANTHROPIC_API_KEY not set — returning fallback brief")
-        return _fallback_brief(cycle_stats, records), ""
+        return _fallback_brief(cycle_stats, records), prompts_text
 
-    if mode == "geopolitics":
-        sys_prompt = GEO_SYSTEM_PROMPT
-    elif mode == "legislative":
-        sys_prompt = LEG_SYSTEM_PROMPT
-    else:
-        sys_prompt = BRIEF_SYSTEM
-
-    prompts_text = ""
     try:
-        user_prompt = _build_prompt(records, cycle_stats, mode=mode)
-        prompts_text = f"## SYSTEM PROMPT\n\n{sys_prompt.strip()}\n\n---\n\n## USER PROMPT\n\n{user_prompt.strip()}\n"
+        import anthropic  # only needed when Claude is called from here
+
         client = anthropic.Anthropic(api_key=api_key)
         message = client.messages.create(
             model=MODEL,
