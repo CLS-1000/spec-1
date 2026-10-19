@@ -385,6 +385,16 @@ def run_cycle(
             print("\n[Briefing] Generating daily intelligence brief...")
         brief_md, _ = generate_brief(stored_records, stats)
         brief_path = write_brief(brief_md, run_id, stats["finished_at"])
+        try:
+            from spec1_core.briefing.generator import handoff_doc
+            from spec1_core.briefing.writer import write_handoff
+            stats["handoff_path"] = write_handoff(
+                handoff_doc(stored_records, stats), stats["finished_at"])
+            if verbose:
+                print(f"  Claude handoff: {stats['handoff_path']}")
+        except Exception as exc:
+            logger.error("Handoff write failed: %s", exc)
+            stats["errors"].append(f"handoff:{exc}")
         brief_word_count = len(brief_md.split())
         stats["brief_path"] = brief_path
         stats["brief_word_count"] = brief_word_count
