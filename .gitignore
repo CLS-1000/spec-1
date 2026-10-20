@@ -20,6 +20,8 @@ wheels/
 MANIFEST
 .env
 .envrc
+.env.bak*
+.env.*.bak
 .venv
 
 # Shell init files — never commit; high risk of leaking secrets via env exports
