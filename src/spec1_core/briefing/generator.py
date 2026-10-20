@@ -75,11 +75,18 @@ def _format_record(record: dict) -> str:
     priority = record.get("opportunity_priority", "—")
     url = record.get("signal_url", "")
     url_str = f" | {url}" if url else ""
-    return (
+    line = (
         f"{source.upper()} | {pattern} | "
         f"confidence={float(confidence):.2f} | classification={classification} | "
         f"priority={priority}{url_str}"
     )
+    excerpt = str(record.get("signal_excerpt") or "").strip()
+    reasoning = str(record.get("llm_reasoning") or "").strip()
+    if excerpt:
+        line += f"\n    Excerpt: {excerpt}"
+    if reasoning:
+        line += f"\n    Model assessment: {reasoning}"
+    return line
 
 
 def _build_prompt(records: list[dict], cycle_stats: dict, mode: str = "standard") -> str:
