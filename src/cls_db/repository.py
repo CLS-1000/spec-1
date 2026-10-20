@@ -69,20 +69,23 @@ class Repository:
         if not records:
             return 0
         now = _now()
-        rows: list[tuple] = []
+        
+        # Serialize each record and ensure written_at is present
+        serialized: list[dict] = []
         for rec in records:
             entry = {k: _serialize(v) for k, v in rec.items()}
             if "written_at" not in entry:
                 entry["written_at"] = now
-            rows.append(tuple(entry.values()))
+            serialized.append(entry)
 
-        # Use columns from first record
-        first = {k: _serialize(v) for k, v in records[0].items()}
-        if "written_at" not in first:
-            first["written_at"] = now
-        columns = ", ".join(first.keys())
-        placeholders = ", ".join("?" for _ in first)
+        # Union all keys across all records in the batch for a consistent schema
+        all_keys: list[str] = sorted({k for entry in serialized for k in entry})
+        columns = ", ".join(all_keys)
+        placeholders = ", ".join("?" for _ in all_keys)
         sql = f"INSERT OR REPLACE INTO {self.table} ({columns}) VALUES ({placeholders})"  # nosec B608
+
+        # Build uniform tuples matching all_keys, defaulting missing fields to None (NULL)
+        rows = [tuple(entry.get(k) for k in all_keys) for entry in serialized]
         self.db.executemany(sql, rows)
         return len(rows)
 
