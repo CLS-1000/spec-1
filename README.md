@@ -32,6 +32,8 @@ A pass shows the records have not changed since they were sealed. It does not sh
 
 ## Oregon Legislature, Verified
 
+**Live: [Oregon Legislature, Verified — 2025 session](https://cls-1000.github.io/notitia-civica/oregon/2025R1/)**, every bill of the 2025 regular session, sealed and checkable. Its anchor is published in [OPERATOR_KEY.md](https://github.com/CLS-1000/notitia-civica/blob/main/evidence/OPERATOR_KEY.md).
+
 `src/cls_civica/` turns every bill in an Oregon legislative session into a plain-language card: what happened, when, and where it stands. Every sentence cites the official rows it rests on.
 
 1. [proc_track](https://github.com/CLS-1000/proc_track) replays each bill's official action history from the Legislature's API and checks that every step was a legal move under chamber procedure. Anything it can't explain halts the build.
