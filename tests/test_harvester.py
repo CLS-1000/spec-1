@@ -8,6 +8,8 @@
 
 from __future__ import annotations
 
+import logging
+
 import ssl
 from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
@@ -280,7 +282,7 @@ def test_parse_feed_normal_uses_feedparser_directly():
 
 # ─── fetch_feed tests ─────────────────────────────────────────────────────────
 
-def test_fetch_feed_bozo_with_no_entries_raises():
+def test_fetch_feed_bozo_with_no_entries_raises(caplog):
     """A bozo feed with no entries and a bozo_exception raises RuntimeError."""
     mock_parsed = MagicMock()
     mock_parsed.get = MagicMock(side_effect=lambda k, d=None: {
@@ -290,8 +292,10 @@ def test_fetch_feed_bozo_with_no_entries_raises():
     }.get(k, d))
 
     with patch("spec1_core.signal.harvester._parse_feed", return_value=mock_parsed):
-        with pytest.raises(RuntimeError, match="Failed to parse feed"):
-            list(fetch_feed("bad_source", "https://example.com"))
+        with caplog.at_level(logging.WARNING):
+            signals = list(fetch_feed("bad_source", "https://example.com"))
+        assert signals == []
+        assert "Failed to parse feed bad_source" in caplog.text
 
 
 def test_fetch_feed_skips_entries_without_title_or_link():

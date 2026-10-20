@@ -13,6 +13,7 @@ Sources: War on the Rocks, Cipher Brief, Lawfare, RAND, Atlantic Council, Defens
 from __future__ import annotations
 
 import hashlib
+import logging
 import re
 import ssl
 import urllib.request
@@ -24,6 +25,8 @@ import requests
 
 from spec1_core.schemas.models import Signal
 
+logger = logging.getLogger(__name__)
+
 DEFAULT_FEEDS: dict[str, str] = {
     "war_on_the_rocks": "https://warontherocks.com/feed/",
     "cipher_brief": "https://www.thecipherbrief.com/feed",
@@ -34,7 +37,7 @@ DEFAULT_FEEDS: dict[str, str] = {
     # DPRK / Korea intelligence feeds
     "38_north": "https://www.38north.org/feed/",
     "nk_news": "https://www.nknews.org/feed/",
-    "csis_korea": "https://www.csis.org/programs/korea-chair/feed",
+    "csis_korea": "https://beyondparallel.csis.org/feed/",
     "yonhap": "https://en.yna.co.kr/RSS/news.xml",
 }
 
@@ -162,8 +165,8 @@ def fetch_feed(
 
     if parsed.get("bozo") and not parsed.get("entries"):
         bozo_exc = parsed.get("bozo_exception")
-        if bozo_exc:
-            raise RuntimeError(f"Failed to parse feed {name}: {bozo_exc}")
+        logger.warning("Failed to parse feed %s: %s (skipping)", name, bozo_exc)
+        return
 
     for entry in parsed.get("entries", []):
         title = getattr(entry, "title", "") or ""
