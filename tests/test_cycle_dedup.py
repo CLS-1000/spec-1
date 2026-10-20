@@ -45,7 +45,15 @@ TWO_ITEMS = (("Russia Military Intelligence Update", "https://example.com/a1"),
 
 
 def _run(store_path: Path, parsed, run_id: str, **kw) -> dict:
-    with patch("spec1_core.signal.harvester.feedparser.parse", return_value=parsed):
+    from spec1_core.investigation.verifier import Outcome
+    mock_outcome = Outcome(
+        outcome_id="mock-outcome-001",
+        classification="CORROBORATED",
+        confidence=0.95,
+        evidence=["LLM assessment: Mock verification passed hermetically"],
+    )
+    with patch("spec1_core.signal.harvester.feedparser.parse", return_value=parsed), \
+         patch("spec1_core.app.cycle.verify_investigation", return_value=mock_outcome):
         return run_cycle(store_path=store_path, run_id=run_id, environment="test",
                          feeds={"rand": "https://example.com/feed"}, verbose=False, **kw)
 
@@ -142,3 +150,36 @@ def test_cycle_in_tests_writes_nothing_into_repo(tmp_path):
     stats = _run(tmp_path / "intel.jsonl", _feed(*TWO_ITEMS), "run-isolation")
     assert stats["records_stored"] > 0
     assert _snapshot(watched) == before
+
+
+def test_yonhap_wire_updates_produce_identical_signal_id():
+    from spec1_core.signal.harvester import _make_signal_id
+    lead_id = _make_signal_id(
+        "https://en.yna.co.kr/view/AEN20261020006751315",
+        "(LEAD) S. Korea to withdraw some embassy staff from Ukraine amid N.K. POW dispute",
+    )
+    second_ld_id = _make_signal_id(
+        "https://en.yna.co.kr/view/AEN20261020006752315",
+        "(2nd LD) S. Korea to withdraw some embassy staff from Ukraine amid N.K. POW dispute",
+    )
+    third_ld_id = _make_signal_id(
+        "https://en.yna.co.kr/view/AEN20261020006753315",
+        "(3rd LD) S. Korea to withdraw some embassy staff from Ukraine amid N.K. POW dispute",
+    )
+    assert lead_id == second_ld_id == third_ld_id
+
+
+def test_yonhap_wire_updates_deduplicated_in_cycle(tmp_path):
+    store_path = tmp_path / "intel.jsonl"
+    lead_item = (
+        "(LEAD) S. Korea to withdraw some embassy staff from Ukraine amid N.K. POW dispute",
+        "https://en.yna.co.kr/view/AEN20261020006751315",
+    )
+    second_ld_item = (
+        "(2nd LD) S. Korea to withdraw some embassy staff from Ukraine amid N.K. POW dispute",
+        "https://en.yna.co.kr/view/AEN20261020006752315",
+    )
+    stats = _run(store_path, _feed(lead_item, second_ld_item), "run-yonhap-dupe")
+    assert stats["signals_harvested"] == 2
+    assert stats["records_stored"] == 1
+    assert stats["signals_skipped_seen"] == 1
