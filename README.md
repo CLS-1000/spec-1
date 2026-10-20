@@ -12,7 +12,9 @@ That last part is the point. Most monitoring software tells you what it surfaced
 
 You don't have to trust SPEC-1's output. Its published findings are sealed, and anyone can check them offline with one file and the Python standard library.
 
-The first published pack is about Oregon's legislative data. It compares two things the Legislature's public API records: the "Governor vetoed." action in each measure's history (27 measures, 3 of them later passed by override) and the API's own `Vetoed` field. As sealed on 2026-10-01, the two agree on all 27. The pack lives in [notitia-civica/evidence](https://github.com/CLS-1000/notitia-civica/tree/main/evidence). To check it:
+The first published finding is about Oregon's legislative data. The Legislature's public data service carries a `Vetoed` field on every bill. On 27 September 2026 it was false on 26 of the 27 measures whose own histories record "Governor vetoed.", including all seven vetoes of 2025. The gap was reported to the Legislature on 28 September; by 29 September the field was true on all 27, and the Legislature confirmed the numbers and the update. The write-up is [Oregon's Veto Field](https://github.com/CLS-1000/pdx-1i/blob/main/ui/oregon-veto-field.html) (Notitia Civica, issue OR-001).
+
+The evidence pack was sealed on 1 October and lives in [notitia-civica/evidence](https://github.com/CLS-1000/notitia-civica/tree/main/evidence). To check it:
 
 ```bash
 git clone https://github.com/CLS-1000/notitia-civica
