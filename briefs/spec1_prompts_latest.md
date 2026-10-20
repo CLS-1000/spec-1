@@ -1,4 +1,4 @@
-# SPEC-1 Investigation Prompts — 2026-10-19
-Generated: 2026-10-19T19:09:44.055396+00:00
+# SPEC-1 Investigation Prompts — 2026-10-20
+Generated: 2026-10-20T17:50:44.173656+00:00
 
 _(No Claude investigation prompts in this brief.)_
