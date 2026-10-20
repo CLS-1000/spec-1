@@ -35,8 +35,17 @@ _SYSTEM_PROMPT = (
 )
 
 
-def _build_user_prompt(investigation: Investigation) -> str:
-    lines = [
+ARTICLE_CHARS = 2000
+
+
+def _build_user_prompt(investigation: Investigation, article: str = "", source: str = "") -> str:
+    lines: list[str] = []
+    if article.strip():
+        text = " ".join(article.split())
+        if len(text) > ARTICLE_CHARS:
+            text = text[:ARTICLE_CHARS].rsplit(" ", 1)[0] + " …"
+        lines += [f"Article ({source or 'unknown source'}):", text, ""]
+    lines += [
         f"Hypothesis: {investigation.hypothesis}",
         "",
         "Queries raised:",
@@ -54,7 +63,7 @@ def _build_user_prompt(investigation: Investigation) -> str:
             lines.append(f"  - {a}")
     lines.append("")
     lines.append(
-        "Based on the hypothesis, queries, and sources, assess credibility. "
+        "Based on the article (if given), hypothesis, queries, and sources, assess credibility. "
         "Return JSON only."
     )
     return "\n".join(lines)
@@ -69,14 +78,46 @@ def _fallback_outcome() -> Outcome:
     )
 
 
-def verify_investigation(investigation: Investigation) -> Outcome:
-    """Verify an investigation hypothesis via 3-tier LLM fallback. Never raises."""
+def _extract_json(raw: str) -> dict:
+    """Parse the reply as JSON, or the first {...} object in it.
+
+    Small local models often add a sentence before or after the JSON.
+    """
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        start = raw.find("{")
+        while start != -1:
+            depth = 0
+            for i in range(start, len(raw)):
+                if raw[i] == "{":
+                    depth += 1
+                elif raw[i] == "}":
+                    depth -= 1
+                    if depth == 0:
+                        try:
+                            data = json.loads(raw[start:i + 1])
+                            if isinstance(data, dict):
+                                return data
+                        except json.JSONDecodeError:
+                            pass
+                        break
+            start = raw.find("{", start + 1)
+        raise
+
+
+def verify_investigation(investigation: Investigation, article: str = "", source: str = "") -> Outcome:
+    """Verify an investigation hypothesis via 3-tier LLM fallback. Never raises.
+
+    ``article`` is the signal's cleaned text; without it the model sees only
+    the templated hypothesis and can't do more than guess.
+    """
     from spec1_core.llm.fallback_client import FallbackLLMClient
 
     try:
         llm = FallbackLLMClient(task="analyze")
         raw = llm.complete(
-            prompt=_build_user_prompt(investigation),
+            prompt=_build_user_prompt(investigation, article, source),
             system=_SYSTEM_PROMPT,
         )
         # Strip markdown fences that some tiers may include.
@@ -93,7 +134,7 @@ def verify_investigation(investigation: Investigation) -> Outcome:
         return _fallback_outcome()
 
     try:
-        data = json.loads(raw)
+        data = _extract_json(raw)
         classification = data.get("classification", "INVESTIGATE")
         if classification not in VALID_CLASSIFICATIONS:
             classification = "INVESTIGATE"
