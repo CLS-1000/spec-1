@@ -329,7 +329,7 @@ def run_cycle(
             stats["investigations_generated"] += 1
 
             # Step 5: Verify
-            outcome = verify_investigation(inv)
+            outcome = verify_investigation(inv, article=ps.cleaned_text, source=sig.source)
             stats["outcomes_verified"] += 1
 
             # Step 6: Analyze
@@ -351,6 +351,10 @@ def run_cycle(
                 "hypothesis": inv.hypothesis,
                 "outcome_classification": outcome.classification,
                 "outcome_confidence": outcome.confidence,
+                "signal_excerpt": " ".join(ps.cleaned_text.split())[:600],
+                "llm_reasoning": next(
+                    (e.split(":", 1)[1].strip()[:400] for e in outcome.evidence
+                     if e.startswith("LLM assessment:")), ""),
             }
             store.append(record_dict)
             stored_records.append(record_dict)
