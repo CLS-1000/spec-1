@@ -13,10 +13,10 @@ def to_markdown(brief: LegJudBrief) -> str:
     """Render full 8-section brief as Markdown."""
     # If zero eligible, emit termination line
     if brief.eligible_records == 0:
-        return f"NO LEGISLATIVE OR JUDICIAL SIGNAL — CYCLE {brief.run_id[:8]}"
+        return f"NO LEGISLATIVE OR JUDICIAL SIGNAL — CYCLE {brief.run_id}"
     lines = [
         f"# Legislative & Judicial Desk — {brief.date}",
-        f"*run_id: {brief.run_id[:8]} | records: {brief.eligible_records}/{brief.total_records}*",
+        f"*run_id: {brief.run_id} | records: {brief.eligible_records}/{brief.total_records}*",
         "",
     ]
     for section in brief.sections:
