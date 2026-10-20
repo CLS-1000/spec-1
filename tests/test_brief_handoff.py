@@ -57,3 +57,10 @@ def test_cli_handoff_writes_file_and_skips_claude(tmp_path, monkeypatch):
     rc = tool.main(["--intel", str(store), "--run-id", "run-h1", "--out-dir", str(tmp_path), "--handoff"])
     assert rc == 0 and not called
     assert "## 2. This run" in (tmp_path / "spec1_handoff_run-h1.md").read_text()
+
+
+def test_handoff_includes_the_feed_prompt_format():
+    doc = handoff_doc(RECORDS, STATS)
+    assert "## 3. Feed prompt format" in doc
+    assert "[ANALYST PASTES DATA HERE]" in doc
+    assert "ROUTING" not in doc.split("## 3.")[1]

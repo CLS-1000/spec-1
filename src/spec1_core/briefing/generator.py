@@ -31,7 +31,7 @@ from spec1_core.briefing.templates import (
     LEG_SYSTEM_PROMPT,
     LEG_USER_PROMPT_TEMPLATE,
 )
-from spec1_core.briefing.brief_package_templates import BRIEF_SYSTEM, BRIEF_USER
+from spec1_core.briefing.brief_package_templates import BRIEF_SYSTEM, BRIEF_USER, LEAD_PACKET_USER
 
 try:
     from zoneinfo import ZoneInfo
@@ -322,6 +322,20 @@ def build_brief_prompts(records: list[dict], cycle_stats: dict, mode: str = "sta
     return sys_prompt, _build_prompt(records, cycle_stats, mode=mode)
 
 
+def _feed_prompt_format() -> str:
+    """The FEED PROMPT block of the Lead Packet template, verbatim.
+
+    The brief's Story Leads section says to use the Lead Packet format and
+    that the feed prompt is mandatory; without this block a hand-written
+    brief has no format to follow.
+    """
+    start = LEAD_PACKET_USER.find("F E E D   P R O M P T")
+    end = LEAD_PACKET_USER.find("ROUTING", start)
+    if start < 0 or end < 0:
+        return ""
+    return LEAD_PACKET_USER[start:end].rstrip(" ━\n") + "\n"
+
+
 def handoff_doc(records: list[dict], cycle_stats: dict, mode: str = "standard") -> str:
     """One file to hand to Claude by hand (chat, not API) to write the brief.
 
@@ -339,6 +353,8 @@ def handoff_doc(records: list[dict], cycle_stats: dict, mode: str = "standard") 
         f"## 1. Instructions\n\n{sys_prompt.strip()}\n\n"
         "---\n\n"
         f"## 2. This run\n\n{user_prompt.strip()}\n"
+        + (f"\n---\n\n## 3. Feed prompt format (every Story Lead carries one)\n\n{feed}"
+           if (feed := _feed_prompt_format()) else "")
     )
 
 
