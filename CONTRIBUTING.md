@@ -3,7 +3,7 @@
 > SPEC-1 is proprietary (see [LICENSE](LICENSE)). External contributions are
 > not accepted by default; this document describes the development process
 > the author and authorized collaborators follow. Reach out at
-> lakampmatt@gmail.com before opening a PR.
+> spec1_ops@proton.me before opening a PR.
 
 SPEC-1 is a portfolio-grade OSINT engine; the bar for changes is "do not
 break the deterministic, legible pipeline." This guide is the short version
