@@ -204,7 +204,12 @@ def _fallback_brief(
     records: list[dict] | None = None,
     reason: str = "API key not configured",
 ) -> str:
-    """Rule-based brief in the canonical layout. No LLM required."""
+    """Rule-based brief in the canonical layout. No LLM required.
+
+    Marks ``cycle_stats["brief_fallback"] = True`` so the caller (and the
+    publish guard) know this brief is rule-based, not model output.
+    """
+    cycle_stats["brief_fallback"] = True
     records = records or []
     date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     run_id = cycle_stats.get("run_id", "—")
@@ -346,7 +351,11 @@ def handoff_doc(records: list[dict], cycle_stats: dict, mode: str = "standard") 
     run_id = cycle_stats.get("run_id", "unknown")
     return (
         f"# SPEC-1 brief handoff — {run_id}\n\n"
-        f"Records: {len(records)} · Mode: {mode}\n\n"
+        f"Records: {len(records)} · Mode: {mode} · "
+        f"Analysis tier: {cycle_stats.get('records_tier', 'unknown')} "
+        f"{cycle_stats.get('analysis_tiers', {})}\n\n"
+        "If the tier is rule_based, these records were not checked by a model: "
+        "do not write a publishable brief from them.\n\n"
         "How to use: give this whole file to Claude and ask for the brief. "
         "Section 1 is the standing instruction set; section 2 is this run's data.\n\n"
         "---\n\n"

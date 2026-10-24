@@ -47,7 +47,8 @@ htmlcov/
 # Write these to generated/ or a dedicated branch, not main
 generated/
 briefs/
-workspace/
+# Case files live in the repo-root workspace/; src/spec1_core/workspace/ is source.
+/workspace/
 research/dossiers/
 
 # Loose runtime artifacts at root — exports, rendered HTML, kill files

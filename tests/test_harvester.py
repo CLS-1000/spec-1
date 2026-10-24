@@ -15,7 +15,6 @@ from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 
 import feedparser
-import pytest
 
 from spec1_core.signal.harvester import (
     _parse_date,

@@ -2,6 +2,11 @@ name: Run SPEC-1 cycle
 
 # Daily autonomous cycle. Code comes from `develop`; all run state and outputs
 # live on the orphan `data` branch (append-only history: one commit per cycle).
+#
+# TRIAGE ONLY: Actions has no model (no Ollama, no API key), so this run
+# harvests, scores the 4 gates and classifies with the deterministic rules.
+# Every record is stamped analysis_tier = rule_based and no brief, handoff or
+# PDF is written. Real analysis runs on Kali against the local model.
 on:
   schedule:
     - cron: '0 13 * * *'   # 13:00 UTC = 06:00 PDT / 05:00 PST
@@ -52,17 +57,22 @@ jobs:
           for p in spec1_intelligence.jsonl spec1.db data briefs logs; do
             if [ -e "_data/$p" ]; then cp -a "_data/$p" . ; fi
           done
+          # Past issues, so the publication issue counter continues instead of
+          # restarting at 001 in a fresh workspace every run.
+          if [ -d _data/publications ]; then
+            mkdir -p generated/briefs
+            cp -a _data/publications/. generated/briefs/
+          fi
 
-      - name: Run cycle
+      - name: Run cycle (triage only)
         env:
           PYTHONPATH: src
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           SPEC1_ENVIRONMENT: production
         run: |
           mkdir -p logs
           LOG="logs/cycle_$(date -u +%Y%m%dT%H%M%SZ).log"
           echo "CYCLE_LOG=$LOG" >> "$GITHUB_ENV"
-          python -m spec1_core.app.cycle --store spec1_intelligence.jsonl --env production --timeout 15 \
+          python -m spec1_core.app.cycle --store spec1_intelligence.jsonl --env production --timeout 15 --triage-only \
             2>&1 | tee "$LOG"
 
       - name: Commit outputs to data branch

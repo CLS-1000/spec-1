@@ -3,7 +3,6 @@
 # @loc:      gh_main
 # @status:   stable
 # @depends:  NONE
-# TODO: back-import from spec1_engine — migrate to spec1_core equivalent
 
 """JSONL → SQLite backfill / migration tool.
 
@@ -17,20 +16,20 @@ reports mismatches without writing any data.
 Usage examples::
 
     # Backfill the intelligence store
-    PYTHONPATH=src python -m spec1_engine.tools.backfill_jsonl_to_db \\
+    PYTHONPATH=src python -m spec1_core.tools.backfill_jsonl_to_db \\
         --jsonl spec1_intelligence.jsonl \\
-        --table intel_records \\
+        --table intelligence_records \\
         --pk record_id
 
     # Backfill leads with a custom DB path
-    PYTHONPATH=src python -m spec1_engine.tools.backfill_jsonl_to_db \\
+    PYTHONPATH=src python -m spec1_core.tools.backfill_jsonl_to_db \\
         --jsonl leads.jsonl \\
         --table leads \\
         --pk lead_id \\
         --db spec1.db
 
     # Verify parity only (no writes)
-    PYTHONPATH=src python -m spec1_engine.tools.backfill_jsonl_to_db \\
+    PYTHONPATH=src python -m spec1_core.tools.backfill_jsonl_to_db \\
         --jsonl verdicts.jsonl \\
         --table verdicts \\
         --pk verdict_id \\

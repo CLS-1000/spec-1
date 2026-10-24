@@ -19,7 +19,6 @@ Usage:
 
 import os
 import re
-import sys
 import argparse
 from pathlib import Path
 
@@ -101,7 +100,6 @@ def infer_module(rel: Path) -> str:
 
     # src files: parent_stem (e.g. signal/harvester -> signal_harvester)
     if len(parts) >= 3 and parts[0] == "src":
-        ns     = parts[1]   # e.g. spec1_core
         subpkg = parts[2] if len(parts) > 3 else ""
         if subpkg and subpkg not in ("__init__",):
             return f"{subpkg}_{stem}" if stem != "__init__" else subpkg
@@ -236,7 +234,7 @@ def main():
             print(f"\n  ... and {len(tagged) - 20} more")
 
     if dry_run and tagged:
-        print(f"\nRun with --write to apply.\n")
+        print("\nRun with --write to apply.\n")
 
 if __name__ == "__main__":
     main()

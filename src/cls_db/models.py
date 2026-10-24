@@ -33,7 +33,10 @@ CREATE TABLE IF NOT EXISTS intel_records (
     source_weight REAL DEFAULT 0.0,
     analyst_weight REAL DEFAULT 0.0,
     run_id TEXT,
-    written_at TEXT
+    written_at TEXT,
+    signal_excerpt TEXT,
+    llm_reasoning TEXT,
+    analysis_tier TEXT
 )
 """
 

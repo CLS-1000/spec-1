@@ -20,7 +20,7 @@ python -m spec1_core.app.cycle
 BRIEF="briefs/spec1_brief_${TODAY}.md"
 if [ -f "$BRIEF" ]; then
     OUT="/mnt/c/Users/mjlak/Desktop/owc_${TODAY}.pdf"
-    PYTHONPATH=src python -m spec1_engine.tools.pdf_render \
+    PYTHONPATH=src python -m spec1_core.tools.pdf_render \
         --brief-md "$BRIEF" \
         --out "$OUT"
     echo ""
