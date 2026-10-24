@@ -101,7 +101,7 @@ Severity = brightness not hue
 
 ## KEY FILES
 DESIGN_INTENT.md                      canonical architecture authority
-AUDIT_NOTES.md                        dual engine finding
+docs/archive/audits/AUDIT_NOTES.md    dual engine finding (engine archived 2026-10-24)
 src/spec1_core/config/calibration.py  operational parameters (not public)
 src/cls_analyst_loop/                 analyst workflow chain of custody
 src/cls_metro/                        SWITCHBOARD city intelligence platform

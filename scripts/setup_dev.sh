@@ -45,7 +45,7 @@ echo "    Created generated/ directories"
 # 5. Smoke test
 echo "==> Running smoke test"
 PYTHONPATH="$REPO_ROOT/src" python3 -c "
-from spec1_engine.core.engine import Engine
+from spec1_core.core.engine import Engine
 print('    Engine import — OK')
 "
 PYTHONPATH="$REPO_ROOT/src" python3 -c "

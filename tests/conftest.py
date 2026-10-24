@@ -27,7 +27,7 @@ def isolate_output_paths(tmp_path, monkeypatch):
     monkeypatch.setenv("SPEC1_DB_PATH", str(out / "spec1.db"))
     monkeypatch.setenv("SPEC1_LLM_LOG_PATH", str(out / "logs" / "llm_fallback.jsonl"))
 
-    for pkg in ("spec1_core", "spec1_engine"):
+    for pkg in ("spec1_core",):
         # Some tests wipe os.environ, so also move the module default, not just the env var.
         try:
             llm = importlib.import_module(f"{pkg}.llm.fallback_client")

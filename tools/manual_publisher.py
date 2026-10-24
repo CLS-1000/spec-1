@@ -13,7 +13,7 @@ store, then renders it to a clean HTML document (and optionally a PDF).
 
 The HTML output references ``assets/brief_style.css`` for print-ready styling.
 PDF output is produced via the out-of-process WeasyPrint renderer
-(``spec1_engine.tools.pdf_render``) so this script never imports weasyprint directly.
+(``spec1_core.tools.pdf_render``) so this script never imports weasyprint directly.
 
 Usage examples
 --------------
@@ -110,7 +110,7 @@ def _cycle_stats(run_id: str, records: list[dict]) -> dict:
 def _generate_brief(records: list[dict], cycle_stats: dict, rule_based: bool) -> str:
     if not rule_based:
         try:
-            from spec1_engine.briefing.generator import generate_brief  # type: ignore
+            from spec1_core.briefing.generator import generate_brief  # type: ignore
             brief_md, _ = generate_brief(records, cycle_stats)
             if brief_md:
                 return brief_md
@@ -207,7 +207,7 @@ def render_html(md_text: str, css_path: str = "../assets/brief_style.css") -> st
 
 
 # ---------------------------------------------------------------------------
-# PDF rendering (out-of-process via spec1_engine.tools.pdf_render)
+# PDF rendering (out-of-process via spec1_core.tools.pdf_render)
 # ---------------------------------------------------------------------------
 
 def render_pdf(md_path: Path, out_path: Path) -> None:
@@ -216,7 +216,7 @@ def render_pdf(md_path: Path, out_path: Path) -> None:
         [
             sys.executable,
             "-m",
-            "spec1_engine.tools.pdf_render",
+            "spec1_core.tools.pdf_render",
             "--brief-md",
             str(md_path),
             "--out",
