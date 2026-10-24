@@ -17,6 +17,13 @@ import threading
 from datetime import datetime, timezone
 from pathlib import Path
 
+from spec1_labels import (
+    ANALYSIS_TIER_LLM_VERIFIED,
+    ANALYSIS_TIER_RULE_BASED,
+    BRIEF_SOURCE_HAND_WRITTEN,
+    BRIEF_SOURCE_MODEL,
+)
+
 logger = logging.getLogger(__name__)
 
 BRIEFS_DIR = Path("briefs")
@@ -251,3 +258,106 @@ def write_handoff(doc: str, timestamp: str) -> str:
         dated.write_text(doc, encoding="utf-8")
         (BRIEFS_DIR / "spec1_handoff_latest.md").write_text(doc, encoding="utf-8")
     return str(dated)
+
+
+# ── Brief provenance (publish guard) ─────────────────────────────────────────
+#
+# Every brief the cycle writes gets a sidecar ``<brief>.meta.json`` saying how
+# it was made. A brief is publishable only when its ``analysis_tier`` is
+# ``llm_verified``: every record behind it was classified by a real model AND
+# the text came from a model or was written by hand from those records. The
+# Notitia publisher refuses anything else, including a brief with no sidecar.
+
+
+def meta_path_for(brief_path: str | Path) -> Path:
+    """``briefs/spec1_brief_2026-10-24.md`` → ``briefs/spec1_brief_2026-10-24.meta.json``."""
+    p = Path(brief_path)
+    return p.with_name(p.stem + ".meta.json")
+
+
+def brief_analysis_tier(records_tier: str, brief_source: str) -> str:
+    """The brief's tier: verified only if its records and its text both are."""
+    if records_tier == ANALYSIS_TIER_LLM_VERIFIED and brief_source in (
+        BRIEF_SOURCE_MODEL, BRIEF_SOURCE_HAND_WRITTEN,
+    ):
+        return ANALYSIS_TIER_LLM_VERIFIED
+    return ANALYSIS_TIER_RULE_BASED
+
+
+def write_brief_meta(
+    brief_path: str | Path,
+    *,
+    run_id: str,
+    records_tier: str,
+    brief_source: str,
+    record_tiers: dict | None = None,
+) -> Path:
+    """Write the provenance sidecar for *brief_path* and for ``spec1_brief_latest``."""
+    brief_path = Path(brief_path)
+    meta = {
+        "run_id": run_id,
+        "brief": brief_path.name,
+        "records_tier": records_tier,
+        "brief_source": brief_source,
+        "record_tiers": record_tiers or {},
+        "analysis_tier": brief_analysis_tier(records_tier, brief_source),
+        "written_at": datetime.now(timezone.utc).isoformat(),
+    }
+    text = json.dumps(meta, indent=2) + "\n"
+    out = meta_path_for(brief_path)
+    with _lock:
+        out.write_text(text, encoding="utf-8")
+        meta_path_for(brief_path.with_name("spec1_brief_latest.md")).write_text(text, encoding="utf-8")
+    return out
+
+
+def read_brief_meta(brief_path: str | Path) -> dict | None:
+    """Return the sidecar for *brief_path*, or None if missing/unreadable."""
+    try:
+        return json.loads(meta_path_for(brief_path).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+
+
+def mark_hand_written(brief_path: str | Path) -> dict:
+    """Record that *brief_path* now holds a hand-written brief (e.g. Claude in chat).
+
+    Keeps the cycle's ``records_tier``: a hand-written brief over rule-based
+    records is still rule-based and still refused by the publisher.
+    """
+    meta = read_brief_meta(brief_path)
+    if meta is None:
+        raise FileNotFoundError(f"no provenance sidecar for {brief_path}: {meta_path_for(brief_path)}")
+    meta["brief_source"] = BRIEF_SOURCE_HAND_WRITTEN
+    meta["analysis_tier"] = brief_analysis_tier(meta.get("records_tier", ""), BRIEF_SOURCE_HAND_WRITTEN)
+    meta["marked_hand_written_at"] = datetime.now(timezone.utc).isoformat()
+    meta_path_for(brief_path).write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
+    return meta
+
+
+def publish_block_reason(brief_path: str | Path) -> str | None:
+    """None if *brief_path* may be published; otherwise why it may not."""
+    meta = read_brief_meta(brief_path)
+    if meta is None:
+        return f"no provenance sidecar ({meta_path_for(brief_path).name}); refusing to publish an unlabelled brief"
+    tier = meta.get("analysis_tier")
+    if tier != ANALYSIS_TIER_LLM_VERIFIED:
+        return (f"brief is {tier or 'unlabelled'} (records_tier={meta.get('records_tier')}, "
+                f"brief_source={meta.get('brief_source')}); only {ANALYSIS_TIER_LLM_VERIFIED} briefs publish")
+    return None
+
+
+if __name__ == "__main__":
+    import argparse
+
+    _p = argparse.ArgumentParser(description="Brief provenance tools")
+    _p.add_argument("--mark-hand-written", metavar="BRIEF_MD",
+                    help="Record that this brief was written by hand from the cycle handoff")
+    _p.add_argument("--check", metavar="BRIEF_MD", help="Exit 1 unless this brief may be published")
+    _a = _p.parse_args()
+    if _a.mark_hand_written:
+        print(json.dumps(mark_hand_written(_a.mark_hand_written), indent=2))
+    if _a.check:
+        _why = publish_block_reason(_a.check)
+        print(f"REFUSED: {_why}" if _why else "OK: publishable")
+        sys.exit(1 if _why else 0)

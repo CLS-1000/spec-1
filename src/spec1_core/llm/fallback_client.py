@@ -133,7 +133,8 @@ class FallbackLLMClient:
                 break
             try:
                 text = self._backend_complete(backend, prompt, system)
-                self._record(self._tier_name(backend), t0, len(prompt + text), success=True)
+                self._active_tier = self._tier_name(backend)
+                self._record(self._active_tier, t0, len(prompt + text), success=True)
                 return text
             except Exception as exc:
                 logger.warning("%s backend failed for task %s: %s", backend, self._task, exc)

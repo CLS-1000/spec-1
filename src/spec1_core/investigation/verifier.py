@@ -18,7 +18,13 @@ import logging
 import uuid
 
 from spec1_core.schemas.models import Investigation, Outcome
-from spec1_labels import VERIF_CORROBORATED, VERIF_CONFLICTED
+from spec1_labels import (
+    ANALYSIS_TIER_LLM_VERIFIED,
+    ANALYSIS_TIER_RULE_BASED,
+    LLM_TIERS_REAL,
+    VERIF_CONFLICTED,
+    VERIF_CORROBORATED,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -75,6 +81,7 @@ def _fallback_outcome() -> Outcome:
         classification="INVESTIGATE",
         confidence=0.0,
         evidence=["Fallback: API error or parse failure — manual review required."],
+        analysis_tier=ANALYSIS_TIER_RULE_BASED,
     )
 
 
@@ -106,20 +113,33 @@ def _extract_json(raw: str) -> dict:
         raise
 
 
-def verify_investigation(investigation: Investigation, article: str = "", source: str = "") -> Outcome:
+def verify_investigation(
+    investigation: Investigation,
+    article: str = "",
+    source: str = "",
+    use_llm: bool = True,
+) -> Outcome:
     """Verify an investigation hypothesis via 3-tier LLM fallback. Never raises.
 
     ``article`` is the signal's cleaned text; without it the model sees only
     the templated hypothesis and can't do more than guess.
+
+    ``use_llm=False`` is deterministic triage: the Tier 3 rules answer directly
+    and no model is tried. Every Outcome carries ``analysis_tier`` —
+    ``llm_verified`` only when a real model produced the classification.
     """
+    from spec1_core.llm import tier3_rules
     from spec1_core.llm.fallback_client import FallbackLLMClient
 
+    tier = "mock"
     try:
-        llm = FallbackLLMClient(task="analyze")
-        raw = llm.complete(
-            prompt=_build_user_prompt(investigation, article, source),
-            system=_SYSTEM_PROMPT,
-        )
+        prompt = _build_user_prompt(investigation, article, source)
+        if use_llm:
+            llm = FallbackLLMClient(task="analyze")
+            raw = llm.complete(prompt=prompt, system=_SYSTEM_PROMPT)
+            tier = getattr(llm, "get_active_tier", lambda: "mock")()
+        else:
+            raw = tier3_rules.to_verifier_json(prompt)
         # Strip markdown fences that some tiers may include.
         if raw.startswith("```"):
             parts = raw.split("```")
@@ -153,6 +173,9 @@ def verify_investigation(investigation: Investigation, article: str = "", source
             classification=classification,
             confidence=confidence,
             evidence=evidence,
+            analysis_tier=(
+                ANALYSIS_TIER_LLM_VERIFIED if tier in LLM_TIERS_REAL else ANALYSIS_TIER_RULE_BASED
+            ),
         )
     except Exception as exc:
         logger.error("Failed to parse Claude response %r: %s", raw, exc)

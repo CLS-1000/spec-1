@@ -11,6 +11,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
+from spec1_labels import ANALYSIS_TIER_RULE_BASED
+
 
 @dataclass
 class Signal:
@@ -121,6 +123,9 @@ class Outcome:
     classification: str  # "CORROBORATED" | "ESCALATE" | "INVESTIGATE" | "MONITOR" | "CONFLICTED" | "ARCHIVE"
     confidence: float
     evidence: list[str]
+    # How the classification was produced; see spec1_labels.ANALYSIS_TIER_*.
+    # Defaults to rule-based so nothing is ever mistaken for model output.
+    analysis_tier: str = ANALYSIS_TIER_RULE_BASED
 
     def to_dict(self) -> dict:
         return {
@@ -128,6 +133,7 @@ class Outcome:
             "classification": self.classification,
             "confidence": self.confidence,
             "evidence": self.evidence,
+            "analysis_tier": self.analysis_tier,
         }
 
 

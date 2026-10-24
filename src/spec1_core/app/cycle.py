@@ -10,11 +10,18 @@ Implements and runs the full loop:
   RSS fetch → parse → score (4 gates) → investigation → verify → intelligence → JSONL store
 
 Usage:
-    python -m spec1_core.app.cycle
+    python -m spec1_core.app.cycle                 # full cycle (local model / Claude analysis)
+    python -m spec1_core.app.cycle --triage-only   # harvest + 4 gates + deterministic triage
+
+Every stored record carries ``analysis_tier``: ``llm_verified`` only when a
+real model produced its classification, ``rule_based`` otherwise. Triage-only
+runs (GitHub Actions) never call a model and never write a brief, handoff or
+publication PDF, so rule-based output can't be mistaken for analysis.
 """
 
 from __future__ import annotations
 
+import json
 import os
 import sys
 from datetime import datetime, timezone
@@ -44,6 +51,7 @@ from spec1_core.investigation.generator import generate_investigation
 from spec1_core.investigation.verifier import verify_investigation
 from spec1_core.intelligence.analyzer import analyze
 from spec1_core.intelligence.store import JsonlStore
+from spec1_labels import ANALYSIS_TIER_LLM_VERIFIED, ANALYSIS_TIER_RULE_BASED
 try:
     from cls_db.dual_write import make_dual_writer as _make_dual_writer
     _DUAL_WRITE_AVAILABLE = True
@@ -139,6 +147,7 @@ def run_cycle(
     max_signals: Optional[int] = None,
     verbose: bool = True,
     skip_seen: bool = True,
+    triage_only: bool = False,
 ) -> dict:
     """Execute one full SPEC-1 cycle and return a summary dict.
 
@@ -146,6 +155,11 @@ def run_cycle(
     the store, or that appear twice in this harvest, are not scored or stored
     again. Parsing and psyop scoring still see the full harvest so cross-outlet
     narrative clustering is unaffected.
+
+    With ``triage_only`` the cycle harvests, parses, scores the 4 gates and
+    classifies with the deterministic Tier 3 rules only: no model is tried and
+    no brief, handoff, publication PDF or case research is produced. Records are
+    stamped ``analysis_tier = rule_based``.
     """
     run_id = run_id or new_run_id()
     if _DUAL_WRITE_AVAILABLE:
@@ -167,6 +181,7 @@ def run_cycle(
         print(f"  environment: {environment}")
         print(f"  store     : {store_path}")
         print(f"  started   : {started_at}")
+        print(f"  mode      : {'triage-only (no model)' if triage_only else 'full'}")
         print(f"{'='*60}\n")
 
     stats = {
@@ -179,6 +194,8 @@ def run_cycle(
         "outcomes_verified": 0,
         "records_stored": 0,
         "signals_skipped_seen": 0,
+        "mode": "triage_only" if triage_only else "full",
+        "analysis_tiers": {ANALYSIS_TIER_LLM_VERIFIED: 0, ANALYSIS_TIER_RULE_BASED: 0},
         "errors": [],
     }
 
@@ -329,7 +346,8 @@ def run_cycle(
             stats["investigations_generated"] += 1
 
             # Step 5: Verify
-            outcome = verify_investigation(inv, article=ps.cleaned_text, source=sig.source)
+            outcome = verify_investigation(
+                inv, article=ps.cleaned_text, source=sig.source, use_llm=not triage_only)
             stats["outcomes_verified"] += 1
 
             # Step 6: Analyze
@@ -355,16 +373,19 @@ def run_cycle(
                 "llm_reasoning": next(
                     (e.split(":", 1)[1].strip()[:400] for e in outcome.evidence
                      if e.startswith("LLM assessment:")), ""),
+                "analysis_tier": outcome.analysis_tier,
             }
             store.append(record_dict)
             stored_records.append(record_dict)
             records_stored += 1
+            stats["analysis_tiers"][outcome.analysis_tier] = (
+                stats["analysis_tiers"].get(outcome.analysis_tier, 0) + 1)
 
             if verbose:
                 print(
                     f"  [{records_stored:03d}] [{opp.priority:8s}] score={opp.score:.3f} "
                     f"class={outcome.classification:14s} conf={outcome.confidence:.2f} "
-                    f"src={sig.source}"
+                    f"tier={outcome.analysis_tier} src={sig.source}"
                 )
         except Exception as exc:
             stats["errors"].append(f"pipeline:{opp.opportunity_id}:{exc}")
@@ -380,6 +401,23 @@ def run_cycle(
     last_run_state["signal_count"] = stats["signals_harvested"]
     last_run_state["record_count"] = records_stored
 
+    # Records count as analysis only if every one of them was model-verified.
+    stats["records_tier"] = (
+        ANALYSIS_TIER_LLM_VERIFIED
+        if stored_records and stats["analysis_tiers"].get(ANALYSIS_TIER_RULE_BASED, 0) == 0
+        else ANALYSIS_TIER_RULE_BASED
+    )
+
+    if triage_only:
+        stats["cases_updated"] = 0
+        if verbose:
+            tiers = stats["analysis_tiers"]
+            print(f"\n[Triage-only] {records_stored} record(s) stored, all rule_based "
+                  f"({tiers}). No brief, handoff, PDF or case research in this mode.")
+            print(f"\n{'='*60}\n  Cycle Complete (triage-only)\n  Records stored : {records_stored}"
+                  f"\n  Errors         : {len(stats['errors'])}\n{'='*60}\n")
+        return stats
+
     # ── Briefing ──────────────────────────────────────────────────────────────
     brief_md = ''
     try:
@@ -389,6 +427,24 @@ def run_cycle(
             print("\n[Briefing] Generating daily intelligence brief...")
         brief_md, _ = generate_brief(stored_records, stats)
         brief_path = write_brief(brief_md, run_id, stats["finished_at"])
+        try:
+            from spec1_core.briefing.writer import write_brief_meta
+            from spec1_labels import BRIEF_SOURCE_MODEL, BRIEF_SOURCE_RULES
+            meta_path = write_brief_meta(
+                brief_path,
+                run_id=run_id,
+                records_tier=stats["records_tier"],
+                brief_source=BRIEF_SOURCE_RULES if stats.get("brief_fallback") or not brief_md
+                else BRIEF_SOURCE_MODEL,
+                record_tiers=stats["analysis_tiers"],
+            )
+            meta = json.loads(meta_path.read_text(encoding="utf-8"))
+            stats["brief_analysis_tier"] = meta["analysis_tier"]
+            stats["brief_meta_path"] = str(meta_path)
+        except Exception as exc:
+            logger.error("Brief provenance sidecar failed: %s", exc)
+            stats["errors"].append(f"brief_meta:{exc}")
+            stats["brief_analysis_tier"] = ANALYSIS_TIER_RULE_BASED
         try:
             from spec1_core.briefing.generator import handoff_doc
             from spec1_core.briefing.writer import write_handoff
@@ -506,6 +562,10 @@ if __name__ == "__main__":
     parser.add_argument("--max-signals", type=int, default=None, help="Cap signals processed")
     parser.add_argument("--reprocess-seen", action="store_true",
                         help="Score and store signals even if their signal_id is already in the store")
+    parser.add_argument("--triage-only", action="store_true",
+                        default=os.environ.get("SPEC1_TRIAGE_ONLY", "").lower() == "true",
+                        help="Harvest + 4 gates + deterministic triage only: no model, no brief/PDF "
+                             "(also SPEC1_TRIAGE_ONLY=true). Used by the GitHub Actions cycle.")
     args = parser.parse_args()
 
     summary = run_cycle(
@@ -515,6 +575,7 @@ if __name__ == "__main__":
         max_signals=args.max_signals,
         verbose=True,
         skip_seen=not args.reprocess_seen,
+        triage_only=args.triage_only,
     )
 
     print("\nRun Summary:")

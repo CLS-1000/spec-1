@@ -57,6 +57,19 @@ OUTCOME_MONITOR      = "MONITOR"
 OUTCOME_CONFLICTED   = "CONFLICTED"
 OUTCOME_ARCHIVE      = "ARCHIVE"
 
+# ── Analysis tier (how a record's classification was produced) ──────────────
+# llm_verified: a real model answered (local Qwen/Ollama/OpenAI-compatible, or Claude).
+# rule_based:   deterministic triage or the Tier 3 rule fallback. Never publishable.
+ANALYSIS_TIER_LLM_VERIFIED = "llm_verified"
+ANALYSIS_TIER_RULE_BASED   = "rule_based"
+ANALYSIS_TIERS = (ANALYSIS_TIER_LLM_VERIFIED, ANALYSIS_TIER_RULE_BASED)
+# Fallback-client tier names that count as a real model.
+LLM_TIERS_REAL = frozenset({"claude", "local", "ollama"})
+# Where the text of a brief came from (recorded in briefs/*.meta.json).
+BRIEF_SOURCE_MODEL        = "model"          # written by a model inside the cycle
+BRIEF_SOURCE_RULES        = "rule_fallback"  # rule-based fallback brief
+BRIEF_SOURCE_HAND_WRITTEN = "hand_written"   # written by hand (e.g. Claude in chat) from the handoff
+
 # ── Cross-source verification classification ──────────────────────────────────
 VERIF_CORROBORATED = "CORROBORATED"
 VERIF_PARTIAL      = "PARTIAL"
