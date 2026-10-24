@@ -890,3 +890,7 @@
 {"ts": "2026-10-23T17:48:08Z", "session": "8e9f52e3", "task": "analyze", "tier": "mock", "latency_ms": 0, "char_count": 147, "success": true}
 {"ts": "2026-10-23T17:48:08Z", "session": "8883f928", "task": "analyze", "tier": "mock", "latency_ms": 0, "char_count": 147, "success": true}
 {"ts": "2026-10-23T17:48:08Z", "session": "13076b7a", "task": "analyze", "tier": "mock", "latency_ms": 0, "char_count": 147, "success": true}
+{"ts": "2026-10-24T16:28:38Z", "session": "9cc655f9", "task": "analyze", "tier": "mock", "latency_ms": 19, "char_count": 147, "success": true}
+{"ts": "2026-10-24T16:28:38Z", "session": "16d6b10b", "task": "analyze", "tier": "mock", "latency_ms": 1, "char_count": 147, "success": true}
+{"ts": "2026-10-24T16:28:38Z", "session": "93ee29e4", "task": "analyze", "tier": "mock", "latency_ms": 0, "char_count": 147, "success": true}
+{"ts": "2026-10-24T16:28:38Z", "session": "e54dc364", "task": "analyze", "tier": "mock", "latency_ms": 0, "char_count": 147, "success": true}
