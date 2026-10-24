@@ -23,6 +23,7 @@ dependencies = [
     "httpx>=0.27",
     "reportlab>=4.0",
     "sqlalchemy>=2.0",
+    "cryptography>=42",   # cls_civica sealing (Gatepost Ed25519 keys)
 ]
 
 [project.optional-dependencies]

@@ -1,4 +1,4 @@
-.PHONY: install test test-fast test-cov lint run mcp cycle backfill calibration workspace clean help brief leads psyop research
+.PHONY: install test test-fast test-cov lint run mcp cycle triage backfill calibration workspace clean help brief leads psyop research organize
 
 PYTHONPATH := src
 PYTHON     := PYTHONPATH=$(PYTHONPATH) python
@@ -9,10 +9,11 @@ help:
 	@echo ""
 	@echo "  make install      Install package + dev deps"
 	@echo "  make test         Run full test suite"
-	@echo "  make lint         Run flake8"
+	@echo "  make lint         Run ruff (same check as CI)"
 	@echo "  make run          Start API server (port 8000)"
 	@echo "  make mcp          Start MCP server"
 	@echo "  make cycle        Run one-shot intelligence cycle (rich path)"
+	@echo "  make triage       Harvest + 4 gates + rules only, no model (what Actions runs)"
 	@echo "  make backfill     Backfill briefs for historical run_ids"
 	@echo "  make calibration  Generate calibration proposal report"
 	@echo "  make brief        Generate a daily brief for the latest run_id (operator tool)"
@@ -21,6 +22,8 @@ help:
 	@echo "  make research     Run analyst-defined topic research dossier expansion"
 	@echo "  make workspace    Open workspace CLI"
 	@echo "  make clean        Remove __pycache__ and .pytest_cache"
+	@echo ""
+	@echo "  Pass tool arguments with ARGS, e.g. make brief ARGS='--run-id run-abc'"
 
 install:
 	pip install -e ".[dev]"
@@ -35,7 +38,7 @@ test-cov:
 	$(PYTEST) tests/ --cov=src --cov-report=term-missing
 
 lint:
-	flake8 src/ tests/ --max-line-length=120
+	ruff check src/ tests/
 
 run:
 	$(PYTHON) -m spec1_api.main
@@ -44,20 +47,34 @@ mcp:
 	$(PYTHON) mcp_server.py
 
 cycle:
-	$(PYTHON) -m spec1_core.app.cycle
+	$(PYTHON) -m spec1_core.app.cycle $(ARGS)
+
+triage:
+	$(PYTHON) -m spec1_core.app.cycle --triage-only $(ARGS)
 
 backfill:
-	$(PYTHON) -m spec1_engine.tools.historical_briefs
-calibration: $(PYTHON) -m spec1_engine.tools.calibration_propose \
-	--intel data/spec1_intelligence.jsonl \
-	--verdicts data/verdicts.jsonl \
-	--out-dir generated/
+	$(PYTHON) -m spec1_core.tools.historical_briefs $(ARGS)
 
-brief: $(PYTHON) -m spec1_engine.tools.generate_brief
-leads: $(PYTHON) -m spec1_engine.tools.generate_leads
-psyop: $(PYTHON) -m spec1_engine.tools.run_psyop
-research: $(PYTHON) -m spec1_core.tools.run_research
-workspace: $(PYTHON) -m spec1_engine.workspace
+calibration:
+	$(PYTHON) -m spec1_core.tools.calibration_propose \
+		--intel data/spec1_intelligence.jsonl \
+		--verdicts data/verdicts.jsonl \
+		--out-dir generated/ $(ARGS)
+
+brief:
+	$(PYTHON) -m spec1_core.tools.generate_brief $(ARGS)
+
+leads:
+	$(PYTHON) -m spec1_core.tools.generate_leads $(ARGS)
+
+psyop:
+	$(PYTHON) -m spec1_core.tools.run_psyop $(ARGS)
+
+research:
+	$(PYTHON) -m spec1_core.tools.run_research $(ARGS)
+
+workspace:
+	$(PYTHON) -m spec1_core.workspace.cli $(ARGS)
 
 clean:
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null; \

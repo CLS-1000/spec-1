@@ -161,11 +161,11 @@ def main():
             print(f"    @status: {old_status} → {new_status}")
 
     if dry_run and promoted:
-        print(f"\nRun without --dry-run to apply.\n")
+        print("\nRun without --dry-run to apply.\n")
 
     if not dry_run and promoted:
-        print(f"\nNext steps:")
-        print(f"  spec1-index")
+        print("\nNext steps:")
+        print("  spec1-index")
         print(f"  git add -A && git commit -m \"chore: promote {args.namespace or args.file} to {new_loc}\"")
         print()
 

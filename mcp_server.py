@@ -388,7 +388,7 @@ def tool_score_signal(args: dict) -> dict:
     """
     from datetime import datetime, timezone
 
-    from spec1_core.schemas.models import Signal, ParsedSignal
+    from spec1_core.schemas.models import Signal
     from spec1_core.signal.parser import parse_signal
     from spec1_core.signal.operator_evaluator import evaluate
 
