@@ -1,6 +1,6 @@
 # SPEC-1
 
-**Status:** Beta · **Version:** 0.6.0 · EVASTARARCANA LLC, Portland, Oregon
+**Status:** Beta · **Version:** 0.6.2 · EVASTARARCANA LLC, Portland, Oregon
 
 SPEC-1 reads public sources on a schedule, decides which items deserve a closer look, and writes up what it found. Every decision it makes along the way is written down, including the decision to throw something out.
 
