@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<!--
+  SPEC-1 Triage Desk
+  Copyright (c) 2026 EVASTARARCANA LLC. All Rights Reserved.
+  Proprietary and confidential. See LICENSE.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="copyright" content="EVASTARARCANA LLC">
+<title>SPEC-1 Triage Desk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #07090b;
+    --panel:     #0d1114;
+    --panel-2:   #12171b;
+    --line:      #1f272d;
+    --line-2:    #2b363e;
+    --text:      #d7e0e5;
+    --muted:     #8a98a2;
+    --dim:       #5f6d77;
+    --accent:    #4fd1c5;
+    --green:     #3ddc84;
+    --green-bg:  rgba(61, 220, 132, 0.10);
+    --amber:     #f5b942;
+    --amber-bg:  rgba(245, 185, 66, 0.10);
+    --red:       #ff5d5d;
+    --red-bg:    rgba(255, 93, 93, 0.10);
+    --blue:      #6aa9ff;
+    --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --rail-w: 320px;
+    --drawer-w: min(560px, 100vw);
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font: 14px/1.45 var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  button, select, input { font: inherit; color: inherit; }
+  .mono { font-family: var(--mono); }
+  .muted { color: var(--muted); }
+  .dim { color: var(--dim); }
+
+  /* ── header ─────────────────────────────────────────── */
+  header.top {
+    position: sticky; top: 0; z-index: 20;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px;
+    padding: 12px 20px;
+    background: rgba(7, 9, 11, 0.94);
+    border-bottom: 1px solid var(--line);
+    backdrop-filter: blur(6px);
+  }
+  .brand { display: flex; align-items: baseline; gap: 10px; margin-right: auto; }
+  .brand h1 {
+    margin: 0; font: 600 15px/1 var(--mono); letter-spacing: 0.14em; color: var(--text);
+  }
+  .brand .ver { font: 500 12px/1 var(--mono); color: var(--accent); }
+  .pill {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 12px; border-radius: 999px;
+    font: 600 11px/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase;
+    border: 1px solid var(--line-2); color: var(--muted); background: var(--panel);
+    white-space: nowrap;
+  }
+  .pill .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+  .pill.ok    { color: var(--green); border-color: rgba(61,220,132,.4); background: var(--green-bg); }
+  .pill.warn  { color: var(--amber); border-color: rgba(245,185,66,.4); background: var(--amber-bg); }
+  .pill.bad   { color: var(--red);   border-color: rgba(255,93,93,.45); background: var(--red-bg); }
+  .pill .lbl { color: var(--dim); font-weight: 500; }
+  .guard-reason { flex-basis: 100%; font: 12px/1.3 var(--mono); color: var(--muted); text-align: right; }
+
+  /* ── layout ─────────────────────────────────────────── */
+  .layout-desk {
+    display: grid;
+    grid-template-columns: var(--rail-w) minmax(0, 1fr);
+    min-height: calc(100vh - 58px);
+  }
+  aside.rail {
+    border-right: 1px solid var(--line);
+    background: var(--panel);
+    padding: 16px;
+    display: flex; flex-direction: column; gap: 20px;
+    min-width: 0;
+  }
+  main.stage { padding: 16px 20px 40px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+
+  .section-title {
+    margin: 0 0 8px; font: 600 11px/1 var(--mono); letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--dim);
+  }
+  label.field { display: flex; flex-direction: column; gap: 6px; font: 12px var(--mono); color: var(--muted); }
+  select, input[type="search"], input[type="number"] {
+    background: var(--bg); border: 1px solid var(--line-2); border-radius: 6px;
+    padding: 9px 10px; min-height: 40px; width: 100%;
+  }
+  select:focus-visible, input:focus-visible, button:focus-visible, tr:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 2px;
+  }
+
+  .run-list { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; max-height: 220px; overflow: auto; }
+  .run-list button {
+    width: 100%; text-align: left; background: transparent; border: 1px solid transparent;
+    border-radius: 6px; padding: 8px 10px; cursor: pointer;
+    display: grid; grid-template-columns: 10px 1fr auto; gap: 8px; align-items: center;
+    font: 12px var(--mono); color: var(--muted);
+  }
+  .run-list button:hover { background: var(--panel-2); color: var(--text); }
+  .run-list button[aria-current="true"] { border-color: var(--line-2); background: var(--panel-2); color: var(--text); }
+  .run-list .g { width: 8px; height: 8px; border-radius: 50%; }
+  .g.armed { background: var(--green); } .g.triage { background: var(--amber); } .g.blocked { background: var(--red); }
+  .run-list .rid { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stat { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+  .stat .k { font: 11px var(--mono); color: var(--dim); text-transform: uppercase; letter-spacing: .06em; }
+  .stat .v { font: 600 22px/1.2 var(--mono); margin-top: 4px; }
+
+  .adapters { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+  .adapters li {
+    display: grid; grid-template-columns: minmax(0,1fr) auto auto; gap: 10px; align-items: center;
+    padding: 7px 8px; border-radius: 6px; font: 12px var(--mono);
+  }
+  .adapters li:nth-child(odd) { background: rgba(255,255,255,0.015); }
+  .adapters .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .adapters .cnt { color: var(--muted); text-align: right; min-width: 56px; }
+  .tag {
+    font: 600 10px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase;
+    padding: 4px 6px; border-radius: 4px; border: 1px solid var(--line-2); color: var(--muted);
+  }
+  .tag.yield, .tag.ok-tag { color: var(--green); border-color: rgba(61,220,132,.35); }
+  .tag.quiet { color: var(--dim); }
+  .tag.error { color: var(--red); border-color: rgba(255,93,93,.4); }
+  .tag.ok    { color: var(--blue); border-color: rgba(106,169,255,.35); }
+
+  /* ── funnel ─────────────────────────────────────────── */
+  .funnel { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; }
+  .funnel button {
+    flex: 1 0 128px; min-height: 76px; text-align: left; cursor: pointer;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+    padding: 10px 12px; display: flex; flex-direction: column; gap: 4px; position: relative;
+  }
+  .funnel button:hover { border-color: var(--line-2); }
+  .funnel button[aria-pressed="true"] { border-color: var(--accent); background: rgba(79,209,197,0.06); }
+  .funnel .n { font: 600 11px var(--mono); color: var(--dim); }
+  .funnel .l { font: 500 13px var(--sans); }
+  .funnel .c { font: 600 18px var(--mono); }
+  .funnel .s { font: 11px var(--mono); color: var(--muted); }
+  .stage-note {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+    padding: 10px 14px; font: 12px/1.5 var(--mono); color: var(--muted);
+  }
+
+  /* ── filters + table ───────────────────────────────── */
+  .filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; align-items: end; }
+  .check { display: flex; align-items: center; gap: 8px; min-height: 40px; font: 12px var(--mono); color: var(--muted); }
+  .check input { width: 18px; height: 18px; accent-color: var(--accent); }
+  .table-wrap { border: 1px solid var(--line); border-radius: 8px; overflow: auto; background: var(--panel); }
+  table { width: 100%; border-collapse: collapse; font: 12.5px var(--mono); }
+  thead th {
+    position: sticky; top: 0; background: var(--panel-2); text-align: left;
+    padding: 10px 12px; font-weight: 600; color: var(--muted); border-bottom: 1px solid var(--line-2);
+    white-space: nowrap;
+  }
+  tbody td { padding: 10px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  tbody tr { cursor: pointer; }
+  tbody tr:hover { background: rgba(255,255,255,0.025); }
+  tbody tr.tier1 { background: rgba(255,93,93,0.07); }
+  tbody tr.tier1 td:first-child { box-shadow: inset 3px 0 0 var(--red); }
+  tbody tr.tier1:hover { background: rgba(255,93,93,0.11); }
+  .num { text-align: right; }
+  .badge {
+    display: inline-block; padding: 3px 7px; border-radius: 4px; font: 600 11px/1 var(--mono);
+    border: 1px solid var(--line-2);
+  }
+  .badge.llm  { color: var(--green); border-color: rgba(61,220,132,.4); background: var(--green-bg); }
+  .badge.rule { color: var(--amber); border-color: rgba(245,185,66,.4); background: var(--amber-bg); }
+  .badge.null { color: var(--red);   border-color: rgba(255,93,93,.45); background: var(--red-bg); }
+  .badge.pass { color: var(--green); } .badge.fail { color: var(--red); } .badge.unknown { color: var(--dim); }
+  .badge.t1 { color: #fff; background: var(--red); border-color: var(--red); margin-left: 6px; }
+  .empty { padding: 28px; text-align: center; color: var(--muted); font: 13px var(--mono); }
+  .count-line { font: 12px var(--mono); color: var(--muted); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+
+  /* ── drawer ─────────────────────────────────────────── */
+  .scrim { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 40; opacity: 0; pointer-events: none; transition: opacity .18s; }
+  .scrim.open { opacity: 1; pointer-events: auto; }
+  aside.drawer {
+    position: fixed; top: 0; right: 0; bottom: 0; width: var(--drawer-w); z-index: 50;
+    background: var(--panel); border-left: 1px solid var(--line-2);
+    transform: translateX(100%); transition: transform .22s ease;
+    display: flex; flex-direction: column;
+  }
+  aside.drawer.open { transform: translateX(0); }
+  .drawer-head { display: flex; align-items: flex-start; gap: 12px; padding: 16px 18px; border-bottom: 1px solid var(--line); }
+  .drawer-head h2 { margin: 0; font: 600 14px/1.3 var(--mono); word-break: break-all; }
+  .drawer-head .sub { font: 12px var(--mono); color: var(--muted); margin-top: 4px; word-break: break-all; }
+  .drawer-head .sub a { color: var(--accent); }
+  .icon-btn {
+    margin-left: auto; width: 44px; height: 44px; flex: none; display: grid; place-items: center;
+    background: transparent; border: 1px solid var(--line-2); border-radius: 8px; cursor: pointer; color: var(--muted);
+  }
+  .icon-btn:hover { color: var(--text); }
+  .drawer-body { overflow: auto; padding: 16px 18px 32px; display: flex; flex-direction: column; gap: 22px; }
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tabs button {
+    min-height: 36px; padding: 0 12px; border-radius: 6px; cursor: pointer;
+    background: transparent; border: 1px solid var(--line-2); color: var(--muted); font: 12px var(--mono);
+  }
+  .tabs button[aria-selected="true"] { color: var(--text); border-color: var(--accent); }
+
+  .score-row { display: grid; grid-template-columns: 150px 1fr 64px; gap: 10px; align-items: center; font: 12px var(--mono); padding: 5px 0; }
+  .bar { height: 8px; background: var(--bg); border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+  .bar > span { display: block; height: 100%; background: var(--accent); }
+  .score-row.p .bar > span { background: var(--blue); }
+  .score-row .v { text-align: right; }
+  .formula { font: 11.5px/1.6 var(--mono); color: var(--muted); margin-top: 8px; }
+
+  .gate-log { width: 100%; border-collapse: collapse; font: 12px var(--mono); }
+  .gate-log th, .gate-log td { padding: 8px 6px; border-bottom: 1px solid var(--line); text-align: left; }
+  .gate-log th { color: var(--dim); font-weight: 500; }
+
+  pre.json {
+    margin: 0; padding: 12px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px;
+    font: 11.5px/1.55 var(--mono); color: #b7c6cf; overflow: auto; max-height: 420px; white-space: pre-wrap; word-break: break-word;
+  }
+  .kv { display: grid; grid-template-columns: 140px 1fr; gap: 6px 12px; font: 12px var(--mono); }
+  .kv dt { color: var(--dim); } .kv dd { margin: 0; word-break: break-all; }
+  .note { font: 12px/1.5 var(--mono); color: var(--muted); }
+
+  .banner {
+    border: 1px solid rgba(255,93,93,.45); background: var(--red-bg); color: var(--text);
+    border-radius: 8px; padding: 12px 14px; font: 12.5px/1.5 var(--mono);
+  }
+  footer.foot { padding: 14px 20px; border-top: 1px solid var(--line); font: 11px var(--mono); color: var(--dim); }
+
+  /* ── responsive ─────────────────────────────────────── */
+  @media (max-width: 900px) {
+    .layout-desk { grid-template-columns: minmax(0, 1fr); }
+    aside.rail { border-right: 0; border-bottom: 1px solid var(--line); }
+    header.top { padding: 10px 16px; }
+    main.stage { padding: 16px; }
+    .guard-reason { text-align: left; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    aside.drawer, .scrim { transition: none; }
+  }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <h1>SPEC-1 TRIAGE DESK</h1>
+    <span class="ver" id="version">v0.7.0</span>
+  </div>
+  <span class="pill" id="host-pill" role="status"><span class="dot"></span><span class="lbl">HOST</span><span id="host-text">checking</span></span>
+  <span class="pill" id="guard-pill" role="status" title=""><span class="dot"></span><span class="lbl">PUBLISH GUARD</span><span id="guard-text">—</span></span>
+  <div class="guard-reason" id="guard-reason"></div>
+</header>
+
+<div class="layout-desk">
+  <aside class="rail" aria-label="Run explorer and feed telemetry">
+    <section>
+      <h2 class="section-title">Run Explorer</h2>
+      <label class="field" for="run-select">Run
+        <select id="run-select"><option value="">Loading runs…</option></select>
+      </label>
+      <ul class="run-list" id="run-list" aria-label="Recent runs"></ul>
+    </section>
+
+    <section>
+      <h2 class="section-title">Run Summary</h2>
+      <div class="stats">
+        <div class="stat"><div class="k">Harvested</div><div class="v" id="st-harvested">—</div></div>
+        <div class="stat"><div class="k">Parsed</div><div class="v" id="st-parsed">—</div></div>
+        <div class="stat"><div class="k">Written Opps</div><div class="v" id="st-written">—</div></div>
+        <div class="stat"><div class="k">Baseline Seeded</div><div class="v" id="st-baseline">—</div></div>
+      </div>
+      <p class="note" id="run-when" style="margin:10px 0 0"></p>
+    </section>
+
+    <section>
+      <h2 class="section-title">Adapter Feed Breakdown <span class="dim" id="adapter-count"></span></h2>
+      <ul class="adapters" id="adapters"><li class="dim">Select a run</li></ul>
+      <p class="note" style="margin:8px 0 0">Count = parsed / passed gates. Tags: yield (records written), ok, quiet (nothing parsed), error.</p>
+    </section>
+  </aside>
+
+  <main class="stage">
+    <div id="api-banner" class="banner" hidden></div>
+
+    <section aria-label="Pipeline stage funnel">
+      <h2 class="section-title">Pipeline Funnel</h2>
+      <div class="funnel" id="funnel"></div>
+    </section>
+    <div class="stage-note" id="stage-note">Select a stage to see what it did in this run.</div>
+
+    <section aria-label="Records">
+      <h2 class="section-title">Records</h2>
+      <div class="filters">
+        <label class="field" for="f-search">Search
+          <input type="search" id="f-search" placeholder="record id, source, class">
+        </label>
+        <label class="field" for="f-tier">Analysis tier
+          <select id="f-tier">
+            <option value="">All tiers</option>
+            <option value="llm_verified">llm_verified</option>
+            <option value="rule_based">rule_based</option>
+            <option value="unverified">no tier (pre-011)</option>
+          </select>
+        </label>
+        <label class="field" for="f-gate">Gate status
+          <select id="f-gate">
+            <option value="">Any</option>
+            <option value="pass">pass</option>
+            <option value="fail">fail</option>
+            <option value="unknown">unknown</option>
+          </select>
+        </label>
+        <label class="field" for="f-source">Source feed
+          <select id="f-source"><option value="">All sources</option></select>
+        </label>
+        <label class="field" for="f-weight">Min composite
+          <input type="number" id="f-weight" min="0" step="0.05" placeholder="0.00">
+        </label>
+        <label class="check" for="f-t1"><input type="checkbox" id="f-t1"> TIER_1 only</label>
+      </div>
+    </section>
+
+    <div class="count-line"><span id="rec-count">—</span><span class="dim">TIER_1 = anomaly_tier TIER_1 or σ ≥ 3.0 · sorted TIER_1 first, then composite</span></div>
+    <div class="table-wrap">
+      <table aria-label="Run records">
+        <thead>
+          <tr>
+            <th scope="col">Record ID</th>
+            <th scope="col">Source Feed</th>
+            <th scope="col" class="num">Composite</th>
+            <th scope="col">Priority</th>
+            <th scope="col">Analysis Tier</th>
+            <th scope="col">Gate Status</th>
+            <th scope="col">Class</th>
+          </tr>
+        </thead>
+        <tbody id="rows"><tr><td colspan="7" class="empty">Select a run</td></tr></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<footer class="foot">© 2026 EVASTARARCANA LLC. All Rights Reserved. Proprietary — internal operator tooling. Read-only view: nothing here scores, gates or publishes.</footer>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="d-title" aria-hidden="true">
+  <div class="drawer-head">
+    <div style="min-width:0">
+      <h2 id="d-title">—</h2>
+      <div class="sub" id="d-sub"></div>
+    </div>
+    <button class="icon-btn" id="d-close" aria-label="Close inspector">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+  </div>
+  <div class="drawer-body" id="d-body"></div>
+</aside>
+
+<script>
+"use strict";
+(function () {
+  // ── config ────────────────────────────────────────────────────────────────
+  const qs = new URLSearchParams(location.search);
+  const API = (qs.get("api") || "").replace(/\/$/, "") + "/api/v1";
+  const HEALTH = (qs.get("api") || "").replace(/\/$/, "") + "/health";
+  const KEY = qs.get("api_key") || "";
+  const STAGE_HELP = {
+    ingest:       "01 Ingest — signals harvested from the configured feeds / adapters.",
+    normalize:    "02 Normalize — signals parsed into cleaned text, keywords and entities.",
+    rule_gates:   "03 Rule Gates — signals that passed all four deterministic gates (A credibility, B volume, C velocity, D novelty). Blocked count comes from the gate-decision log.",
+    scoring:      "04 Scoring — opportunities scored with the composite P = 0.30·C + 0.20·Vol + 0.20·V + 0.30·N.",
+    graph_dedupe: "05 Graph Dedupe — signals already seen in the store or duplicated in this harvest; skipped before scoring.",
+    handoff:      "06 Handoff — outcomes verified and handed to the brief / analyst handoff (none in triage-only runs).",
+    audit_store:  "07 Audit Store — records written to the append-only intelligence store. These are the rows below."
+  };
+  const STAGE_FILTER = { rule_gates: { gate: "pass" }, audit_store: {} };
+
+  const $ = (id) => document.getElementById(id);
+  const state = { runs: [], run: null, records: [], stage: null, current: null, lastFocus: null };
+
+  function esc(v) {
+    return String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+  function fmtNum(v, d) {
+    if (v === null || v === undefined || v === "") return "—";
+    const n = Number(v);
+    if (!Number.isFinite(n)) return esc(v);
+    return d === undefined ? n.toLocaleString() : n.toFixed(d);
+  }
+  function fmtTime(iso) {
+    if (!iso) return "—";
+    const d = new Date(iso);
+    return isNaN(d) ? esc(iso) : d.toLocaleString();
+  }
+  async function getJSON(url) {
+    const headers = KEY ? { "X-API-Key": KEY } : {};
+    const r = await fetch(url, { headers });
+    if (!r.ok) throw new Error(r.status + " " + r.statusText + " — " + url);
+    return r.json();
+  }
+  function banner(msg) {
+    const b = $("api-banner");
+    if (!msg) { b.hidden = true; b.textContent = ""; return; }
+    b.hidden = false; b.textContent = msg;
+  }
+
+  // ── header pills ──────────────────────────────────────────────────────────
+  async function checkHost() {
+    const pill = $("host-pill");
+    try {
+      const h = await getJSON(HEALTH);
+      pill.className = "pill ok";
+      $("host-text").textContent = (h.status || "ok").toUpperCase() + " · " + location.host;
+      if (h.version) $("version").textContent = "v" + h.version;
+    } catch (e) {
+      pill.className = "pill bad";
+      $("host-text").textContent = "UNREACHABLE";
+    }
+  }
+  const GUARD_TEXT = { armed: "ARMED & VERIFIED", triage: "TRIAGE ONLY / RULE-BASED", blocked: "GUARD BLOCKED" };
+  const GUARD_CLASS = { armed: "ok", triage: "warn", blocked: "bad" };
+  function setGuard(g) {
+    const pill = $("guard-pill");
+    if (!g) { pill.className = "pill"; $("guard-text").textContent = "—"; $("guard-reason").textContent = ""; return; }
+    pill.className = "pill " + (GUARD_CLASS[g.state] || "");
+    $("guard-text").textContent = GUARD_TEXT[g.state] || g.state;
+    const t = g.tiers || {};
+    $("guard-reason").textContent = g.reason + "  ·  llm_verified " + (t.llm_verified || 0) +
+      " / rule_based " + (t.rule_based || 0) + " / no tier " + (t.unverified || 0);
+  }
+
+  // ── runs ──────────────────────────────────────────────────────────────────
+  async function loadRuns() {
+    try {
+      const data = await getJSON(API + "/runs?limit=100");
+      state.runs = data.runs || [];
+      banner("");
+    } catch (e) {
+      state.runs = [];
+      banner("Cannot reach the SPEC-1 API (" + e.message + "). Serve this page from the API (python -m spec1_api.main) or pass ?api=http://host:8000.");
+    }
+    const sel = $("run-select");
+    if (!state.runs.length) {
+      sel.innerHTML = '<option value="">No runs found</option>';
+      $("run-list").innerHTML = '<li class="dim note">No cycle logs or stored records yet.</li>';
+      return;
+    }
+    sel.innerHTML = state.runs.map((r) =>
+      '<option value="' + esc(r.run_id) + '">' + esc(r.run_id) + " · " + esc((r.started_at || "").slice(0, 16).replace("T", " ")) + "</option>").join("");
+    $("run-list").innerHTML = state.runs.slice(0, 30).map((r) =>
+      '<li><button type="button" data-run="' + esc(r.run_id) + '" title="' + esc(r.guard.reason) + '">' +
+      '<span class="g ' + esc(r.guard.state) + '" aria-hidden="true"></span>' +
+      '<span class="rid">' + esc(r.run_id) + '</span>' +
+      '<span class="dim">' + esc(fmtNum(r.written_opportunities)) + '</span></button></li>').join("");
+    const want = qs.get("run");
+    selectRun(want && state.runs.some((r) => r.run_id === want) ? want : state.runs[0].run_id);
+  }
+
+  async function selectRun(runId) {
+    $("run-select").value = runId;
+    document.querySelectorAll("#run-list button").forEach((b) => b.setAttribute("aria-current", String(b.dataset.run === runId)));
+    $("rows").innerHTML = '<tr><td colspan="7" class="empty">Loading…</td></tr>';
+    try {
+      const [run, recs] = await Promise.all([
+        getJSON(API + "/runs/" + encodeURIComponent(runId)),
+        getJSON(API + "/runs/" + encodeURIComponent(runId) + "/records?limit=5000"),
+      ]);
+      state.run = run;
+      state.records = recs.records || [];
+      state.stage = null;
+      renderRun();
+      renderRecords();
+    } catch (e) {
+      banner("Run " + runId + " failed to load: " + e.message);
+      $("rows").innerHTML = '<tr><td colspan="7" class="empty">Failed to load records</td></tr>';
+    }
+  }
+
+  function renderRun() {
+    const r = state.run;
+    setGuard(r.guard);
+    $("st-harvested").textContent = fmtNum(r.harvested);
+    $("st-parsed").textContent = fmtNum(r.parsed);
+    $("st-written").textContent = fmtNum(r.written_opportunities);
+    $("st-baseline").textContent = fmtNum(r.baseline_seeded);
+    $("run-when").textContent = "Started " + fmtTime(r.started_at) + (r.mode ? " · mode " + r.mode : "") +
+      (r.log_file ? " · " + r.log_file : " · no run log (from store)");
+
+    const ad = r.adapters || [];
+    $("adapter-count").textContent = ad.length ? "(" + ad.length + ")" : "";
+    $("adapters").innerHTML = ad.length ? ad.map((a) =>
+      '<li><span class="name" title="' + esc(a.name) + '">' + esc(a.name) + '</span>' +
+      '<span class="cnt">' + fmtNum(a.parsed) + " / " + fmtNum(a.passed) + '</span>' +
+      '<span class="tag ' + esc(a.status) + '">' + esc(a.status) + "</span></li>").join("")
+      : '<li class="dim">No adapter stats for this run</li>';
+
+    const sources = [...new Set(state.records.map((x) => x.source).filter(Boolean))].sort();
+    $("f-source").innerHTML = '<option value="">All sources</option>' +
+      sources.map((s) => '<option value="' + esc(s) + '">' + esc(s) + "</option>").join("");
+
+    $("funnel").innerHTML = (r.funnel || []).map((s, i) =>
+      '<button type="button" data-stage="' + esc(s.key) + '" aria-pressed="false">' +
+      '<span class="n">' + String(i + 1).padStart(2, "0") + '</span>' +
+      '<span class="l">' + esc(s.label) + '</span>' +
+      '<span class="c">' + fmtNum(s.count) + '</span>' +
+      '<span class="s">' + (s.blocked != null ? fmtNum(s.blocked) + " blocked" : esc(s.note || "")) + "</span></button>").join("");
+    $("stage-note").textContent = "Select a stage to see what it did in this run.";
+    if (r.errors && r.errors.length) {
+      $("stage-note").textContent += "  ·  " + r.errors.length + " error(s) logged: " + r.errors.slice(0, 3).join(" | ");
+    }
+  }
+
+  function selectStage(key) {
+    state.stage = state.stage === key ? null : key;
+    document.querySelectorAll("#funnel button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.stage === state.stage)));
+    const s = (state.run.funnel || []).find((x) => x.key === state.stage);
+    $("stage-note").textContent = s ? (STAGE_HELP[s.key] || s.label) + "  Count: " + fmtNum(s.count) +
+      (s.blocked != null ? " · blocked " + fmtNum(s.blocked) : "") : "Select a stage to see what it did in this run.";
+    const f = STAGE_FILTER[state.stage];
+    if (f && f.gate) $("f-gate").value = f.gate;
+    if (!state.stage) $("f-gate").value = "";
+    renderRecords();
+  }
+
+  // ── records ───────────────────────────────────────────────────────────────
+  function tierBadge(t) {
+    if (t === "llm_verified") return '<span class="badge llm">llm_verified</span>';
+    if (t === "rule_based") return '<span class="badge rule">rule_based</span>';
+    return '<span class="badge null">NULL</span>';
+  }
+  function filtered() {
+    const q = $("f-search").value.trim().toLowerCase();
+    const tier = $("f-tier").value, gate = $("f-gate").value, src = $("f-source").value;
+    const minW = parseFloat($("f-weight").value);
+    const t1 = $("f-t1").checked;
+    return state.records.filter((r) => {
+      if (tier === "unverified" ? (r.analysis_tier === "llm_verified" || r.analysis_tier === "rule_based") : (tier && r.analysis_tier !== tier)) return false;
+      if (gate && r.gate_status !== gate) return false;
+      if (src && r.source !== src) return false;
+      if (Number.isFinite(minW) && (r.composite || 0) < minW) return false;
+      if (t1 && !r.tier1) return false;
+      if (q && ![r.record_id, r.source, r.classification, r.priority].some((v) => String(v || "").toLowerCase().includes(q))) return false;
+      return true;
+    });
+  }
+  function renderRecords() {
+    const rows = filtered();
+    const t1 = rows.filter((r) => r.tier1).length;
+    $("rec-count").textContent = rows.length + " of " + state.records.length + " records" + (t1 ? " · " + t1 + " TIER_1" : "");
+    if (!rows.length) {
+      $("rows").innerHTML = '<tr><td colspan="7" class="empty">' +
+        (state.records.length ? "No records match these filters" : "This run wrote no records") + "</td></tr>";
+      return;
+    }
+    $("rows").innerHTML = rows.map((r) => {
+      const i = state.records.indexOf(r);
+      return '<tr tabindex="0" data-i="' + i + '" class="' + (r.tier1 ? "tier1" : "") + '">' +
+        "<td>" + esc(r.record_id) + (r.tier1 ? '<span class="badge t1">TIER_1</span>' : "") + "</td>" +
+        "<td>" + esc(r.source) + "</td>" +
+        '<td class="num">' + fmtNum(r.composite, 3) + "</td>" +
+        "<td>" + esc(r.priority || "—") + "</td>" +
+        "<td>" + tierBadge(r.analysis_tier) + "</td>" +
+        '<td><span class="badge ' + esc(r.gate_status) + '">' + esc(r.gate_status.toUpperCase()) + "</span></td>" +
+        "<td>" + esc(r.classification || "—") + "</td></tr>";
+    }).join("");
+  }
+
+  // ── drawer ────────────────────────────────────────────────────────────────
+  function scoreRow(label, v, cls) {
+    const n = Number(v);
+    const pct = Number.isFinite(n) ? Math.max(0, Math.min(1, n)) * 100 : 0;
+    return '<div class="score-row ' + (cls || "") + '"><span>' + label + '</span><span class="bar"><span style="width:' + pct.toFixed(1) +
+      '%"></span></span><span class="v">' + (Number.isFinite(n) && v !== null ? n.toFixed(3) : "—") + "</span></div>";
+  }
+  function drawerTab(name) {
+    const r = state.current;
+    document.querySelectorAll("#d-tabs button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.tab === name)));
+    const pane = $("d-pane");
+    if (name === "raw") {
+      pane.innerHTML = '<pre class="json">' + esc(JSON.stringify(r.raw, null, 2)) + "</pre>";
+    } else if (name === "meta") {
+      pane.innerHTML = r.provenance
+        ? '<p class="note">Brief provenance sidecar for this run (' + esc(r.provenance.meta_file || ".meta.json") + ").</p>" +
+          '<pre class="json">' + esc(JSON.stringify(r.provenance, null, 2)) + "</pre>"
+        : '<p class="note">No <span class="mono">.meta.json</span> sidecar found for this run. Triage-only runs write no brief; publishing refuses a brief without one.</p>';
+      if (r.gate_decision) {
+        pane.innerHTML += '<p class="note">Gate-decision log entry:</p><pre class="json">' + esc(JSON.stringify(r.gate_decision, null, 2)) + "</pre>";
+      }
+    }
+  }
+  function openDrawer(r, from) {
+    state.current = r;
+    state.lastFocus = from || document.activeElement;
+    $("d-title").innerHTML = esc(r.record_id) + (r.tier1 ? ' <span class="badge t1">TIER_1</span>' : "");
+    $("d-sub").innerHTML = esc(r.source) + (r.url ? ' · <a href="' + esc(r.url) + '" target="_blank" rel="noopener noreferrer">source link</a>' : "") +
+      " · written " + esc(fmtTime(r.written_at));
+    const s = r.scoring || {};
+    const gates = r.gates || [];
+    $("d-body").innerHTML =
+      '<section><h3 class="section-title">Deterministic Scoring</h3>' +
+        scoreRow("C · Credibility", s.credibility) +
+        scoreRow("Vol · Volume", s.volume) +
+        scoreRow("V · Velocity", s.velocity) +
+        scoreRow("N · Novelty", s.novelty) +
+        scoreRow("P · Composite", s.composite, "p") +
+        '<p class="formula">P = 0.30·C + 0.20·Vol + 0.20·V + 0.30·N  (spec1_core.signal.scorer)<br>' +
+        "Outcome confidence " + fmtNum(r.confidence, 3) + " · tier " + esc(r.analysis_tier || "NULL") + " · " + esc(r.classification || "—") +
+        (s.velocity == null ? "<br>Velocity / volume / novelty values need the gate-decision log; this record predates it." : "") + "</p></section>" +
+      '<section><h3 class="section-title">Gate Decision Log</h3><table class="gate-log"><thead><tr><th scope="col">Gate</th><th scope="col">Check</th><th scope="col">Value</th><th scope="col">Threshold</th><th scope="col">Result</th></tr></thead><tbody>' +
+        gates.map((g) => "<tr><td>" + esc(g.gate) + "</td><td>" + esc(g.name) + "</td><td>" + fmtNum(g.value, g.name === "novelty" ? undefined : 2) +
+          "</td><td>" + fmtNum(g.threshold, g.name === "novelty" ? undefined : 2) + "</td><td>" +
+          (g.passed === true ? '<span class="badge pass">PASS</span>' : g.passed === false ? '<span class="badge fail">FAIL</span>' : '<span class="badge unknown">—</span>') +
+          "</td></tr>").join("") +
+      "</tbody></table></section>" +
+      '<section><div class="tabs" id="d-tabs" role="tablist">' +
+        '<button type="button" role="tab" data-tab="raw" aria-selected="true">Raw JSON</button>' +
+        '<button type="button" role="tab" data-tab="meta" aria-selected="false">Provenance .meta.json</button></div>' +
+        '<div id="d-pane" style="margin-top:10px"></div></section>';
+    drawerTab("raw");
+    $("drawer").classList.add("open");
+    $("drawer").setAttribute("aria-hidden", "false");
+    $("scrim").classList.add("open");
+    $("d-close").focus();
+  }
+  function closeDrawer() {
+    $("drawer").classList.remove("open");
+    $("drawer").setAttribute("aria-hidden", "true");
+    $("scrim").classList.remove("open");
+    if (state.lastFocus && state.lastFocus.focus) state.lastFocus.focus();
+  }
+
+  // ── events ────────────────────────────────────────────────────────────────
+  $("run-select").addEventListener("change", (e) => e.target.value && selectRun(e.target.value));
+  $("run-list").addEventListener("click", (e) => { const b = e.target.closest("button[data-run]"); if (b) selectRun(b.dataset.run); });
+  $("funnel").addEventListener("click", (e) => { const b = e.target.closest("button[data-stage]"); if (b) selectStage(b.dataset.stage); });
+  ["f-search", "f-tier", "f-gate", "f-source", "f-weight", "f-t1"].forEach((id) =>
+    $(id).addEventListener(id === "f-search" || id === "f-weight" ? "input" : "change", renderRecords));
+  $("rows").addEventListener("click", (e) => { const tr = e.target.closest("tr[data-i]"); if (tr) openDrawer(state.records[+tr.dataset.i], tr); });
+  $("rows").addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    const tr = e.target.closest("tr[data-i]");
+    if (tr) { e.preventDefault(); openDrawer(state.records[+tr.dataset.i], tr); }
+  });
+  $("d-body").addEventListener("click", (e) => { const b = e.target.closest("#d-tabs button"); if (b) drawerTab(b.dataset.tab); });
+  $("d-close").addEventListener("click", closeDrawer);
+  $("scrim").addEventListener("click", closeDrawer);
+  $("drawer").addEventListener("keydown", (e) => { if (e.key === "Escape") closeDrawer(); });
+
+  checkHost();
+  setInterval(checkHost, 30000);
+  loadRuns();
+})();
+</script>
+</body>
+</html>
