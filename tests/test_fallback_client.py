@@ -582,13 +582,14 @@ class TestLocalChat:
         return resp
 
     def test_posts_chat_payload_to_qwen(self, monkeypatch):
+        from spec1_core.llm import fallback_client
         monkeypatch.delenv("OLLAMA_MODEL", raising=False)
         client = self._client(self._response("## Brief\n"))
         assert client.chat("user text", system_prompt="sys", temperature=0.4) == "## Brief"
         path = client.client.post.call_args.args[0]
         payload = client.client.post.call_args.kwargs["json"]
         assert path == "/api/chat"
-        assert payload["model"] == "qwen2.5:latest"
+        assert payload["model"] == fallback_client.CHAT_MODEL == "qwen2.5:3b"
         assert payload["stream"] is False
         assert "format" not in payload
         assert payload["options"]["temperature"] == 0.4

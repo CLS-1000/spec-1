@@ -373,7 +373,7 @@ class FallbackLLMClient:
 
 OLLAMA_BASE_URL = "http://127.0.0.1:11434"
 DEFAULT_MODEL = "qwen2.5:3b"       # constrained-JSON triage verification
-CHAT_MODEL = "qwen2.5:latest"      # unconstrained markdown chat (briefs)
+CHAT_MODEL = "qwen2.5:3b"          # unconstrained markdown chat (briefs); 7B needs >4.5 GiB free
 # A full brief on a CPU-bound local model can take several minutes.
 CHAT_TIMEOUT = float(os.environ.get("SPEC1_LOCAL_CHAT_TIMEOUT", "600"))
 
