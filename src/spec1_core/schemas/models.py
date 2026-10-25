@@ -215,3 +215,25 @@ class CaseFile:
             "environment": self.environment,
             "metadata": self.metadata,
         }
+
+from typing import List, Literal, Optional
+from pydantic import BaseModel, Field
+
+
+class DeterministicScoreVerification(BaseModel):
+    credibility_pass: bool = Field(description="Gate A: Source authority and signature validation")
+    volume_pass: bool = Field(description="Gate B: Cross-source confirmation volume check")
+    velocity_pass: bool = Field(description="Gate C: Acceleration and transmission rate threshold")
+    novelty_pass: bool = Field(description="Gate D: Lexical and conceptual distance from baseline")
+
+
+class Tier3TriageVerdict(BaseModel):
+    record_id: str = Field(description="Canonical record identifier being audited")
+    analysis_tier: Literal["llm_verified", "rule_based"] = Field(
+        description="Required by migration 011: only llm_verified unlocks publish guard"
+    )
+    confidence: float = Field(ge=0.0, le=1.0, description="Evaluated confidence score between 0.0 and 1.0")
+    classification: str = Field(description="Primary domain classification")
+    gate_checks: DeterministicScoreVerification
+    justification: str = Field(max_length=500, description="Concise rationale for verification")
+    flags: List[str] = Field(default_factory=list, description="Audit flags: TIER_1, RETRACTED, ANOMALOUS")
