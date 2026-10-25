@@ -41,8 +41,7 @@ _PRIORITY_RANK = {"ELEVATED": 0, "STANDARD": 1, "MONITOR": 2}
 
 def _signal_id(*parts: Any) -> str:
     """Stable per (source, item, action date): a new action on a bill is a new signal."""
-    digest = hashlib.sha1("|".join(str(p) for p in parts).encode("utf-8"),
-                          usedforsecurity=False).hexdigest()  # an ID, not a security hash
+    digest = hashlib.sha256("|".join(str(p) for p in parts).encode("utf-8")).hexdigest()
     return f"leg-{digest[:16]}"
 
 
