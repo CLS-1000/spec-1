@@ -152,15 +152,20 @@ def write_brief(
     run_id: str,
     timestamp: str,
     prompts: str | None = None,
+    prefix: str = "spec1_brief",
 ) -> str:
     """Write brief to disk and return the filepath string.
 
-    Creates:
+    Creates (with the default *prefix*):
       briefs/spec1_brief_{YYYY-MM-DD}.md    — dated full brief
       briefs/spec1_brief_latest.md          — always overwritten
       briefs/spec1_prompts_{YYYY-MM-DD}.md  — investigation prompts only
       briefs/spec1_prompts_latest.md        — always overwritten
       briefs/brief_index.jsonl              — append-only index
+
+    Another *prefix* (e.g. ``spec1_legislative``) gives a desk its own files —
+    ``{prefix}_{date}.md``, ``{prefix}_latest.md``, ``{prefix}_prompts_*``,
+    ``{prefix}_index.jsonl`` — so it never overwrites or joins the daily brief.
     """
     BRIEFS_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -171,11 +176,14 @@ def write_brief(
         dt = datetime.now(timezone.utc)
     date_str = dt.strftime("%Y-%m-%d")
 
-    dated_path = BRIEFS_DIR / f"spec1_brief_{date_str}.md"
-    latest_path = BRIEFS_DIR / "spec1_brief_latest.md"
-    prompts_dated_path = BRIEFS_DIR / f"spec1_prompts_{date_str}.md"
-    prompts_latest_path = BRIEFS_DIR / "spec1_prompts_latest.md"
-    index_path = BRIEFS_DIR / "brief_index.jsonl"
+    prompts_prefix = "spec1_prompts" if prefix == "spec1_brief" else f"{prefix}_prompts"
+    dated_path = BRIEFS_DIR / f"{prefix}_{date_str}.md"
+    latest_path = BRIEFS_DIR / f"{prefix}_latest.md"
+    prompts_dated_path = BRIEFS_DIR / f"{prompts_prefix}_{date_str}.md"
+    prompts_latest_path = BRIEFS_DIR / f"{prompts_prefix}_latest.md"
+    # The daily index is copied to the public site by notitia_civica_publish.yml;
+    # other desks keep their own so they can't be listed as a daily brief.
+    index_path = BRIEFS_DIR / ("brief_index.jsonl" if prefix == "spec1_brief" else f"{prefix}_index.jsonl")
 
     brief = _strip_unresolved_placeholders(brief)
 
@@ -291,8 +299,9 @@ def write_brief_meta(
     records_tier: str,
     brief_source: str,
     record_tiers: dict | None = None,
+    latest_name: str = "spec1_brief_latest.md",
 ) -> Path:
-    """Write the provenance sidecar for *brief_path* and for ``spec1_brief_latest``."""
+    """Write the provenance sidecar for *brief_path* and for *latest_name*."""
     brief_path = Path(brief_path)
     meta = {
         "run_id": run_id,
@@ -307,7 +316,7 @@ def write_brief_meta(
     out = meta_path_for(brief_path)
     with _lock:
         out.write_text(text, encoding="utf-8")
-        meta_path_for(brief_path.with_name("spec1_brief_latest.md")).write_text(text, encoding="utf-8")
+        meta_path_for(brief_path.with_name(latest_name)).write_text(text, encoding="utf-8")
     return out
 
 
