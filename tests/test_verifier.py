@@ -490,3 +490,50 @@ def test_all_valid_classifications_accepted():
                 outcome = verify_investigation(inv)
 
         assert outcome.classification == cls, f"Expected {cls}, got {outcome.classification}"
+
+
+# ── _extract_json — regex fallback for almost-JSON ────────────────────────────
+
+# Real qwen2.5:3b reply from run-20f93b090b81: unescaped quotes inside "reasoning".
+_UNESCAPED_REPLY = (
+    '{"verified": false, "confidence": 0.85, "reasoning": "The article discusses a UNEP '
+    'report. The mention of "Seven Questions" could lead to a deeper investigation." , '
+    '"classification": "INVESTIGATE"}'
+)
+
+
+def test_extract_json_recovers_unescaped_quotes():
+    from spec1_core.investigation.verifier import _extract_json
+    data = _extract_json(_UNESCAPED_REPLY)
+    assert data["classification"] == "INVESTIGATE"
+    assert data["verified"] is False
+    assert float(data["confidence"]) == 0.85
+    assert data["reasoning"].startswith("The article discusses")
+    assert '"Seven Questions"' in data["reasoning"]
+    assert data["reasoning"].endswith("deeper investigation.")
+
+
+def test_extract_json_regex_handles_reasoning_last():
+    from spec1_core.investigation.verifier import _extract_json
+    raw = '{"classification": "monitor", "confidence": "0.4", "reasoning": "a "quoted" word"}'
+    data = _extract_json(raw)
+    assert data == {"classification": "MONITOR", "confidence": "0.4", "reasoning": 'a "quoted" word'}
+
+
+def test_extract_json_still_raises_on_garbage():
+    from spec1_core.investigation.verifier import _extract_json
+    with pytest.raises(json.JSONDecodeError):
+        _extract_json("no structured content here {not json}")
+
+
+def test_unescaped_reply_stays_llm_verified():
+    from spec1_core.investigation import verifier
+    inv = make_investigation()
+    llm = MagicMock()
+    llm.complete.return_value = _UNESCAPED_REPLY
+    llm.get_active_tier.return_value = "ollama"
+    with patch("spec1_core.llm.fallback_client.FallbackLLMClient", return_value=llm):
+        outcome = verifier.verify_investigation(inv)
+    assert outcome.analysis_tier == "llm_verified"
+    assert outcome.classification == "INVESTIGATE"
+    assert outcome.confidence == 0.85

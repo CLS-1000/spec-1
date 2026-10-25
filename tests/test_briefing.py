@@ -1179,3 +1179,46 @@ def test_fallback_brief_empty_records_and_api_failure_reason():
     assert "API call failed" in result
     assert "No signals cleared the elevated threshold this cycle." in result
     assert "No leads this cycle." in result
+
+
+# ─── Local-first ordering ─────────────────────────────────────────────────────
+
+def test_generate_brief_uses_local_model_first():
+    from spec1_core.briefing import generator
+    from spec1_core.llm.fallback_client import LocalTier3Client
+    stats = make_cycle_stats()
+    with patch.object(LocalTier3Client, "chat", return_value=SAMPLE_BRIEF) as chat, \
+            patch.dict("os.environ", {"ANTHROPIC_API_KEY": "test-key"}), \
+            patch("anthropic.Anthropic") as MockClient:
+        brief, prompts = generator.generate_brief([make_record()], stats)
+    assert brief == SAMPLE_BRIEF
+    assert chat.call_args.kwargs["system_prompt"]
+    MockClient.assert_not_called()
+    assert stats["brief_backend"] == "local"
+    assert not stats.get("brief_fallback")
+    assert "USER PROMPT" in prompts
+
+
+def test_generate_brief_local_down_falls_back_to_claude():
+    from spec1_core.briefing import generator
+    stats = make_cycle_stats()
+    with patch.dict("os.environ", {"ANTHROPIC_API_KEY": "test-key"}), \
+            patch("anthropic.Anthropic") as MockClient:
+        MockClient.return_value.messages.create.return_value = make_mock_claude_response(SAMPLE_BRIEF)
+        brief, _ = generator.generate_brief([make_record()], stats)
+    assert brief == SAMPLE_BRIEF.strip()
+    MockClient.assert_called_once()
+    assert stats["brief_backend"] == "claude"
+    assert not stats.get("brief_fallback")
+
+
+def test_generate_brief_local_down_no_key_uses_rules(monkeypatch):
+    from spec1_core.briefing import generator
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    stats = make_cycle_stats()
+    with patch("anthropic.Anthropic") as MockClient:
+        brief, _ = generator.generate_brief([make_record()], stats)
+    MockClient.assert_not_called()
+    assert stats["brief_fallback"] is True
+    assert "brief_backend" not in stats
+    assert "local model unavailable" in brief

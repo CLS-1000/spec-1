@@ -87,3 +87,31 @@ def mock_network_llm_calls(request):
             os.environ.pop("SPEC1_DEV_MODE", None)
     else:
         yield
+
+
+@pytest.fixture(autouse=True, scope="function")
+def block_real_llm_backends(request, monkeypatch):
+    """Keep tests off the real Claude API and a real Ollama.
+
+    generator.py runs load_dotenv(), so a dev box's .env key leaks into every
+    test, and an unmocked verifier would call Claude and then wait on
+    ollama_manager.spawn(). generate_brief() also tries LocalTier3Client.chat()
+    first. Drop the key and make both local paths fail fast, so the cycle falls
+    to Tier 3. Tests that want a backend set the key or patch it themselves
+    (their patch is applied after this one). The client's own test files are
+    left alone.
+    """
+    if request.fspath.basename in ("test_fallback_client.py", "test_llm_task_routing.py"):
+        yield
+        return
+    from spec1_core.llm import ollama_manager
+    from spec1_core.llm.fallback_client import LocalTier3Client
+
+    def _offline(self, *args, **kwargs):
+        raise ConnectionError("Ollama offline (test)")
+
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.setenv("OLLAMA_AUTO_SPAWN", "false")
+    monkeypatch.setattr(ollama_manager, "is_running", lambda *a, **k: False)
+    monkeypatch.setattr(LocalTier3Client, "chat", _offline)
+    yield
