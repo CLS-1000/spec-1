@@ -69,3 +69,6 @@ class LocalTier3Client:
         except (ValidationError, KeyError, json.JSONDecodeError) as e:
             logger.error("Schema validation failed for record %s: %s", record.get("record_id"), e)
             return None
+
+# Compatibility alias for legacy investigation & audit callers
+FallbackLLMClient = LocalTier3Client
