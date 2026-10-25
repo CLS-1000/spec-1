@@ -151,6 +151,18 @@ def evaluate_gates(signal: Signal, parsed: ParsedSignal) -> dict:
     }
 
 
+def composite_score(evaluation: dict) -> float:
+    """Weighted composite of an ``evaluate_gates`` result, whether or not it passed."""
+    g = evaluation["gates"]
+    return round(
+        g["credibility"]["value"] * 0.30
+        + g["volume"]["value"] * 0.20
+        + g["velocity"]["value"] * 0.20
+        + g["novelty"]["score"] * 0.30,
+        4,
+    )
+
+
 def score_signal(
     signal: Signal,
     parsed: ParsedSignal,
@@ -158,25 +170,12 @@ def score_signal(
 ) -> Optional[Opportunity]:
     """Score a signal through 4 gates. Returns Opportunity if all pass, else None."""
     ev = evaluate_gates(signal, parsed)
-    g = ev["gates"]
-    credibility = g["credibility"]["value"]
-    volume = g["volume"]["value"]
-    velocity = g["velocity"]["value"]
-    novelty_score = g["novelty"]["score"]
-
-    gate_results = {name: gate["passed"] for name, gate in g.items()}
+    gate_results = {name: gate["passed"] for name, gate in ev["gates"].items()}
 
     if not ev["passed"]:
         return None
 
-    # Composite score
-    composite = round(
-        credibility * 0.30
-        + volume * 0.20
-        + velocity * 0.20
-        + novelty_score * 0.30,
-        4,
-    )
+    composite = composite_score(ev)
 
     return Opportunity(
         opportunity_id=f"opp-{uuid.uuid4().hex[:12]}",

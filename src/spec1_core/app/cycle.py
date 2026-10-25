@@ -62,6 +62,10 @@ configure_root()
 logger = get_logger(__name__)
 
 DEFAULT_STORE_PATH = Path("spec1_intelligence.jsonl")
+LEGISLATIVE_STORE_PATH = Path("spec1_legislative.jsonl")
+DESK_STANDARD = "standard"
+DESK_LEGISLATIVE = "legislative"
+DESKS = (DESK_STANDARD, DESK_LEGISLATIVE)
 
 # Module-level state updated after every completed cycle — read by API routes.
 last_run_state: dict = {
@@ -138,6 +142,43 @@ def _build_psyop_signal(
     }
 
 
+def build_record_dict(record, *, sig, ps, opp, inv, outcome, run_id: str, environment: str) -> dict:
+    """The stored form of one analyzed signal — shared by every desk."""
+    return {
+        **record.to_dict(),
+        "run_id": run_id,
+        "signal_id": sig.signal_id,
+        "signal_source": sig.source,
+        "signal_url": sig.url,
+        "environment": environment,
+        "opportunity_id": opp.opportunity_id,
+        "opportunity_score": opp.score,
+        "opportunity_priority": opp.priority,
+        "gate_results": opp.gate_results,
+        "investigation_id": inv.investigation_id,
+        "hypothesis": inv.hypothesis,
+        "outcome_classification": outcome.classification,
+        "outcome_confidence": outcome.confidence,
+        "signal_excerpt": " ".join(ps.cleaned_text.split())[:600],
+        "llm_reasoning": next(
+            (e.split(":", 1)[1].strip()[:400] for e in outcome.evidence
+             if e.startswith("LLM assessment:")), ""),
+        "analysis_tier": outcome.analysis_tier,
+    }
+
+
+def make_store(store_path: Path):
+    """Dual-write store (JSONL + SQLite intelligence_records), or JSONL only."""
+    if _DUAL_WRITE_AVAILABLE:
+        return _make_dual_writer(
+            jsonl_path=store_path,
+            db_path=Path(os.environ.get("SPEC1_DB_PATH", "spec1.db")),
+            table="intelligence_records",
+            pk_field="record_id",
+        )
+    return JsonlStore(store_path)
+
+
 def run_cycle(
     store_path: Path = DEFAULT_STORE_PATH,
     run_id: Optional[str] = None,
@@ -148,8 +189,16 @@ def run_cycle(
     verbose: bool = True,
     skip_seen: bool = True,
     triage_only: bool = False,
+    desk: str = "standard",
+    since_days: Optional[int] = None,
 ) -> dict:
     """Execute one full SPEC-1 cycle and return a summary dict.
+
+    ``desk="legislative"`` runs the Legislative & Judicial Desk instead
+    (``spec1_core.app.legislative_desk``): OLIS / state-legislature candidates,
+    no 4-gate filter, stored to ``spec1_legislative.jsonl`` unless *store_path*
+    is given, brief written with ``mode="legislative"``. ``since_days`` is its
+    lookback window; *feeds* and *feed_timeout* only apply to the standard desk.
 
     With ``skip_seen`` (the default), signals whose ``signal_id`` is already in
     the store, or that appear twice in this harvest, are not scored or stored
@@ -162,16 +211,16 @@ def run_cycle(
     stamped ``analysis_tier = rule_based``.
     """
     run_id = run_id or new_run_id()
-    if _DUAL_WRITE_AVAILABLE:
-        from pathlib import Path as _Path
-        store = _make_dual_writer(
-            jsonl_path=store_path,
-            db_path=_Path(os.environ.get("SPEC1_DB_PATH", "spec1.db")),
-            table="intelligence_records",
-            pk_field="record_id",
-        )
-    else:
-        store = JsonlStore(store_path)
+    if desk == DESK_LEGISLATIVE:
+        from spec1_core.app.legislative_desk import run_legislative_desk
+        return run_legislative_desk(
+            store_path=store_path if store_path != DEFAULT_STORE_PATH else LEGISLATIVE_STORE_PATH,
+            run_id=run_id, environment=environment, max_signals=max_signals,
+            verbose=verbose, skip_seen=skip_seen, triage_only=triage_only,
+            since_days=since_days)
+    if desk != DESK_STANDARD:
+        raise ValueError(f"unknown desk {desk!r}; expected one of {DESKS}")
+    store = make_store(store_path)
     started_at = datetime.now(timezone.utc).isoformat()
 
     if verbose:
@@ -354,27 +403,9 @@ def run_cycle(
             record = analyze(opp, inv, outcome, sig)
 
             # Step 7: Store
-            record_dict = {
-                **record.to_dict(),
-                "run_id": run_id,
-                "signal_id": sig.signal_id,
-                "signal_source": sig.source,
-                "signal_url": sig.url,
-                "environment": environment,
-                "opportunity_id": opp.opportunity_id,
-                "opportunity_score": opp.score,
-                "opportunity_priority": opp.priority,
-                "gate_results": opp.gate_results,
-                "investigation_id": inv.investigation_id,
-                "hypothesis": inv.hypothesis,
-                "outcome_classification": outcome.classification,
-                "outcome_confidence": outcome.confidence,
-                "signal_excerpt": " ".join(ps.cleaned_text.split())[:600],
-                "llm_reasoning": next(
-                    (e.split(":", 1)[1].strip()[:400] for e in outcome.evidence
-                     if e.startswith("LLM assessment:")), ""),
-                "analysis_tier": outcome.analysis_tier,
-            }
+            record_dict = build_record_dict(
+                record, sig=sig, ps=ps, opp=opp, inv=inv, outcome=outcome,
+                run_id=run_id, environment=environment)
             store.append(record_dict)
             stored_records.append(record_dict)
             records_stored += 1
@@ -556,7 +587,14 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="SPEC-1 Intelligence Engine")
-    parser.add_argument("--store", default="spec1_intelligence.jsonl", help="JSONL output path")
+    parser.add_argument("--store", default=None,
+                        help="JSONL output path (default spec1_intelligence.jsonl; "
+                             "spec1_legislative.jsonl with --desk legislative)")
+    parser.add_argument("--desk", choices=DESKS, default=DESK_STANDARD,
+                        help="standard: RSS + 4 gates (default). legislative: OLIS measures, "
+                             "interim committees and state bills; no 4 gates.")
+    parser.add_argument("--since-days", type=int, default=None,
+                        help="Legislative desk lookback window in days (default 90)")
     parser.add_argument("--env", default="production", help="Environment label")
     parser.add_argument("--timeout", type=int, default=15, help="Feed fetch timeout (seconds)")
     parser.add_argument("--max-signals", type=int, default=None, help="Cap signals processed")
@@ -569,13 +607,15 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     summary = run_cycle(
-        store_path=Path(args.store),
+        store_path=Path(args.store) if args.store else DEFAULT_STORE_PATH,
         environment=args.env,
         feed_timeout=args.timeout,
         max_signals=args.max_signals,
         verbose=True,
         skip_seen=not args.reprocess_seen,
         triage_only=args.triage_only,
+        desk=args.desk,
+        since_days=args.since_days,
     )
 
     print("\nRun Summary:")
