@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_URL = "http://localhost:11434"
 MODEL_HIGH_RAM = "llama3"
-MODEL_LOW_RAM = "mistral"
+MODEL_LOW_RAM = "qwen2.5:3b"   # fits the ~7 GiB Kali/WSL box; 7B models do not
 RAM_THRESHOLD_GB = 8.0
 
 
