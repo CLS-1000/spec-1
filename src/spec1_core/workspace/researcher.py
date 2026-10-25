@@ -95,7 +95,11 @@ def run_research(case: CaseFile, new_signals: list[Signal]) -> str:
 
         finding = response.content[0].text
 
-        logger.info(f"research_complete: case_id={case.case_id}, signals_analyzed={len(new_signals)}, tokens_used={response.usage.input_tokens + response.usage.output_tokens}")
+        logger.info(
+            "research_complete: case_id=%s, signals_analyzed=%d, tokens_used=%d",
+            case.case_id, len(new_signals),
+            response.usage.input_tokens + response.usage.output_tokens,
+        )
 
         return finding
 

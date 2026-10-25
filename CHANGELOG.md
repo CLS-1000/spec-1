@@ -6,6 +6,26 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.7.0] — 2026-10-24
+
+### Added
+- **`analysis_tier` on every record:** `llm_verified` only when a real model answered, else `rule_based`. Migration 011 adds `analysis_tier` (plus `signal_excerpt`, `llm_reasoning`) to `intel_records`; pre-011 rows stay `NULL` and fail the publish guard closed.
+- **Publish guard:** each brief gets a `<brief>.meta.json` provenance sidecar. `notitia_civica_publish.yml`, `scripts/inject_brief_to_template.py` and `python -m spec1_core.briefing.writer --check` refuse anything not `llm_verified` or without a sidecar. `--mark-hand-written` keeps the Kali hand-written-brief flow over Qwen-verified records.
+- **Triage-only cloud cycle:** `--triage-only` / `SPEC1_TRIAGE_ONLY=true` / `make triage` runs harvest, the 4 gates and Tier 3 rules with no model, brief, handoff, PDF or case research. Both Actions workflows use it.
+
+### Changed
+- **License reverted to proprietary** (EVASTARARCANA LLC, all rights reserved); the Apache 2.0 `LICENSE` from `831ad7a` is withdrawn.
+- `Repository` writes only existing columns and updates existing rows in place instead of `INSERT OR REPLACE`; `filter()` accepts only real column names.
+- `spec1_engine` archived.
+
+### Fixed
+- `FallbackLLMClient.complete()` reports the tier that actually answered.
+- `run-cycle.yml` restores past issue PDFs so the issue counter no longer restarts at 001.
+- Six broken Makefile targets; `make lint` runs ruff; `cryptography` declared.
+- Harvester: CSIS Korea routed to Beyond Parallel, bozo feeds handled, Yonhap wire edition slugs canonicalized; batch insert supports heterogeneous record schemas.
+
+---
+
 ## [0.6.0] — 2026-05-19
 
 ### Added

@@ -13,7 +13,13 @@
 #
 # Prerequisites (set these secrets in the spec-1 repo settings):
 #   NOTITIA_PAT        — GitHub PAT with write access to CLS-1000/notitia-civica
-#   ANTHROPIC_API_KEY  — (optional) Anthropic key; absent → Tier 3 rule-based fallback
+#
+# PUBLISH GUARD: nothing is published unless the brief's provenance sidecar
+# (briefs/spec1_brief_<date>.meta.json) says analysis_tier = llm_verified.
+# GitHub Actions has no model, so the cloud cycle here runs --triage-only
+# (harvest + 4 gates + deterministic rules, no brief). With NOTITIA_PAT set,
+# this job therefore fails at the guard (exit 1) instead of publishing
+# rule-based output. Real briefs come from the local-model cycle on Kali.
 
 name: Notitia Civica — Publish Brief
 
@@ -63,21 +69,16 @@ jobs:
         working-directory: spec-1
         run: pip install -e ".[dev]" --quiet
 
-      # ── 4. Run SPEC-1 cycle ───────────────────────────────────────────────
-      #     Falls back to Tier 3 (rule-based) automatically if no API key.
-      - name: Run SPEC-1 intelligence cycle
+      # ── 4. Run SPEC-1 cycle (triage only — no model in Actions) ──────────
+      - name: Run SPEC-1 triage cycle
         working-directory: spec-1
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           SPEC1_ENVIRONMENT: production
           PYTHONPATH: src
         run: |
-          # Route to Tier 3 rules when no Anthropic key is configured
-          SPEC1_DEV_MODE=$([ -z "$ANTHROPIC_API_KEY" ] && echo "true" || echo "false")
-          export SPEC1_DEV_MODE
-          python -m spec1_core.app.cycle
+          python -m spec1_core.app.cycle --triage-only
           echo "Cycle complete. Brief files:"
-          ls -lh briefs/
+          ls -lh briefs/ 2>/dev/null || echo "(none — triage-only runs write no brief)"
 
       # ── 5. Determine publication date ─────────────────────────────────────
       - name: Resolve publication date
@@ -88,6 +89,24 @@ jobs:
           else
             echo "date=$(date -u '+%Y-%m-%d')" >> "$GITHUB_OUTPUT"
           fi
+
+      # ── 5b. Publish guard — refuse anything not llm_verified ─────────────
+      - name: Publish guard (refuse rule-based briefs)
+        if: ${{ env.PUBLISH_ENABLED == 'true' }}
+        working-directory: spec-1
+        env:
+          PUB_DATE: ${{ steps.pub_date.outputs.date }}
+          PYTHONPATH: src
+        run: |
+          brief="briefs/spec1_brief_${PUB_DATE}.md"
+          if [ ! -f "$brief" ]; then
+            echo "::error::REFUSED: no brief for ${PUB_DATE} (triage-only cloud cycles write none)."
+            exit 1
+          fi
+          python -m spec1_core.briefing.writer --check "$brief" || {
+            echo "::error::REFUSED: $brief is not llm_verified — see the line above."
+            exit 1
+          }
 
       # ── 6. Checkout notitia-civica ────────────────────────────────────────
       - name: Checkout notitia-civica
@@ -122,6 +141,9 @@ jobs:
              "notitia-civica/briefs/spec1_brief_${PUB_DATE}.md"
           cp "spec-1/briefs/spec1_brief_latest.md" \
              "notitia-civica/briefs/spec1_brief_latest.md"
+          # Provenance travels with the brief.
+          cp "spec-1/briefs/spec1_brief_${PUB_DATE}.meta.json" \
+             "notitia-civica/briefs/spec1_brief_${PUB_DATE}.meta.json"
           # Also copy brief_index.jsonl so the index stays in sync
           if [ -f "spec-1/briefs/brief_index.jsonl" ]; then
             cp "spec-1/briefs/brief_index.jsonl" "notitia-civica/briefs/brief_index.jsonl"
@@ -140,6 +162,7 @@ jobs:
           git config user.email "spec-1-bot@users.noreply.github.com"
           git add \
             "briefs/spec1_brief_${PUB_DATE}.md" \
+            "briefs/spec1_brief_${PUB_DATE}.meta.json" \
             "briefs/spec1_brief_latest.md" \
             "published/civic-intelligence-brief_${PUB_DATE}.html"
           # Only stage brief_index.jsonl if it was actually copied this run

@@ -16,10 +16,10 @@ Closed. Keep Open under 40 lines.
 - [2026-08-26] analyst loop: `cls_analyst_loop` writes to its own JSONL at `./analyst_loop/`, not to `spec1.db`. `analyst_cases` in SQLite is empty. Two stores or one?
 - [2026-08-26] deploy: no `make migrate` target exists and the schema-init mechanism is still unconfirmed. Find it or write it before any GCP bring-up.
 - [2026-08-26] deploy: WSL2 means no systemd and no always-on uptime. The GCP runbook assumes a systemd timer for `make cycle`. Reconcile before following it.
-- [2026-07-26] hygiene: `backfill_jsonl_to_db.py` line 6 has a TODO referencing the stale `spec1_engine` namespace.
 - [2026-08-04] labeldrift: `ominous-22/labeldrift` is confirmed empty. The package exists locally with 18 tests and PyPI Trusted Publishing configured but was never actually pushed.
 
 ## Closed
 
+- [2026-07-26] hygiene: `backfill_jsonl_to_db.py` TODO referencing the stale `spec1_engine` namespace. Closed 2026-10-24: TODO removed, `spec1_engine` archived to `_ARCHIVE/`.
 - [2026-08-26] feedparser 6.0.10 broke on Python 3.13 (`cgi` removed from stdlib). Closed: pin changed to `>=6.0.11`, 6.0.14 installed, first live `make cycle` succeeded.
 - [2026-08-06] pdx-1i seed migration structure-vs-persons. Closed: Option A chosen — structure only, names deliberately discarded, 57 seats preserved via `Jurisdiction.seats` tuple.

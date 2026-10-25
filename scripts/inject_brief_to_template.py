@@ -13,7 +13,13 @@ Usage:
         [--date    2026-08-31]   # defaults to today
         [--run-id  run-abc123]   # optional run ID for metadata display
 
-Exit codes: 0 = success, 1 = error (missing input files, write failure).
+Publish guard: the brief must have a provenance sidecar
+(``<brief>.meta.json``, written by the cycle) whose ``analysis_tier`` is
+``llm_verified``. Rule-based / fallback briefs, and briefs with no sidecar,
+are refused with exit 1 — nothing is written.
+
+Exit codes: 0 = success, 1 = error (missing input files, write failure,
+or the brief is not publishable).
 """
 
 from __future__ import annotations
@@ -22,7 +28,7 @@ import argparse
 import html
 import re
 import sys
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 
@@ -434,6 +440,32 @@ def inject_brief_into_template(
 # CLI
 # ---------------------------------------------------------------------------
 
+# Mirrors spec1_labels.ANALYSIS_TIER_LLM_VERIFIED; this script also runs
+# without spec-1 installed, so it doesn't import it.
+try:
+    from spec1_labels import ANALYSIS_TIER_LLM_VERIFIED as _VERIFIED
+except ImportError:  # pragma: no cover - standalone use
+    _VERIFIED = "llm_verified"
+
+
+def publish_block_reason(brief_path: Path) -> str | None:
+    """None if *brief_path* may be published, else the reason it may not."""
+    import json
+
+    meta_path = brief_path.with_name(brief_path.stem + ".meta.json")
+    try:
+        meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return f"no provenance sidecar {meta_path.name}; refusing an unlabelled brief"
+    except (OSError, ValueError) as exc:
+        return f"unreadable provenance sidecar {meta_path.name}: {exc}"
+    tier = meta.get("analysis_tier")
+    if tier != _VERIFIED:
+        return (f"brief is {tier or 'unlabelled'} (records_tier={meta.get('records_tier')}, "
+                f"brief_source={meta.get('brief_source')}); only {_VERIFIED} briefs publish")
+    return None
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--brief", default="briefs/spec1_brief_latest.md",
@@ -457,6 +489,11 @@ def main(argv: list[str] | None = None) -> int:
         return 1
     if not template_path.exists():
         print(f"[inject] ERROR: template not found: {template_path}", file=sys.stderr)
+        return 1
+
+    why = publish_block_reason(brief_path)
+    if why:
+        print(f"[inject] REFUSED: {why}", file=sys.stderr)
         return 1
 
     output_date = date.today()

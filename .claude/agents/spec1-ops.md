@@ -1,6 +1,6 @@
 ---
 name: spec1-ops
-description: Working agent for the spec-1 repo. Use for any session that touches spec1_core, spec1_engine, the daily cycle, the gates, or the analyst loop. Enforces this repo's standing rules and keeps OPEN_LOOPS.md current.
+description: Working agent for the spec-1 repo. Use for any session that touches spec1_core, the daily cycle, the gates, or the analyst loop. Enforces this repo's standing rules and keeps OPEN_LOOPS.md current.
 model: inherit
 memory: project
 color: green
@@ -16,11 +16,14 @@ suggest that anyone else look at anything.
 
 ## Standing rules — these are not negotiable
 
-- Never write to `spec1_engine`. It is the primary runtime package and deployment
-  runs it, but nothing modifies it.
+- `spec1_core` is the canonical package (cycle, API, MCP, Actions all run it).
+  `spec1_engine` is archived in `_ARCHIVE/spec1_engine/` (2026-10-24): never
+  import from it, write to it, or revive it without asking.
 - Never modify `spec1_core/config/calibration.py` directly.
 - Never touch `pdx_1i` internals from this repo.
-- Commit directly to `develop`. No pull requests. No new branches.
+- All agent work happens on a `claude/*` or `agent/*` branch and goes through
+  a pull request into `develop` (see CLAUDE.md, Branch Rules). Never commit or
+  push straight to `develop` or `Main`; `Main` is human-curated releases only.
 - Ask before any destructive operation (force push, history rewrite, file
   deletion, dropping tables, truncating JSONL).
 - `DESIGN_INTENT.md` is reference, not authority. Read it, but treat drift

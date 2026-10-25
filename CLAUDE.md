@@ -20,7 +20,7 @@ SPEC-1 is a real-time open-source intelligence (OSINT) platform that:
 ```
 spec-1/
 ├── src/
-│   ├── spec1_core/              # CANONICAL OSINT pipeline (replaces spec1_engine as the active package)
+│   ├── spec1_core/              # THE OSINT pipeline (spec1_engine archived 2026-10-24)
 │   │   ├── schemas/models.py        # Signal, ParsedSignal, Opportunity, Investigation, Outcome,
 │   │   │                            # IntelligenceRecord, AnalystRecord
 │   │   ├── core/                    # FROZEN: engine, ids, logging_utils, settings, prompts/
@@ -48,17 +48,10 @@ spec-1/
 │   │   │   ├── pdf_render.py            # Out-of-process weasyprint subprocess
 │   │   │   ├── publication_generator.py # ReportLab PDF (Psyche-Ops Issue layout)
 │   │   │   ├── run_psyop.py             # Score intel records for psyop patterns
-│   │   │   ├── backfill_jsonl_to_db.py  # Migrate JSONL → SQLite
-│   │   │   ├── radar_dashboard.py       # Signal radar view
-│   │   │   ├── snapshot_manager.py      # JSONL snapshot management
-│   │   │   └── workspace_sanitizer.py   # Case file cleanup
+│   │   │   └── backfill_jsonl_to_db.py  # Migrate JSONL → SQLite
 │   │   ├── api/                     # Internal FastAPI sub-app (legacy mount /api/v1)
 │   │   ├── app/cycle.py             # `python -m spec1_core.app.cycle` — one-shot cycle
 │   │   └── main.py                  # `python -m spec1_core.main` — uvicorn entry point
-│   │
-│   ├── spec1_engine/            # LEGACY PACKAGE — kept for backward compat; mirrors spec1_core
-│   │   │                        # All new code should target spec1_core imports
-│   │   └── (same subdirectory structure as spec1_core; imports from spec1_engine.* namespace)
 │   │
 │   ├── cls_osint/               # Extended OSINT adapters
 │   │   ├── schemas.py           # OSINTRecord, FaraRecord, CongressRecord, NarrativeRecord
@@ -188,7 +181,8 @@ spec-1/
 │   ├── test_feed.py / test_fara.py / test_congressional.py / test_narrative.py
 │   ├── test_world_brief.py / test_briefing.py / test_leads.py
 │   ├── test_psyop.py / test_psyop_evidence.py
-│   ├── test_persistence.py / test_store.py
+│   ├── test_store.py / test_repository_upsert.py
+│   ├── test_analysis_tier.py    # analysis_tier, triage-only cycle, publish guard
 │   ├── test_analysts.py / test_workspace.py
 │   ├── test_verdicts.py / test_calibration.py / test_calibration_proposer.py
 │   ├── test_pdf_render.py / test_logging_utils.py
@@ -204,17 +198,17 @@ spec-1/
 │   ├── test_publication_generator.py / test_x_publisher.py
 │   ├── test_ui_route.py / test_e2e_metro_president_vacancy.py
 │   ├── test_olis_live.py / test_orestar_resolver.py  # live integration tests (network)
-│   └── test_credibility.py
+│   └── test_db_record_fields.py
 │
 ├── briefs/                      # Generated daily briefs + per-day analyst prompts
 ├── scripts/                     # Standalone scripts (e.g. anthropic_smoke.py)
 ├── monitor.py                   # Terminal curses monitor (standalone, cosmetic)
 ├── mcp_server.py                # MCP server exposing SPEC-1 tools to Claude
-├── pyproject.toml               # Version: 0.6.0
+├── pyproject.toml               # Version: 0.7.0
 ├── requirements.txt
 ├── .env.example
-├── CASE_STUDY.md
-├── PORTFOLIO_SUMMARY.md
+├── _ARCHIVE/                    # spec1_engine (archived 2026-10-24), old root copies
+├── docs/archive/audits/         # point-in-time audit reports moved out of the root
 └── README.md
 ```
 
@@ -345,12 +339,14 @@ RSS / FARA / Congress / Narrative / Judicial / State-Leg / PDX-911
 
 Every signal must pass ALL four gates to become an Opportunity:
 
-| Gate | Criterion | Default Threshold |
+| Gate | Criterion | Threshold (`spec1_core/config/calibration.py`) |
 |------|-----------|-------------------|
-| credibility | Known source / analyst weight ≥ 0.5 | 0.5 |
-| volume | Word count ≥ 50 | 50 words |
-| velocity | Signal recency ≤ 48 hours | 48h |
-| novelty | Not duplicate (hash-based dedup) | — |
+| credibility | Source weight (unlisted sources default 0.60) | `CREDIBILITY_THRESHOLD` = 0.65 |
+| volume | Word-count tier score (`VOLUME_TIERS`) | `VOLUME_THRESHOLD` = 0.30 |
+| velocity | Recency score (0.50 = published within 72h) | `VELOCITY_THRESHOLD` = 0.50 |
+| novelty | Keyword hits | `NOVELTY_THRESHOLD` = 1 |
+
+The code is the source of truth for these values; this table is a snapshot.
 
 Calibration drift across these gates is surfaced by `cls_calibration` — never auto-applied.
 
@@ -368,6 +364,28 @@ Research Mode (`cls_research`) does **not** run the 4-gate filter.
 
 All LLM calls are logged to `SPEC1_LLM_LOG_PATH` (default: `logs/llm_fallback.jsonl`).
 The cycle never crashes on LLM failure — every call eventually reaches Tier 3.
+
+### analysis_tier and triage-only (2026-10-24)
+
+Every Outcome and stored intelligence record carries `analysis_tier`
+(`spec1_labels.ANALYSIS_TIER_*`): `llm_verified` only when a real model
+(local/Ollama/OpenAI-compatible or Claude) produced the classification,
+`rule_based` for Tier 3 or deterministic triage. Rule-based output is never
+analysis and never publishable.
+
+- `python -m spec1_core.app.cycle --triage-only` (or `SPEC1_TRIAGE_ONLY=true`,
+  `make triage`): harvest + 4 gates + Tier 3 rules called directly. No model,
+  no brief, handoff, PDF or case research. This is what GitHub Actions runs
+  (`run-cycle.yml`, `notitia_civica_publish.yml`) — Actions has no model.
+- Real analysis runs on Kali against the local model (`make cycle`).
+- Each brief gets `briefs/spec1_brief_<date>.meta.json` (records_tier,
+  brief_source, analysis_tier). Publishing refuses (exit 1) anything not
+  `llm_verified`, or with no sidecar: `scripts/inject_brief_to_template.py`,
+  `python -m spec1_core.briefing.writer --check <brief>`, and the guard step in
+  `notitia_civica_publish.yml`.
+- A brief written by hand from the handoff: `python -m spec1_core.briefing.writer
+  --mark-hand-written briefs/spec1_brief_<date>.md`. Only publishable if the
+  records behind it were `llm_verified`.
 
 ## MCP Tools Exposed (mcp_server.py)
 
@@ -450,6 +468,9 @@ SPEC1_RESEARCH_DOSSIER_PATH=research/dossiers
 # Full intelligence cycle (one-shot)
 python -m spec1_core.app.cycle
 
+# Triage only — no model, no brief (what GitHub Actions runs)
+python -m spec1_core.app.cycle --triage-only
+
 # API server (canonical)
 python -m spec1_api.main
 # or
@@ -515,14 +536,16 @@ All test functions must be fully implemented — no `pass` stubs, no `pytest.ski
     any X publisher integration depend on these exact strings; do not rename.
 15. `cls_pdx1.ConfidenceTier.INFERRED` (tier 3) signals are not publish-eligible alone.
     `AnomalyTier.TIER_1` (≥3σ) is required for publication gating.
-16. New code should import from `spec1_core.*` not `spec1_engine.*`.
-    `spec1_engine` is kept only for backward compatibility.
+16. Import from `spec1_core.*`. `spec1_engine` was archived to `_ARCHIVE/` on
+    2026-10-24 and is not on the import path.
+17. Every stored intelligence record carries `analysis_tier`; nothing
+    `rule_based` is published (see "analysis_tier and triage-only").
 
 ## Governance & Agent Constraints
 
 ### Frozen Core
 
-`src/spec1_core/core/` (and its mirror `src/spec1_engine/core/`) is the frozen core.
+`src/spec1_core/core/` is the frozen core.
 It contains canonical schemas, ID generation, logging utilities, settings, and the prompt
 files under `core/prompts/`.
 
@@ -534,7 +557,7 @@ files under `core/prompts/`.
 
 ### Semantic Versioning
 
-`pyproject.toml` version follows MAJOR.MINOR.PATCH (current: `0.6.0`):
+`pyproject.toml` version follows MAJOR.MINOR.PATCH (current: `0.7.0`):
 
 | Bump | When |
 |------|------|
@@ -547,12 +570,6 @@ Every PR must declare its version bump type in the PR description.
 ### Agent Write Surfaces
 
 Agents may freely modify:
-- `src/spec1_engine/signal/`
-- `src/spec1_engine/investigation/`
-- `src/spec1_engine/intelligence/`
-- `src/spec1_engine/briefing/` (except `templates.py` imports — edit `.md` files instead)
-- `src/spec1_engine/tools/`
-- `src/cls_osint/`, `src/cls_psyop/`, `src/cls_quant/`, `src/cls_leads/`
 - `src/spec1_core/signal/`
 - `src/spec1_core/investigation/`
 - `src/spec1_core/intelligence/`
@@ -565,7 +582,6 @@ Agents may freely modify:
 
 Agents must **NOT** modify without human approval:
 - `src/spec1_core/core/` (any file)
-- `src/spec1_engine/core/` (any file)
 - `src/spec1_core/core/prompts/` (any `.md` file)
 - `pyproject.toml` version field
 - `CLAUDE.md`
@@ -575,9 +591,10 @@ Agents must **NOT** modify without human approval:
 
 | Branch | Purpose |
 |--------|---------|
-| `main` | Human-curated stable releases only |
-| `dev` | Integration branch — merge agent branches here first |
-| `claude/*` or `agent/*` | Agent work — never merge directly to `main` |
+| `Main` | Human-curated stable releases only (scheduled workflows run from `develop`/`Main`) |
+| `develop` | Integration branch — agent PRs target this; kept equal to `Main` after releases |
+| `claude/*` or `agent/*` | Agent work — never merge directly to `Main` |
+| `data` | Orphan branch: daily cycle state and outputs, written by `run-cycle.yml` only |
 
 ### PR Requirements
 

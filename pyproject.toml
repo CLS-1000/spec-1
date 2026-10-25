@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "spec1-engine"
-version = "0.6.2"
+version = "0.7.0"
 description = "SPEC-1 Intelligence Engine — signal intelligence, psyop detection, leads, briefs, API, and MCP"
 requires-python = ">=3.11"
 dependencies = [
@@ -23,6 +23,7 @@ dependencies = [
     "httpx>=0.27",
     "reportlab>=4.0",
     "sqlalchemy>=2.0",
+    "cryptography>=42",   # cls_civica sealing (Gatepost Ed25519 keys)
 ]
 
 [project.optional-dependencies]
@@ -66,7 +67,7 @@ ignore = [
     "E702",   # multiple statements on one line — pre-existing in tests
     "C901",   # function too complex — existing pipeline functions (run_cycle=48, run=21, etc.)
 ]
-exclude = [".venv", ".git", "build", "dist"]
+exclude = [".venv", ".git", "build", "dist", "_ARCHIVE"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["E501"]   # long XML/string literals in test fixtures are acceptable

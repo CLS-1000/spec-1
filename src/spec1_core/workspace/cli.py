@@ -3,16 +3,15 @@
 # @loc:      gh_main
 # @status:   stable
 # @depends:  NONE
-# TODO: back-import from spec1_engine — migrate to spec1_core equivalent
 
 """Command-line interface for case management.
 
 Usage:
-    python -m spec1_engine.workspace open "Title" "Question" --tags "tag1,tag2"
-    python -m spec1_engine.workspace list
-    python -m spec1_engine.workspace status <case_id>
-    python -m spec1_engine.workspace close <case_id>
-    python -m spec1_engine.workspace report <case_id>
+    python -m spec1_core.workspace open "Title" "Question" --tags "tag1,tag2"
+    python -m spec1_core.workspace list
+    python -m spec1_core.workspace status <case_id>
+    python -m spec1_core.workspace close <case_id>
+    python -m spec1_core.workspace report <case_id>
 """
 
 from __future__ import annotations
@@ -38,6 +37,7 @@ def cmd_open(args):
     tags = [t.strip() for t in args.tags.split(",") if t.strip()]
 
     case = open_case(title, question, tags)
+    print(f"Opened {case.case_id}: {case.title}")
     return 0
 
 
@@ -73,7 +73,7 @@ def cmd_status(args):
     print(f"Tags:       {', '.join(case.tags)}")
     print(f"Opened:     {case.opened_at.isoformat()}")
     print(f"Updated:    {case.updated_at.isoformat()}")
-    print(f"")
+    print("")
     print(f"Signals:    {len(case.signal_ids)}")
     print(f"Findings:   {len(case.findings)}")
     print(f"Cycles:     {case.research_runs}")
@@ -81,7 +81,7 @@ def cmd_status(args):
     print(f"{'='*60}")
 
     if case.findings:
-        print(f"\nLatest Finding:")
+        print("\nLatest Finding:")
         print(f"{'-'*60}")
         print(case.findings[-1][:500])
         if len(case.findings[-1]) > 500:
@@ -118,7 +118,7 @@ def main():
     """Main CLI entrypoint."""
     parser = argparse.ArgumentParser(
         description="SPEC-1 Case Workspace CLI",
-        prog="python -m spec1_engine.workspace",
+        prog="python -m spec1_core.workspace",
     )
 
     subparsers = parser.add_subparsers(dest="command", help="Command to run")

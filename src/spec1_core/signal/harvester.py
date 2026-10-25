@@ -13,6 +13,7 @@ Sources: War on the Rocks, Cipher Brief, Lawfare, RAND, Atlantic Council, Defens
 from __future__ import annotations
 
 import hashlib
+import logging
 import re
 import ssl
 import urllib.request
@@ -24,6 +25,8 @@ import requests
 
 from spec1_core.schemas.models import Signal
 
+logger = logging.getLogger(__name__)
+
 DEFAULT_FEEDS: dict[str, str] = {
     "war_on_the_rocks": "https://warontherocks.com/feed/",
     "cipher_brief": "https://www.thecipherbrief.com/feed",
@@ -34,7 +37,7 @@ DEFAULT_FEEDS: dict[str, str] = {
     # DPRK / Korea intelligence feeds
     "38_north": "https://www.38north.org/feed/",
     "nk_news": "https://www.nknews.org/feed/",
-    "csis_korea": "https://www.csis.org/programs/korea-chair/feed",
+    "csis_korea": "https://beyondparallel.csis.org/feed/",
     "yonhap": "https://en.yna.co.kr/RSS/news.xml",
 }
 
@@ -55,8 +58,26 @@ _ILLEGAL_XML_RE = re.compile(
 )
 
 
+_WIRE_PREFIX_RE = re.compile(
+    r"^\s*\((?:URGENT|[0-9]+(?:st|nd|rd|th)?\s*LD|LEAD)\)\s*",
+    re.IGNORECASE,
+)
+_YONHAP_URL_RE = re.compile(
+    r"(https?://en\.yna\.co\.kr/view/AEN\d{12})\d{2}(\d{3})",
+    re.IGNORECASE,
+)
+
+
+def _canonicalize_wire_item(url: str, title: str) -> tuple[str, str]:
+    """Strip wire edition prefixes and collapse rolling update URLs."""
+    canon_title = _WIRE_PREFIX_RE.sub("", title).strip()
+    canon_url = _YONHAP_URL_RE.sub(r"\1_BASE_\2", url)
+    return canon_url, canon_title
+
+
 def _make_signal_id(url: str, title: str) -> str:
-    raw = f"{url}::{title}"
+    canon_url, canon_title = _canonicalize_wire_item(url, title)
+    raw = f"{canon_url}::{canon_title}"
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
 
 
@@ -162,8 +183,8 @@ def fetch_feed(
 
     if parsed.get("bozo") and not parsed.get("entries"):
         bozo_exc = parsed.get("bozo_exception")
-        if bozo_exc:
-            raise RuntimeError(f"Failed to parse feed {name}: {bozo_exc}")
+        logger.warning("Failed to parse feed %s: %s (skipping)", name, bozo_exc)
+        return
 
     for entry in parsed.get("entries", []):
         title = getattr(entry, "title", "") or ""
