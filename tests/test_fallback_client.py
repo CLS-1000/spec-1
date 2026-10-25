@@ -564,3 +564,60 @@ class TestDevMode:
         assert required.issubset(result.keys())
         assert result["verdict"] in {"THREAT", "ANOMALY", "CLEAR"}
         assert 0.0 <= result["confidence"] <= 1.0
+
+
+# ── LocalTier3Client.chat — free-form local markdown ──────────────────────────
+
+class TestLocalChat:
+    def _client(self, response: MagicMock):
+        from spec1_core.llm.fallback_client import LocalTier3Client
+        client = LocalTier3Client()
+        client.client = MagicMock()
+        client.client.post.return_value = response
+        return client
+
+    def _response(self, content: str) -> MagicMock:
+        resp = MagicMock()
+        resp.json.return_value = {"message": {"content": content}}
+        return resp
+
+    def test_posts_chat_payload_to_qwen(self, monkeypatch):
+        from spec1_core.llm import fallback_client
+        monkeypatch.delenv("OLLAMA_MODEL", raising=False)
+        client = self._client(self._response("## Brief\n"))
+        assert client.chat("user text", system_prompt="sys", temperature=0.4) == "## Brief"
+        path = client.client.post.call_args.args[0]
+        payload = client.client.post.call_args.kwargs["json"]
+        assert path == "/api/chat"
+        assert payload["model"] == fallback_client.CHAT_MODEL == "qwen2.5:3b"
+        assert payload["stream"] is False
+        assert "format" not in payload
+        assert payload["options"]["temperature"] == 0.4
+        assert payload["messages"] == [
+            {"role": "system", "content": "sys"},
+            {"role": "user", "content": "user text"},
+        ]
+
+    def test_no_system_prompt_sends_user_only(self):
+        client = self._client(self._response("ok"))
+        client.chat("only user")
+        assert client.client.post.call_args.kwargs["json"]["messages"] == [
+            {"role": "user", "content": "only user"}]
+
+    def test_reasoning_block_stripped(self):
+        client = self._client(self._response("<think>plan</think>\n# Brief"))
+        assert client.chat("x") == "# Brief"
+
+    def test_empty_response_raises(self):
+        client = self._client(self._response("   "))
+        with pytest.raises(RuntimeError):
+            client.chat("x")
+
+    def test_connection_error_propagates(self):
+        import httpx
+        from spec1_core.llm.fallback_client import LocalTier3Client
+        client = LocalTier3Client()
+        client.client = MagicMock()
+        client.client.post.side_effect = httpx.ConnectError("refused")
+        with pytest.raises(httpx.ConnectError):
+            client.chat("x")

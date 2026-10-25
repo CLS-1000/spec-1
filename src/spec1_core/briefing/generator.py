@@ -6,8 +6,9 @@
 
 """Daily intelligence brief generator.
 
-Calls Claude Sonnet to write a publishable brief from today's scored records.
-Falls back to a raw-stats brief on any API error — never crashes the cycle.
+Local-first: the brief is written by Qwen 2.5 on the local Ollama server,
+then Claude Sonnet if Ollama is unavailable, then a rule-based raw-stats brief
+if both fail — never crashes the cycle.
 """
 
 import os
@@ -368,7 +369,10 @@ def handoff_doc(records: list[dict], cycle_stats: dict, mode: str = "standard") 
 
 
 def generate_brief(records: list[dict], cycle_stats: dict, mode: str = "standard") -> tuple[str, str]:
-    """Generate the daily intelligence brief via Claude.
+    """Generate the daily intelligence brief: local Qwen 2.5, then Claude, then rules.
+
+    ``cycle_stats["brief_backend"]`` records which model wrote it ("local" or
+    "claude"); the rule-based path sets ``brief_fallback`` instead.
 
     Returns a (brief, prompts_text) tuple where *brief* is the generated
     markdown and *prompts_text* is the full prompts payload (system + user)
@@ -388,11 +392,26 @@ def generate_brief(records: list[dict], cycle_stats: dict, mode: str = "standard
         logger.error("Brief prompt build failed: %s", exc)
         return _fallback_brief(cycle_stats, records, reason="prompt build failed"), ""
 
+    # Tier 1: local Qwen 2.5 via Ollama.
+    try:
+        from spec1_core.llm.fallback_client import LocalTier3Client
+
+        brief = LocalTier3Client().chat(user_prompt, system_prompt=sys_prompt)
+        cycle_stats["brief_backend"] = "local"
+        logger.info("Brief generated via local qwen2.5 (mode=%s) — %d words", mode, len(brief.split()))
+        return brief, prompts_text
+    except Exception as exc:
+        print(f"[briefing] Local model unavailable: {type(exc).__name__}: {exc}")
+        logger.warning("Local brief generation failed: %s", exc)
+
+    # Tier 2: Anthropic Claude.
     api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip().lstrip('\ufeff')
     if not api_key:
         print("[briefing] ANTHROPIC_API_KEY not set in environment — returning fallback brief")
         logger.warning("ANTHROPIC_API_KEY not set — returning fallback brief")
-        return _fallback_brief(cycle_stats, records), prompts_text
+        return _fallback_brief(
+            cycle_stats, records, reason="local model unavailable and API key not configured"
+        ), prompts_text
 
     try:
         import anthropic  # only needed when Claude is called from here
@@ -405,9 +424,12 @@ def generate_brief(records: list[dict], cycle_stats: dict, mode: str = "standard
             messages=[{"role": "user", "content": user_prompt}],
         )
         brief = message.content[0].text.strip()
-        logger.info("Brief generated (mode=%s) — %d words", mode, len(brief.split()))
+        cycle_stats["brief_backend"] = "claude"
+        logger.info("Brief generated via Claude (mode=%s) — %d words", mode, len(brief.split()))
         return brief, prompts_text
     except Exception as exc:
         print(f"[briefing] API call failed: {type(exc).__name__}: {exc}")
         logger.error("Brief generation failed: %s", exc)
-        return _fallback_brief(cycle_stats, records, reason="API call failed"), prompts_text
+        return _fallback_brief(
+            cycle_stats, records, reason="local model unavailable and API call failed"
+        ), prompts_text
