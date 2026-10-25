@@ -204,7 +204,7 @@ spec-1/
 ├── scripts/                     # Standalone scripts (e.g. anthropic_smoke.py)
 ├── monitor.py                   # Terminal curses monitor (standalone, cosmetic)
 ├── mcp_server.py                # MCP server exposing SPEC-1 tools to Claude
-├── pyproject.toml               # Version: 0.6.2
+├── pyproject.toml               # Version: 0.7.0
 ├── requirements.txt
 ├── .env.example
 ├── _ARCHIVE/                    # spec1_engine (archived 2026-10-24), old root copies
@@ -557,7 +557,7 @@ files under `core/prompts/`.
 
 ### Semantic Versioning
 
-`pyproject.toml` version follows MAJOR.MINOR.PATCH (current: `0.6.2`):
+`pyproject.toml` version follows MAJOR.MINOR.PATCH (current: `0.7.0`):
 
 | Bump | When |
 |------|------|
