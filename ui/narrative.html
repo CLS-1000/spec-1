@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<!--
+  SPEC-1 Narrative & Publisher Desk
+  Copyright (c) 2026 EVASTARARCANA LLC. All Rights Reserved.
+  Proprietary and confidential. See LICENSE.
+
+  Draft → review → release over /api/v1/narrative/*.
+  Offline: no external fonts, scripts or styles. All data is escaped.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="copyright" content="EVASTARARCANA LLC">
+<title>SPEC-1 Narrative Desk</title>
+<style>
+  :root {
+    --bg:        #07090b;
+    --panel:     #0d1114;
+    --panel-2:   #12171b;
+    --line:      #1f272d;
+    --line-2:    #2b363e;
+    --text:      #d7e0e5;
+    --muted:     #8a98a2;
+    --dim:       #5f6d77;
+    --accent:    #4fd1c5;
+    --green:     #3ddc84;
+    --green-bg:  rgba(61, 220, 132, 0.10);
+    --amber:     #f5b942;
+    --amber-bg:  rgba(245, 185, 66, 0.10);
+    --red:       #ff5d5d;
+    --red-bg:    rgba(255, 93, 93, 0.10);
+    --blue:      #6aa9ff;
+    --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { background: var(--bg); color: var(--text); font: 14px/1.45 var(--sans); -webkit-font-smoothing: antialiased; }
+  button, select, input, textarea { font: inherit; color: inherit; }
+  a { color: var(--accent); }
+
+  /* ── header + nav ───────────────────────────────────── */
+  header.top {
+    position: sticky; top: 0; z-index: 20;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px;
+    padding: 12px 20px; background: rgba(7, 9, 11, 0.94);
+    border-bottom: 1px solid var(--line); backdrop-filter: blur(6px);
+  }
+  .brand { display: flex; align-items: baseline; gap: 10px; }
+  .brand h1 { margin: 0; font: 600 15px/1 var(--mono); letter-spacing: 0.14em; }
+  .brand .ver { font: 500 12px/1 var(--mono); color: var(--accent); }
+  nav.desks { display: flex; gap: 4px; margin-right: auto; flex-wrap: wrap; }
+  nav.desks a {
+    font: 600 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; text-decoration: none;
+    color: var(--muted); padding: 8px 10px; border-radius: 6px; border: 1px solid transparent;
+  }
+  nav.desks a:hover { color: var(--text); border-color: var(--line-2); }
+  nav.desks a[aria-current="page"] { color: var(--accent); border-color: rgba(79,209,197,.4); background: rgba(79,209,197,.06); }
+  .pill {
+    display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px;
+    font: 600 11px/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase;
+    border: 1px solid var(--line-2); color: var(--muted); background: var(--panel); white-space: nowrap;
+  }
+  .pill .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+  .pill .lbl { color: var(--dim); font-weight: 500; }
+  .pill.ok   { color: var(--green); border-color: rgba(61,220,132,.4); background: var(--green-bg); }
+  .pill.warn { color: var(--amber); border-color: rgba(245,185,66,.4); background: var(--amber-bg); }
+  .pill.bad  { color: var(--red);   border-color: rgba(255,93,93,.45); background: var(--red-bg); }
+
+  /* ── toolbar ────────────────────────────────────────── */
+  .toolbar {
+    display: grid; grid-template-columns: repeat(3, minmax(150px, 1fr)) auto; gap: 10px; align-items: end;
+    padding: 14px 20px; border-bottom: 1px solid var(--line); background: var(--panel);
+  }
+  label.field { display: flex; flex-direction: column; gap: 6px; font: 12px var(--mono); color: var(--muted); }
+  select, input[type="text"], input[type="date"], textarea {
+    background: var(--bg); border: 1px solid var(--line-2); border-radius: 6px;
+    padding: 9px 10px; min-height: 40px; width: 100%;
+  }
+  textarea { resize: vertical; min-height: 88px; font: 13px/1.5 var(--sans); }
+  select:focus-visible, input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .btn {
+    min-height: 40px; padding: 0 16px; border-radius: 6px; cursor: pointer; white-space: nowrap;
+    font: 600 12px var(--mono); letter-spacing: .04em;
+    background: var(--panel-2); border: 1px solid var(--line-2); color: var(--text);
+  }
+  .btn:hover:not(:disabled) { border-color: var(--accent); }
+  .btn.primary { background: rgba(79,209,197,.12); border-color: rgba(79,209,197,.5); color: var(--accent); }
+  .btn.release { background: var(--green-bg); border-color: rgba(61,220,132,.5); color: var(--green); width: 100%; }
+  .btn.danger { background: var(--red-bg); border-color: rgba(255,93,93,.5); color: var(--red); }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .progress { grid-column: 1 / -1; display: flex; align-items: center; gap: 12px; font: 12px var(--mono); color: var(--muted); }
+  .bar { flex: 1; height: 6px; background: var(--bg); border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+  .bar > span { display: block; height: 100%; width: 0; background: var(--accent); transition: width .4s; }
+  .bar.indeterminate > span { width: 35%; animation: slide 1.4s ease-in-out infinite; }
+  .bar.done > span { width: 100%; background: var(--green); }
+  .bar.fail > span { width: 100%; background: var(--red); }
+  @keyframes slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(300%); } }
+
+  /* ── workspace ──────────────────────────────────────── */
+  .desk { display: grid; grid-template-columns: minmax(300px, 0.85fr) minmax(0, 1.4fr); min-height: calc(100vh - 170px); }
+  .col { padding: 16px 20px 40px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+  .col.left { border-right: 1px solid var(--line); background: var(--panel); }
+  .section-title { margin: 0 0 8px; font: 600 11px/1 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim); }
+
+  .drafts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; max-height: 260px; overflow: auto; }
+  .drafts button {
+    width: 100%; text-align: left; cursor: pointer; background: transparent; border: 1px solid transparent;
+    border-radius: 6px; padding: 8px 10px; display: flex; flex-direction: column; gap: 5px; font: 12px var(--mono); color: var(--muted);
+  }
+  .drafts button:hover { background: var(--panel-2); color: var(--text); }
+  .drafts button[aria-current="true"] { border-color: var(--line-2); background: var(--panel-2); color: var(--text); }
+  .drafts .row1 { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .drafts .rid { color: var(--dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .badge { display: inline-block; padding: 3px 7px; border-radius: 4px; font: 600 11px/1 var(--mono); border: 1px solid var(--line-2); color: var(--muted); white-space: nowrap; }
+  .badge.llm  { color: var(--green); border-color: rgba(61,220,132,.4); background: var(--green-bg); }
+  .badge.rule { color: var(--amber); border-color: rgba(245,185,66,.4); background: var(--amber-bg); }
+  .badge.null { color: var(--red);   border-color: rgba(255,93,93,.45); background: var(--red-bg); }
+  .badge.voice { color: var(--blue); border-color: rgba(106,169,255,.4); }
+  .badge.rel { color: var(--accent); border-color: rgba(79,209,197,.45); }
+
+  .meter { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+  .meter.ok { border-color: rgba(61,220,132,.45); } .meter.warn { border-color: rgba(245,185,66,.45); }
+  .meter .head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .stat .k { font: 11px var(--mono); color: var(--dim); text-transform: uppercase; letter-spacing: .06em; }
+  .stat .v { font: 600 20px/1.2 var(--mono); margin-top: 2px; }
+  .reasons { margin: 0; padding-left: 18px; font: 12px/1.5 var(--mono); color: var(--amber); }
+
+  .kv { display: grid; grid-template-columns: 110px 1fr; gap: 6px 12px; font: 12px var(--mono); margin: 0; }
+  .kv dt { color: var(--dim); } .kv dd { margin: 0; word-break: break-word; }
+  .row-btns { display: flex; gap: 8px; align-items: center; }
+  .note { font: 12px/1.5 var(--mono); color: var(--muted); margin: 0; }
+  .saved { color: var(--green); }
+
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tabs button {
+    min-height: 36px; padding: 0 14px; border-radius: 6px; cursor: pointer;
+    background: transparent; border: 1px solid var(--line-2); color: var(--muted); font: 12px var(--mono);
+  }
+  .tabs button[aria-selected="true"] { color: var(--text); border-color: var(--accent); }
+
+  article.md { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 20px 26px 28px; font: 14px/1.65 var(--sans); overflow-wrap: anywhere; }
+  article.md h1, article.md h2, article.md h3, article.md h4 { font-family: var(--mono); letter-spacing: .02em; margin: 1.4em 0 .5em; line-height: 1.3; }
+  article.md h1 { font-size: 17px; } article.md h2 { font-size: 15px; color: var(--accent); }
+  article.md h3 { font-size: 13.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); border-bottom: 1px solid var(--line); padding-bottom: 6px; }
+  article.md h4 { font-size: 13px; }
+  article.md > :first-child { margin-top: 0; }
+  article.md p { margin: .6em 0; }
+  article.md ul, article.md ol { margin: .5em 0; padding-left: 1.4em; }
+  article.md code { font: 12.5px var(--mono); background: var(--panel-2); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; }
+  article.md pre { background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; overflow: auto; }
+  article.md pre code { background: none; border: 0; padding: 0; }
+  article.md hr { border: 0; border-top: 1px solid var(--line-2); margin: 1.2em 0; }
+  article.md blockquote { margin: .6em 0; padding-left: 12px; border-left: 3px solid var(--line-2); color: var(--muted); }
+
+  .table-wrap { border: 1px solid var(--line); border-radius: 8px; overflow: auto; background: var(--panel); }
+  table { width: 100%; border-collapse: collapse; font: 12.5px var(--mono); }
+  thead th { position: sticky; top: 0; background: var(--panel-2); text-align: left; padding: 10px 12px; font-weight: 600; color: var(--muted); border-bottom: 1px solid var(--line-2); white-space: nowrap; }
+  tbody td { padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  td.wrap { white-space: normal; min-width: 220px; }
+  .num { text-align: right; }
+
+  .files { margin: 0; padding-left: 18px; font: 12px/1.7 var(--mono); }
+  iframe.preview { width: 100%; height: 70vh; border: 1px solid var(--line-2); border-radius: 8px; background: #fff; }
+
+  .empty { padding: 28px; text-align: center; color: var(--muted); font: 13px var(--mono); }
+  .banner { border: 1px solid rgba(255,93,93,.45); background: var(--red-bg); border-radius: 8px; padding: 12px 14px; font: 12.5px/1.5 var(--mono); }
+  .banner.okb { border-color: rgba(61,220,132,.45); background: var(--green-bg); }
+
+  dialog { background: var(--panel); color: var(--text); border: 1px solid var(--line-2); border-radius: 10px; padding: 0; width: min(560px, 92vw); }
+  dialog::backdrop { background: rgba(0,0,0,.6); }
+  dialog .dhead { padding: 16px 18px; border-bottom: 1px solid var(--line); font: 600 13px var(--mono); }
+  dialog .dbody { padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; }
+  dialog .dfoot { padding: 12px 18px 16px; display: flex; gap: 8px; justify-content: flex-end; }
+  .check { display: flex; align-items: center; gap: 8px; font: 12px var(--mono); color: var(--muted); }
+  .check input { width: 18px; height: 18px; accent-color: var(--accent); }
+
+  footer.foot { padding: 14px 20px; border-top: 1px solid var(--line); font: 11px var(--mono); color: var(--dim); }
+
+  @media (max-width: 1000px) {
+    .desk { grid-template-columns: minmax(0, 1fr); }
+    .col.left { border-right: 0; border-bottom: 1px solid var(--line); }
+    .toolbar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 560px) {
+    header.top, .toolbar, .col { padding-left: 16px; padding-right: 16px; }
+    .toolbar { grid-template-columns: minmax(0, 1fr); }
+  }
+  @media (prefers-reduced-motion: reduce) { .bar.indeterminate > span { animation: none; width: 100%; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><h1>SPEC-1 NARRATIVE DESK</h1><span class="ver" id="version">—</span></div>
+  <nav class="desks" aria-label="Desks">
+    <a href="/" data-desk-link>Triage Desk</a>
+    <a href="/desk/legislative" data-desk-link>Legislative Desk</a>
+    <a href="/desk/narrative" data-desk-link aria-current="page">Narrative Desk</a>
+  </nav>
+  <span class="pill" id="engine-pill" role="status"><span class="dot"></span><span class="lbl">ENGINE</span><span id="engine-text">checking</span></span>
+  <span class="pill" id="release-pill" role="status"><span class="lbl">TODAY</span><span id="release-text">—</span></span>
+</header>
+
+<section class="toolbar" aria-label="Editorial toolbar">
+  <label class="field" for="voice">Voice
+    <select id="voice">
+      <option value="standard">Standard Intel</option>
+      <option value="world_state">Strategic World-State</option>
+      <option value="notitia_civica">Notitia Civica</option>
+    </select>
+  </label>
+  <label class="field" for="desk">Ingestion source
+    <select id="desk">
+      <option value="standard">Standard OSINT</option>
+      <option value="legislative">Legislative &amp; Judicial</option>
+    </select>
+  </label>
+  <label class="field" for="gen-date">Run date (UTC)
+    <input type="date" id="gen-date">
+  </label>
+  <button type="button" class="btn primary" id="generate">Generate Editorial Draft</button>
+  <div class="progress" aria-live="polite">
+    <span id="job-text">No job running.</span>
+    <div class="bar" id="job-bar"><span></span></div>
+    <span id="job-time"></span>
+  </div>
+</section>
+
+<div class="desk">
+  <section class="col left" aria-label="Editorial controls">
+    <div id="api-banner" class="banner" hidden></div>
+    <section>
+      <h2 class="section-title">Drafts <span class="dim" id="draft-count"></span></h2>
+      <ul class="drafts" id="drafts"><li class="note">Loading…</li></ul>
+    </section>
+
+    <section class="meter" id="meter" aria-label="Publishing gate">
+      <div class="head"><h2 class="section-title" style="margin:0">Publishing Gate</h2><span class="pill" id="gate-pill">—</span></div>
+      <div class="stats">
+        <div class="stat"><div class="k">LLM verified</div><div class="v" id="g-llm">—</div></div>
+        <div class="stat"><div class="k">Rule based</div><div class="v" id="g-rule">—</div></div>
+        <div class="stat"><div class="k">Avg conf</div><div class="v" id="g-conf">—</div></div>
+      </div>
+      <ul class="reasons" id="g-reasons" hidden></ul>
+    </section>
+
+    <section>
+      <h2 class="section-title">Metadata</h2>
+      <dl class="kv" id="meta"><dt>Draft</dt><dd class="note">Select a draft</dd></dl>
+    </section>
+
+    <section aria-label="Frontmatter inspector">
+      <h2 class="section-title">Frontmatter</h2>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <label class="field" for="hed">Hed<input type="text" id="hed" maxlength="300"></label>
+        <label class="field" for="dek">Dek<input type="text" id="dek" maxlength="500"></label>
+        <label class="field" for="lead">Lead<textarea id="lead" maxlength="4000"></textarea></label>
+        <div class="row-btns"><button type="button" class="btn" id="save-edits" disabled>Save edits</button><span class="note" id="save-note"></span></div>
+      </div>
+    </section>
+
+    <section aria-label="Release">
+      <h2 class="section-title">Release</h2>
+      <label class="field" for="signature">Analyst signature<input type="text" id="signature" maxlength="120" placeholder="initials or name" autocomplete="off"></label>
+      <div style="height:10px"></div>
+      <button type="button" class="btn release" id="release" disabled>Authorize Release &amp; Export</button>
+      <p class="note" id="release-note" style="margin-top:8px">Release writes the canonical daily brief and a signed receipt locally. The Notitia Civica workflow still does the push.</p>
+    </section>
+  </section>
+
+  <section class="col" aria-label="Reader and evidence">
+    <div class="tabs" role="tablist">
+      <button type="button" role="tab" aria-selected="true" data-tab="reader">Reader</button>
+      <button type="button" role="tab" aria-selected="false" data-tab="evidence">Evidence</button>
+      <button type="button" role="tab" aria-selected="false" data-tab="export">Export bundle</button>
+    </div>
+    <div id="tab-reader"><article class="md" id="reader"><p class="note">Select or generate a draft.</p></article></div>
+    <div id="tab-evidence" hidden><div class="table-wrap"><table><thead id="ev-head"></thead><tbody id="ev-rows"><tr><td class="empty">Select a draft.</td></tr></tbody></table></div></div>
+    <div id="tab-export" hidden>
+      <div id="export-body" class="note">Select a draft.</div>
+    </div>
+  </section>
+</div>
+
+<dialog id="confirm">
+  <div class="dhead">Authorize release</div>
+  <div class="dbody" id="confirm-body"></div>
+  <div class="dfoot">
+    <button type="button" class="btn" id="confirm-cancel">Cancel</button>
+    <button type="button" class="btn release" id="confirm-ok" style="width:auto">Release</button>
+  </div>
+</dialog>
+
+<footer class="foot">SPEC-1 · Narrative &amp; Publisher Desk · drafts never overwrite published briefs · release requires llm_verified and avg confidence ≥ <span id="foot-min">0.55</span></footer>
+
+<script>
+(function () {
+  "use strict";
+  const qs = new URLSearchParams(location.search);
+  const BASE = (qs.get("api") || "").replace(/\/$/, "");
+  const API = BASE + "/api/v1/narrative";
+  const KEY = qs.get("api_key") || "";
+  const $ = (id) => document.getElementById(id);
+  const VOICE = { standard: "Standard Intel", world_state: "World-State", notitia_civica: "Notitia Civica" };
+  const state = { drafts: [], current: null, detail: null, tab: "reader", job: null, poll: null, minConf: 0.55 };
+
+  function esc(v) {
+    return String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+  function safeUrl(u) { return /^https?:\/\//i.test(String(u || "")) ? String(u) : ""; }
+  function fmtConf(v) { const n = Number(v); return v === null || v === undefined || v === "" || !Number.isFinite(n) ? "—" : n.toFixed(2); }
+  function fmtTime(iso) { if (!iso) return "—"; const d = new Date(iso); return isNaN(d) ? esc(iso) : d.toLocaleString(); }
+  function tierBadge(t) {
+    const cls = t === "llm_verified" ? "llm" : t === "rule_based" ? "rule" : "null";
+    return '<span class="badge ' + cls + '">' + esc(t || "unverified") + "</span>";
+  }
+  async function api(method, path, body) {
+    const u = new URL(API + path, location.origin);
+    if (KEY) u.searchParams.set("api_key", KEY);
+    const headers = { "Content-Type": "application/json" };
+    if (KEY) headers["X-API-Key"] = KEY;
+    const r = await fetch(u.toString(), { method, headers, body: body ? JSON.stringify(body) : undefined });
+    let data = null;
+    try { data = await r.json(); } catch (e) { data = null; }
+    if (!r.ok) {
+      const d = data && data.detail;
+      const msg = typeof d === "string" ? d : Array.isArray(d) ? d.map((x) => x.msg).join("; ") : r.statusText;
+      const err = new Error(msg); err.status = r.status; throw err;
+    }
+    return data;
+  }
+  function banner(msg, ok) { const b = $("api-banner"); b.hidden = !msg; b.textContent = msg || ""; b.className = "banner" + (ok ? " okb" : ""); }
+
+  // ── markdown (escape first, then a small safe subset) ─────────────────────
+  function inline(s) {
+    return s
+      .replace(/`([^`]+)`/g, "<code>$1</code>")
+      .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+      .replace(/(^|[^*])\*([^*\s][^*]*)\*/g, "$1<em>$2</em>")
+      .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
+      .replace(/&lt;(https?:\/\/[^\s&]+)&gt;/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
+  }
+  function renderMarkdown(md) {
+    const lines = esc(md).split(/\r?\n/);
+    const out = [];
+    let list = null, para = [], code = null;
+    const flushPara = () => { if (para.length) { out.push("<p>" + inline(para.join(" ")) + "</p>"); para = []; } };
+    const flushList = () => { if (list) { out.push("</" + list + ">"); list = null; } };
+    for (const raw of lines) {
+      if (code !== null) {
+        if (/^```/.test(raw)) { out.push("<pre><code>" + code.join("\n") + "</code></pre>"); code = null; }
+        else code.push(raw);
+        continue;
+      }
+      const line = raw.replace(/\s+$/, "");
+      let m;
+      if (/^```/.test(line)) { flushPara(); flushList(); code = []; }
+      else if (!line.trim()) { flushPara(); flushList(); }
+      else if ((m = line.match(/^(#{1,4})\s+(.*)$/))) { flushPara(); flushList(); out.push("<h" + m[1].length + ">" + inline(m[2]) + "</h" + m[1].length + ">"); }
+      else if (/^(-{3,}|\*{3,}|_{3,})$/.test(line.trim())) { flushPara(); flushList(); out.push("<hr>"); }
+      else if ((m = line.match(/^\s*[-*+]\s+(.*)$/))) { flushPara(); if (list !== "ul") { flushList(); out.push("<ul>"); list = "ul"; } out.push("<li>" + inline(m[1]) + "</li>"); }
+      else if ((m = line.match(/^\s*\d+[.)]\s+(.*)$/))) { flushPara(); if (list !== "ol") { flushList(); out.push("<ol>"); list = "ol"; } out.push("<li>" + inline(m[1]) + "</li>"); }
+      else if ((m = line.match(/^&gt;\s?(.*)$/))) { flushPara(); flushList(); out.push("<blockquote>" + inline(m[1]) + "</blockquote>"); }
+      else { flushList(); para.push(line.trim()); }
+    }
+    if (code !== null) out.push("<pre><code>" + code.join("\n") + "</code></pre>");
+    flushPara(); flushList();
+    return out.join("\n");
+  }
+
+  // ── status ────────────────────────────────────────────────────────────────
+  async function loadStatus() {
+    try {
+      const h = await fetch(BASE + "/health").then((r) => (r.ok ? r.json() : null)).catch(() => null);
+      if (h && h.version) $("version").textContent = "v" + h.version;
+      const s = await api("GET", "/status");
+      state.minConf = s.min_confidence; $("foot-min").textContent = s.min_confidence;
+      $("engine-text").textContent = s.engine_model + (s.engine_reachable ? "" : " · OFFLINE");
+      $("engine-pill").className = "pill " + (s.engine_reachable ? "ok" : "warn");
+      $("release-text").textContent = s.receipt ? "RELEASED · " + (s.receipt.analyst_signature || "") : s.canonical_brief ? "BRIEF · NOT RELEASED" : "NO BRIEF";
+      $("release-pill").className = "pill " + (s.receipt ? "ok" : "");
+      if (!$("gen-date").value) $("gen-date").value = s.date;
+      if (s.job_running && !state.job) startPolling(s.job_running.job_id);
+    } catch (e) {
+      $("engine-text").textContent = "UNKNOWN"; $("engine-pill").className = "pill bad";
+      banner("API unreachable: " + e.message);
+    }
+  }
+
+  // ── generate + poll ───────────────────────────────────────────────────────
+  function setJob(view) {
+    const bar = $("job-bar");
+    const st = view ? view.status : null;
+    $("generate").disabled = st === "pending" || st === "running";
+    bar.className = "bar" + (st === "pending" || st === "running" ? " indeterminate" : st === "completed" ? " done" : st === "failed" ? " fail" : "");
+    $("job-time").textContent = view && view.elapsed_seconds ? Math.round(view.elapsed_seconds) + "s" : "";
+    $("job-text").textContent = !view ? "No job running." :
+      st === "pending" ? "Pending… (" + VOICE[view.voice] + ", " + view.desk + " run " + view.run_id + ")" :
+      st === "running" ? "Running Qwen 3B synthesis (~3 min)… " + VOICE[view.voice] :
+      st === "completed" ? "Ready — " + view.draft_id :
+      "Failed — " + (view.error || "unknown error");
+  }
+  function startPolling(jobId) {
+    clearInterval(state.poll);
+    state.job = jobId;
+    const tick = async () => {
+      try {
+        const v = await api("GET", "/jobs/" + encodeURIComponent(jobId));
+        setJob(v);
+        if (v.status === "completed" || v.status === "failed") {
+          clearInterval(state.poll); state.job = null;
+          await loadDrafts();
+          if (v.status === "completed" && v.draft_id) selectDraft(v.draft_id);
+        }
+      } catch (e) { clearInterval(state.poll); state.job = null; $("job-text").textContent = "Lost job: " + e.message; $("generate").disabled = false; }
+    };
+    tick(); state.poll = setInterval(tick, 3000);
+  }
+  $("generate").addEventListener("click", async () => {
+    banner("");
+    try {
+      const body = { voice: $("voice").value, desk: $("desk").value };
+      if ($("gen-date").value) body.date = $("gen-date").value;
+      const r = await api("POST", "/generate", body);
+      setJob({ status: "pending", voice: r.voice, desk: r.desk, run_id: r.run_id });
+      startPolling(r.job_id);
+    } catch (e) { banner("Could not start a draft: " + e.message); }
+  });
+
+  // ── drafts ────────────────────────────────────────────────────────────────
+  async function loadDrafts() {
+    try {
+      const d = await api("GET", "/drafts");
+      state.drafts = d.drafts;
+      $("draft-count").textContent = "(" + d.total + ")";
+      $("drafts").innerHTML = d.drafts.length ? d.drafts.map((x) =>
+        '<li><button type="button" data-id="' + esc(x.draft_id) + '" aria-current="' + (x.draft_id === state.current) + '">' +
+        '<span class="row1"><span class="badge voice">' + esc(VOICE[x.voice] || x.voice) + "</span>" + tierBadge(x.analysis_tier) +
+        (x.released ? '<span class="badge rel">released</span>' : "") + "</span>" +
+        '<span>' + esc(x.date) + " · " + esc(x.desk) + " · conf " + fmtConf(x.avg_confidence) + "</span>" +
+        '<span class="rid">' + esc(fmtTime(x.generated_at)) + " · " + esc(x.run_id) + "</span></button></li>").join("")
+        : '<li class="note">No drafts yet. Pick a voice and source, then Generate.</li>';
+    } catch (e) { banner("Could not load drafts: " + e.message); }
+  }
+  $("drafts").addEventListener("click", (e) => { const b = e.target.closest("button[data-id]"); if (b) selectDraft(b.dataset.id); });
+
+  async function selectDraft(id) {
+    state.current = id;
+    document.querySelectorAll("#drafts button").forEach((b) => b.setAttribute("aria-current", String(b.dataset.id === id)));
+    try {
+      const d = await api("GET", "/drafts/" + encodeURIComponent(id));
+      state.detail = d;
+      renderDetail();
+      loadTab(state.tab);
+    } catch (e) { banner("Could not load draft: " + e.message); }
+  }
+
+  function renderDetail() {
+    const d = state.detail; if (!d) return;
+    const m = d.meta || {}, g = d.readiness;
+    $("g-llm").textContent = g.llm_verified; $("g-rule").textContent = g.rule_based; $("g-conf").textContent = fmtConf(g.avg_confidence);
+    $("gate-pill").textContent = g.publishable ? "PUBLISHABLE" : "BLOCKED";
+    $("gate-pill").className = "pill " + (g.publishable ? "ok" : "warn");
+    $("meter").className = "meter " + (g.publishable ? "ok" : "warn");
+    $("g-reasons").hidden = g.publishable;
+    $("g-reasons").innerHTML = g.reasons.map((r) => "<li>" + esc(r) + "</li>").join("");
+    $("meta").innerHTML =
+      "<dt>Draft</dt><dd>" + esc(d.draft_id) + "</dd>" +
+      "<dt>Run</dt><dd>" + esc(m.run_id) + "</dd>" +
+      "<dt>Voice</dt><dd>" + esc(VOICE[m.voice] || m.voice) + " <span class=\"note\">(" + esc(m.mode) + " prompts)</span></dd>" +
+      "<dt>Source</dt><dd>" + esc(m.desk) + " desk · " + esc(m.records) + " records</dd>" +
+      "<dt>Model</dt><dd>" + esc(m.model || "not recorded") + " <span class=\"note\">" + esc(m.brief_backend || m.brief_source || "") + "</span></dd>" +
+      "<dt>Generated</dt><dd>" + esc(fmtTime(m.generated_at)) + "</dd>" +
+      "<dt>Brief tier</dt><dd>" + tierBadge(m.analysis_tier) + "</dd>" +
+      (d.existing_receipt ? "<dt>Released</dt><dd>" + esc(d.existing_receipt.date) + " by " + esc(d.existing_receipt.analyst_signature) +
+        (d.existing_receipt.draft_id === d.draft_id ? " (this draft)" : " (another draft)") + "</dd>" : "");
+    const fm = d.frontmatter, ed = d.edits || {};
+    $("hed").value = ed.hed ?? fm.hed; $("dek").value = ed.dek ?? fm.dek; $("lead").value = ed.lead ?? fm.lead;
+    $("save-edits").disabled = false; $("save-note").textContent = ed.edited_at ? "edited " + fmtTime(ed.edited_at) : "";
+    $("release").disabled = !g.publishable;
+    $("release-note").textContent = g.publishable
+      ? (d.existing_receipt ? "This date already has a release; releasing again needs Supersede and archives the old one." : "Release writes the canonical daily brief and a signed receipt locally. The Notitia Civica workflow still does the push.")
+      : "Blocked by the publishing gate.";
+  }
+
+  $("save-edits").addEventListener("click", async () => {
+    if (!state.current) return;
+    try {
+      await api("PATCH", "/drafts/" + encodeURIComponent(state.current), { hed: $("hed").value, dek: $("dek").value, lead: $("lead").value });
+      $("save-note").innerHTML = '<span class="saved">saved</span>';
+      await selectDraft(state.current);
+    } catch (e) { $("save-note").textContent = "save failed: " + e.message; }
+  });
+
+  // ── tabs ──────────────────────────────────────────────────────────────────
+  document.querySelectorAll(".tabs button").forEach((b) => b.addEventListener("click", () => {
+    document.querySelectorAll(".tabs button").forEach((x) => x.setAttribute("aria-selected", String(x === b)));
+    state.tab = b.dataset.tab;
+    ["reader", "evidence", "export"].forEach((t) => { $("tab-" + t).hidden = t !== state.tab; });
+    loadTab(state.tab);
+  }));
+
+  async function loadTab(tab) {
+    const d = state.detail; if (!d) return;
+    if (tab === "reader") { $("reader").innerHTML = renderMarkdown(d.edited_markdown); return; }
+    if (tab === "evidence") {
+      try {
+        const ev = await api("GET", "/drafts/" + encodeURIComponent(d.draft_id) + "/evidence");
+        if (ev.desk === "legislative") {
+          $("ev-head").innerHTML = "<tr><th>Measure / Committee</th><th>Status</th><th>Last action</th><th>Tier</th><th>Class</th><th class=\"num\">Conf</th></tr>";
+          $("ev-rows").innerHTML = ev.records.map((r) => "<tr><td class=\"wrap\"><strong>" +
+            esc(r.kind === "interim_committee" ? (r.committee || r.committee_code) : (r.measure_prefix ? r.measure_prefix + " " + r.measure_number : r.measure)) +
+            "</strong><div class=\"note\">" + esc(r.title) + "</div></td><td>" + esc(r.status) + "</td><td>" + esc((r.last_action || "").slice(0, 10)) +
+            "</td><td>" + tierBadge(r.analysis_tier) + "</td><td>" + esc(r.classification) + "</td><td class=\"num\">" + fmtConf(r.confidence) + "</td></tr>").join("")
+            || '<tr><td colspan="6" class="empty">No records for this run.</td></tr>';
+        } else {
+          $("ev-head").innerHTML = "<tr><th>Source</th><th>Signal</th><th>Tier</th><th>Class</th><th class=\"num\">Conf</th></tr>";
+          $("ev-rows").innerHTML = ev.records.map((r) => {
+            const url = safeUrl(r.url);
+            return "<tr><td>" + esc(r.source) + "</td><td class=\"wrap\">" + esc(r.excerpt) +
+              (url ? ' <a href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">source</a>' : "") +
+              (r.reasoning ? '<div class="note">' + esc(r.reasoning) + "</div>" : "") + "</td><td>" + tierBadge(r.analysis_tier) +
+              "</td><td>" + esc(r.classification) + "</td><td class=\"num\">" + fmtConf(r.confidence) + "</td></tr>";
+          }).join("") || '<tr><td colspan="5" class="empty">No records for this run.</td></tr>';
+        }
+      } catch (e) { $("ev-rows").innerHTML = '<tr><td class="empty">Could not load evidence: ' + esc(e.message) + "</td></tr>"; }
+      return;
+    }
+    try {
+      const x = await api("GET", "/drafts/" + encodeURIComponent(d.draft_id) + "/export");
+      $("export-body").innerHTML =
+        '<h2 class="section-title">Release writes (briefs/)</h2><ul class="files">' + x.files.map((f) => "<li>" + esc(f) + "</li>").join("") + "</ul>" +
+        '<h2 class="section-title" style="margin-top:14px">Notitia Civica workflow then copies</h2><ul class="files">' + x.workflow_copies.map((f) => "<li>" + esc(f) + "</li>").join("") + "</ul>" +
+        (x.existing_receipt ? '<p class="note" style="color:var(--amber)">' + esc(x.date) + " already released by " + esc(x.existing_receipt.analyst_signature) + ".</p>" : "") +
+        '<h2 class="section-title" style="margin-top:14px">Print layout preview</h2>' +
+        (x.preview_available ? '<iframe class="preview" sandbox="" title="Notitia Civica print preview"></iframe>'
+          : '<p class="note">Preview unavailable: ' + esc(x.preview_error) + "</p>");
+      const frame = $("export-body").querySelector("iframe");
+      if (frame) frame.srcdoc = x.preview_html;   // sandboxed: no scripts, no same-origin
+    } catch (e) { $("export-body").textContent = "Could not load export bundle: " + e.message; }
+  }
+
+  // ── release ───────────────────────────────────────────────────────────────
+  $("release").addEventListener("click", () => {
+    const d = state.detail; if (!d) return;
+    const sig = $("signature").value.trim();
+    if (!sig) { banner("Enter an analyst signature before releasing."); $("signature").focus(); return; }
+    banner("");
+    const date = (d.meta || {}).date;
+    const r = d.existing_receipt;
+    $("confirm-body").innerHTML =
+      '<p class="note">Release <strong>' + esc(d.draft_id) + "</strong> as the canonical brief for <strong>" + esc(date) + "</strong>, signed <strong>" + esc(sig) + "</strong>.</p>" +
+      '<ul class="files"><li>spec1_brief_' + esc(date) + '.md</li><li>spec1_brief_' + esc(date) + '.meta.json</li><li>spec1_brief_latest.md (+ meta)</li><li>spec1_brief_' + esc(date) + ".published.json (receipt)</li></ul>" +
+      '<label class="check"><input type="checkbox" id="exp-canon" checked> canonical</label>' +
+      '<label class="check"><input type="checkbox" id="exp-nc" checked> notitia_civica</label>' +
+      (r ? '<div class="banner">' + esc(date) + " was already released by " + esc(r.analyst_signature) + " at " + esc(fmtTime(r.released_at)) +
+        '. <label class="check" style="margin-top:8px"><input type="checkbox" id="force"> Supersede it (the old release is archived under briefs/releases/' + esc(date) + "/)</label></div>" : "");
+    $("confirm-ok").disabled = !!r;
+    const f = $("force"); if (f) f.addEventListener("change", () => { $("confirm-ok").disabled = !f.checked; $("confirm-ok").className = "btn " + (f.checked ? "danger" : "release"); });
+    $("confirm-ok").className = "btn release"; $("confirm-ok").style.width = "auto";
+    $("confirm").showModal();
+  });
+  $("confirm-cancel").addEventListener("click", () => $("confirm").close());
+  $("confirm-ok").addEventListener("click", async () => {
+    const d = state.detail; const f = $("force");
+    const targets = [];
+    if ($("exp-canon").checked) targets.push("canonical");
+    if ($("exp-nc").checked) targets.push("notitia_civica");
+    $("confirm-ok").disabled = true;
+    try {
+      const res = await api("POST", "/publish", { draft_id: d.draft_id, analyst_signature: $("signature").value.trim(), export_targets: targets, force: !!(f && f.checked) });
+      $("confirm").close();
+      banner("Released " + res.receipt.date + " · brief sha256 " + res.receipt.brief_sha256.slice(0, 12) + "… · signed " + res.receipt.analyst_signature, true);
+      await Promise.all([loadDrafts(), loadStatus()]);
+      await selectDraft(d.draft_id);
+    } catch (e) {
+      $("confirm").close();
+      banner("Release refused: " + e.message);
+    }
+  });
+
+  // keep ?api / ?api_key on desk links
+  if (BASE || KEY) {
+    const p = new URLSearchParams(); if (BASE) p.set("api", BASE); if (KEY) p.set("api_key", KEY);
+    document.querySelectorAll("[data-desk-link]").forEach((a) => { a.href = a.getAttribute("href") + "?" + p.toString(); });
+  }
+
+  loadStatus();
+  loadDrafts();
+})();
+</script>
+</body>
+</html>

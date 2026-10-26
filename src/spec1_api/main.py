@@ -40,6 +40,7 @@ from spec1_api.routers import (
     psyop,
     publication,
     legislative_desk,
+    narrative_desk,
     runs,
     signals,
     verdicts,
@@ -194,6 +195,7 @@ def create_app() -> FastAPI:
     app.include_router(congress_brief.router, prefix=_V1)
     app.include_router(runs.router, prefix=_V1)
     app.include_router(legislative_desk.router, prefix=_V1)
+    app.include_router(narrative_desk.router, prefix=_V1)
 
     @app.get("/desk/legislative", include_in_schema=False)
     @app.get("/desk/legislative/", include_in_schema=False)
@@ -202,6 +204,15 @@ def create_app() -> FastAPI:
         path = ui_dir / "legislative.html"
         if not path.is_file():
             raise HTTPException(status_code=404, detail="Legislative desk UI not found")
+        return FileResponse(path, media_type="text/html")
+
+    @app.get("/desk/narrative", include_in_schema=False)
+    @app.get("/desk/narrative/", include_in_schema=False)
+    async def narrative_ui() -> FileResponse:
+        """Serve the Narrative & Publisher Desk (``ui/narrative.html``)."""
+        path = ui_dir / "narrative.html"
+        if not path.is_file():
+            raise HTTPException(status_code=404, detail="Narrative desk UI not found")
         return FileResponse(path, media_type="text/html")
 
     @app.get("/verdicts/", include_in_schema=False)

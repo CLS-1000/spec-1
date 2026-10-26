@@ -57,7 +57,15 @@
     border-bottom: 1px solid var(--line);
     backdrop-filter: blur(6px);
   }
-  .brand { display: flex; align-items: baseline; gap: 10px; margin-right: auto; }
+  .brand { display: flex; align-items: baseline; gap: 10px; }
+
+  nav.desks { display: flex; gap: 4px; margin-right: auto; flex-wrap: wrap; }
+  nav.desks a {
+    font: 600 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; text-decoration: none;
+    color: var(--muted); padding: 8px 10px; border-radius: 6px; border: 1px solid transparent;
+  }
+  nav.desks a:hover { color: var(--text); border-color: var(--line-2); }
+  nav.desks a[aria-current="page"] { color: var(--accent); border-color: rgba(79,209,197,.4); background: rgba(79,209,197,.06); }
   .brand h1 {
     margin: 0; font: 600 15px/1 var(--mono); letter-spacing: 0.14em; color: var(--text);
   }
@@ -258,7 +266,11 @@
     <h1>SPEC-1 TRIAGE DESK</h1>
     <span class="ver" id="version">v0.7.0</span>
   </div>
-  <a class="pill" id="leg-desk-link" href="/desk/legislative" style="text-decoration:none"><span class="lbl">DESK</span>LEGISLATIVE →</a>
+  <nav class="desks" aria-label="Desks">
+    <a href="/" data-desk-link aria-current="page">Triage Desk</a>
+    <a href="/desk/legislative" data-desk-link>Legislative Desk</a>
+    <a href="/desk/narrative" data-desk-link>Narrative Desk</a>
+  </nav>
   <span class="pill" id="host-pill" role="status"><span class="dot"></span><span class="lbl">HOST</span><span id="host-text">checking</span></span>
   <span class="pill" id="guard-pill" role="status" title=""><span class="dot"></span><span class="lbl">PUBLISH GUARD</span><span id="guard-text">—</span></span>
   <div class="guard-reason" id="guard-reason"></div>
@@ -662,6 +674,12 @@
   checkHost();
   setInterval(checkHost, 30000);
   loadRuns();
+  // keep ?api / ?api_key on desk links
+  (function () {
+    const q = new URLSearchParams(location.search), p = new URLSearchParams();
+    if (q.get("api")) p.set("api", q.get("api")); if (q.get("api_key")) p.set("api_key", q.get("api_key"));
+    if ([...p].length) document.querySelectorAll("[data-desk-link]").forEach((a) => { a.href = a.getAttribute("href") + "?" + p.toString(); });
+  })();
 })();
 </script>
 </body>

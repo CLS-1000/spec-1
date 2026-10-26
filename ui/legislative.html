@@ -48,7 +48,15 @@
     padding: 12px 20px; background: rgba(7, 9, 11, 0.94);
     border-bottom: 1px solid var(--line); backdrop-filter: blur(6px);
   }
-  .brand { display: flex; align-items: baseline; gap: 10px; margin-right: auto; }
+  .brand { display: flex; align-items: baseline; gap: 10px; }
+
+  nav.desks { display: flex; gap: 4px; margin-right: auto; flex-wrap: wrap; }
+  nav.desks a {
+    font: 600 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; text-decoration: none;
+    color: var(--muted); padding: 8px 10px; border-radius: 6px; border: 1px solid transparent;
+  }
+  nav.desks a:hover { color: var(--text); border-color: var(--line-2); }
+  nav.desks a[aria-current="page"] { color: var(--accent); border-color: rgba(79,209,197,.4); background: rgba(79,209,197,.06); }
   .brand h1 { margin: 0; font: 600 15px/1 var(--mono); letter-spacing: 0.14em; }
   .brand .ver { font: 500 12px/1 var(--mono); color: var(--accent); }
   .brand a.back { font: 12px var(--mono); color: var(--muted); text-decoration: none; margin-left: 6px; }
@@ -162,8 +170,12 @@
   <div class="brand">
     <h1>SPEC-1 LEGISLATIVE DESK</h1>
     <span class="ver" id="version">—</span>
-    <a class="back" id="back-link" href="/">← Triage Desk</a>
   </div>
+  <nav class="desks" aria-label="Desks">
+    <a href="/" data-desk-link>Triage Desk</a>
+    <a href="/desk/legislative" data-desk-link aria-current="page">Legislative Desk</a>
+    <a href="/desk/narrative" data-desk-link>Narrative Desk</a>
+  </nav>
   <span class="pill" id="lookback-pill" role="status"><span class="lbl">INTERIM LOOKBACK</span><span id="lookback-text">—</span></span>
   <span class="pill" id="engine-pill" role="status"><span class="dot"></span><span class="lbl">LOCAL ENGINE</span><span id="engine-text">checking</span></span>
   <span class="pill" id="store-pill" role="status"><span class="lbl">RECORDS</span><span id="store-text">—</span></span>
@@ -465,7 +477,7 @@
   $("brief-date").addEventListener("change", (e) => loadBrief(e.target.value));
   if (BASE || KEY) {
     const p = new URLSearchParams(); if (BASE) p.set("api", BASE); if (KEY) p.set("api_key", KEY);
-    $("back-link").href = "/?" + p.toString();
+    document.querySelectorAll("[data-desk-link]").forEach((a) => { a.href = a.getAttribute("href") + "?" + p.toString(); });
   }
 
   loadStatus();
