@@ -25,7 +25,7 @@ import re
 from datetime import datetime, timezone
 
 
-from spec1_labels import VERIF_CORROBORATED
+from spec1_labels import BRIEF_RULE_FALLBACK_NOTE, VERIF_CORROBORATED
 from spec1_core.briefing.templates import (
     GEO_SYSTEM_PROMPT,
     GEO_USER_PROMPT_TEMPLATE,
@@ -241,7 +241,7 @@ def _fallback_brief(
     lines = [
         f"## SPEC-1 DAILY BRIEF — {date_str}",
         "",
-        f"*AI brief unavailable — {reason}. Rule-based brief generated from cycle data.*",
+        f"*AI brief unavailable — {reason}. {BRIEF_RULE_FALLBACK_NOTE}.*",
         "",
         f"**Run:** {run_id}  ",
         f"**Completed:** {finished}  ",

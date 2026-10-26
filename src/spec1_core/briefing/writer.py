@@ -20,6 +20,7 @@ from pathlib import Path
 from spec1_labels import (
     ANALYSIS_TIER_LLM_VERIFIED,
     ANALYSIS_TIER_RULE_BASED,
+    BRIEF_RULE_FALLBACK_NOTE,
     BRIEF_SOURCE_HAND_WRITTEN,
     BRIEF_SOURCE_MODEL,
 )
@@ -344,6 +345,41 @@ def mark_hand_written(brief_path: str | Path) -> dict:
     return meta
 
 
+# A home directory or Windows user folder in brief text means machine output
+# (stack traces, harvest errors) leaked into the brief.
+LOCAL_PATH_RE = re.compile(r"(?<![\w.~/-])/(?:home|Users)/[^/\s]+/|(?<!\w)[A-Za-z]:\\Users\\", re.IGNORECASE)
+
+
+def evidence_block_reason(meta: dict, text: str) -> str | None:
+    """Why a brief labelled llm_verified still may not publish, judged on evidence.
+
+    The label alone is not enough: the sidecar's record counts must show
+    model-verified records and nothing rule-based, and the text must not be the
+    rule fallback or carry local file paths.
+    """
+    tiers = meta.get("record_tiers") or {}
+    counts = {}
+    for key, value in tiers.items():
+        try:
+            counts[key] = int(value or 0)
+        except (TypeError, ValueError):
+            counts[key] = 0
+    verified = counts.get(ANALYSIS_TIER_LLM_VERIFIED, 0)
+    other = sum(v for k, v in counts.items() if k != ANALYSIS_TIER_LLM_VERIFIED)
+    if verified < 1:
+        return (f"sidecar says {ANALYSIS_TIER_LLM_VERIFIED} but record_tiers shows no "
+                f"{ANALYSIS_TIER_LLM_VERIFIED} records ({tiers or 'empty'}); the label is not evidence")
+    if other:
+        return f"record_tiers includes {other} record(s) that are not {ANALYSIS_TIER_LLM_VERIFIED} ({tiers})"
+    if BRIEF_RULE_FALLBACK_NOTE in text:
+        return ("brief text is the rule-based fallback; write the brief from the handoff "
+                "before marking it hand-written")
+    hit = LOCAL_PATH_RE.search(text)
+    if hit:
+        return f"brief contains a local file path ({hit.group(0)}...); remove machine output before publishing"
+    return None
+
+
 def publish_block_reason(brief_path: str | Path) -> str | None:
     """None if *brief_path* may be published; otherwise why it may not."""
     meta = read_brief_meta(brief_path)
@@ -353,7 +389,11 @@ def publish_block_reason(brief_path: str | Path) -> str | None:
     if tier != ANALYSIS_TIER_LLM_VERIFIED:
         return (f"brief is {tier or 'unlabelled'} (records_tier={meta.get('records_tier')}, "
                 f"brief_source={meta.get('brief_source')}); only {ANALYSIS_TIER_LLM_VERIFIED} briefs publish")
-    return None
+    try:
+        text = Path(brief_path).read_text(encoding="utf-8")
+    except OSError as exc:
+        return f"brief unreadable: {exc}"
+    return evidence_block_reason(meta, text)
 
 
 if __name__ == "__main__":

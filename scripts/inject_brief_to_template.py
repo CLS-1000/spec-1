@@ -449,7 +449,25 @@ except ImportError:  # pragma: no cover - standalone use
 
 
 def publish_block_reason(brief_path: Path) -> str | None:
-    """None if *brief_path* may be published, else the reason it may not."""
+    """None if *brief_path* may be published, else the reason it may not.
+
+    Uses the shared guard (spec1_core.briefing.writer) when spec-1 is importable,
+    which is how the publish workflow runs; the standalone copy below mirrors it.
+    """
+    try:
+        from spec1_core.briefing.writer import publish_block_reason as _shared
+    except ImportError:  # pragma: no cover - standalone use
+        _shared = None
+    if _shared is not None:
+        return _shared(brief_path)
+    return _standalone_block_reason(brief_path)
+
+
+_FALLBACK_NOTE = "Rule-based brief generated from cycle data"   # spec1_labels.BRIEF_RULE_FALLBACK_NOTE
+_LOCAL_PATH = re.compile(r"(?<![\w.~/-])/(?:home|Users)/[^/\s]+/|(?<!\w)[A-Za-z]:\\Users\\", re.IGNORECASE)
+
+
+def _standalone_block_reason(brief_path: Path) -> str | None:
     import json
 
     meta_path = brief_path.with_name(brief_path.stem + ".meta.json")
@@ -463,6 +481,19 @@ def publish_block_reason(brief_path: Path) -> str | None:
     if tier != _VERIFIED:
         return (f"brief is {tier or 'unlabelled'} (records_tier={meta.get('records_tier')}, "
                 f"brief_source={meta.get('brief_source')}); only {_VERIFIED} briefs publish")
+    tiers = meta.get("record_tiers") or {}
+    verified = int(tiers.get(_VERIFIED, 0) or 0)
+    other = sum(int(v or 0) for k, v in tiers.items() if k != _VERIFIED)
+    if verified < 1:
+        return f"sidecar says {_VERIFIED} but record_tiers shows no {_VERIFIED} records ({tiers or 'empty'})"
+    if other:
+        return f"record_tiers includes {other} record(s) that are not {_VERIFIED} ({tiers})"
+    text = brief_path.read_text(encoding="utf-8")
+    if _FALLBACK_NOTE in text:
+        return "brief text is the rule-based fallback"
+    hit = _LOCAL_PATH.search(text)
+    if hit:
+        return f"brief contains a local file path ({hit.group(0)}...)"
     return None
 
 
