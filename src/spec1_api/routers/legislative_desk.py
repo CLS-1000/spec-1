@@ -192,10 +192,13 @@ def desk_brief(
     """The legislative brief's markdown, its provenance sidecar, and its run's record stats."""
     if date is not None and not _DATE_RE.match(date):
         raise HTTPException(status_code=422, detail="date must be YYYY-MM-DD")
-    name = f"{BRIEF_PREFIX}_{date}.md" if date else f"{BRIEF_PREFIX}_latest.md"
-    path = _briefs_dir() / name
-    if not path.is_file():
-        raise HTTPException(status_code=404, detail=f"no legislative brief at {path}")
+    # Pick from the files that exist rather than building a path from the request,
+    # so no user-supplied value ever reaches the filesystem.
+    briefs = {p.stem[len(BRIEF_PREFIX) + 1:]: p
+              for p in _briefs_dir().glob(f"{BRIEF_PREFIX}_*.md") if p.is_file()}
+    path = briefs.get(date if date else "latest")
+    if path is None:
+        raise HTTPException(status_code=404, detail="no legislative brief for that date")
 
     markdown = path.read_text(encoding="utf-8")
     meta_path = path.with_name(path.stem + ".meta.json")
@@ -218,11 +221,7 @@ def desk_brief(
                 r.get("outcome_classification") or "—" for r in recs)),
         }
 
-    dates = sorted(
-        (p.stem[len(BRIEF_PREFIX) + 1:] for p in _briefs_dir().glob(f"{BRIEF_PREFIX}_*.md")
-         if _DATE_RE.match(p.stem[len(BRIEF_PREFIX) + 1:])),
-        reverse=True,
-    )
+    dates = sorted((d for d in briefs if _DATE_RE.match(d)), reverse=True)
     return {
         "path": str(path),
         "markdown": _strip_pdf_instructions(markdown),
