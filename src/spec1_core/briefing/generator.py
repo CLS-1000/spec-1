@@ -368,6 +368,15 @@ def handoff_doc(records: list[dict], cycle_stats: dict, mode: str = "standard") 
     )
 
 
+def _require_content(brief: str, backend: str) -> None:
+    """Raise if *brief* is below the content floor, so the caller falls through a tier."""
+    from spec1_core.briefing.writer import BRIEF_MIN_WORDS, brief_content_words
+
+    words = brief_content_words(brief)
+    if words < BRIEF_MIN_WORDS:
+        raise ValueError(f"{backend} returned a degenerate brief ({words} words, minimum {BRIEF_MIN_WORDS})")
+
+
 def generate_brief(records: list[dict], cycle_stats: dict, mode: str = "standard") -> tuple[str, str]:
     """Generate the daily intelligence brief: local Qwen 2.5, then Claude, then rules.
 
@@ -397,6 +406,7 @@ def generate_brief(records: list[dict], cycle_stats: dict, mode: str = "standard
         from spec1_core.llm.fallback_client import LocalTier3Client
 
         brief = LocalTier3Client().chat(user_prompt, system_prompt=sys_prompt)
+        _require_content(brief, "local model")
         cycle_stats["brief_backend"] = "local"
         logger.info("Brief generated via local qwen2.5 (mode=%s) — %d words", mode, len(brief.split()))
         return brief, prompts_text
@@ -424,6 +434,7 @@ def generate_brief(records: list[dict], cycle_stats: dict, mode: str = "standard
             messages=[{"role": "user", "content": user_prompt}],
         )
         brief = message.content[0].text.strip()
+        _require_content(brief, "Claude")
         cycle_stats["brief_backend"] = "claude"
         logger.info("Brief generated via Claude (mode=%s) — %d words", mode, len(brief.split()))
         return brief, prompts_text
