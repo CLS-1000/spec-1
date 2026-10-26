@@ -4,7 +4,7 @@
 # @status:   stable
 # @depends:  NONE
 
-"""D3 force-directed graph exporter for Metro Citizens Brief.
+"""D3 force-directed graph exporter for Metro Citizens Narrative.
 
 Produces a self-contained HTML file with embedded D3.js and graph data.
 The diagram is regenerated on each publish cycle (or diagram trigger) and
@@ -49,7 +49,7 @@ _TEMPLATE = """\
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Metro Citizens Brief — Political Ties Graph</title>
+  <title>Metro Citizens Narrative — Political Ties Graph</title>
   <style>
     body {{ margin: 0; background: #1a1a2e; color: #eee; font-family: sans-serif; }}
     svg {{ width: 100vw; height: 100vh; }}

@@ -1,4 +1,4 @@
-"""Neutrality gates for Metro Citizens Brief.
+"""Neutrality gates for Metro Citizens Narrative.
 
 Every section must pass tone, attribution, and structural gates before publication.
 """
