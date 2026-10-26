@@ -6,6 +6,27 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.8.0] — 2026-10-25
+
+### Added
+- **Legislative & Judicial Desk v2.1 (#196):** `python -m spec1_core.app.cycle --desk legislative [--since-days 90]`. `cls_leg_jud.bridge` turns OLIS measures, OLIS interim committee meetings (with agenda items) and OpenStates/LegiScan bills into standard Signals tagged `domain="state_leg.<st>.<kind>"`. Each item is verified on the local model and stored to `spec1_legislative.jsonl` + SQLite `intelligence_records`. The desk writes `briefs/spec1_legislative_<date>.md` via `generate_brief(mode="legislative")` with a provenance sidecar, plus the rule-based `cls_leg_jud` view. The 4 gates are evaluated and stored but not enforced; a 90-day window and a cap of 25 replace them. Synthetic state-legislature samples are dropped.
+- **OLIS:** `Bill.last_action_at` / `introduced_at` from OData `ModifiedDate` / `CreatedDate`; `latest_interim_session_key()` and `fetch_interim_meetings()`.
+- **`LocalTier3Client.chat()` (#195):** free-form markdown chat against local Ollama (`qwen2.5:3b` default, `OLLAMA_MODEL` override, `SPEC1_LOCAL_CHAT_TIMEOUT`, default 600s).
+- `briefing.writer.write_brief(prefix=…)` / `write_brief_meta(latest_name=…)`: a desk gets its own dated, latest, prompts and index files and never touches `spec1_brief_*` or the published `brief_index.jsonl`.
+- `signal.scorer.composite_score()`.
+
+### Changed
+- **Local-first brief (#195):** `generate_brief()` tries local Qwen, then Claude, then the rule-based brief, and records `cycle_stats["brief_backend"]`.
+- Low-RAM Ollama default (`MODEL_LOW_RAM`) is now `qwen2.5:3b` (was `mistral`).
+
+### Fixed
+- **Routed `FallbackLLMClient` restored (#195).** The `FallbackLLMClient = LocalTier3Client` alias from 3f80d77 made the verifier raise TypeError, which was swallowed, so every record silently became `rule_based`. The analyst-loop audit crashed.
+- Verifier `_extract_json` recovers `classification` / `verified` / `confidence` / `reasoning` by regex when a small model leaves quotes unescaped inside `reasoning`, instead of demoting the record to `rule_based`.
+- Tests no longer reach the real Claude API or Ollama (`.env` keys leaked in through `load_dotenv`).
+- Unused `Optional` import in `schemas/models.py` that failed CI lint on `develop`.
+
+---
+
 ## [0.7.0] — 2026-10-24
 
 ### Added
