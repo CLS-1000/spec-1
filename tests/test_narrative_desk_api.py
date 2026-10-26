@@ -383,3 +383,11 @@ def test_template_instruction_leak_blocks_release(client, env):
 def test_template_leaks_ignores_ordinary_brackets():
     assert ns.template_leaks("- **SB 5701** [signed]\nSee [source](https://x.org) here.\n") == []
     assert ns.template_leaks("[3-5 bullets. Each bullet: one sentence, names the subject.]") != []
+
+
+def test_export_preview_failure_hides_internals(client):
+    _, job = _generate(client)
+    with patch.object(ns, "print_preview", side_effect=RuntimeError("secret /home/path detail")):
+        x = client.get(f"/api/v1/narrative/drafts/{job['draft_id']}/export").json()
+    assert x["preview_available"] is False
+    assert "secret" not in x["preview_error"] and "RuntimeError" not in x["preview_error"]

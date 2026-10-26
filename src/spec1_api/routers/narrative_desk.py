@@ -36,6 +36,9 @@ from fastapi import APIRouter, BackgroundTasks, HTTPException
 from pydantic import BaseModel, Field
 
 from spec1_api import narrative_store as ns
+from spec1_core.core.logging_utils import get_logger
+
+logger = get_logger(__name__)
 
 router = APIRouter(prefix="/narrative", tags=["narrative"])
 
@@ -269,8 +272,9 @@ def narrative_export(draft_id: str) -> dict:
     markdown = ns.apply_edits(path.read_text(encoding="utf-8"), ns.draft_edits(path))
     try:
         preview = ns.print_preview(markdown, date)
-    except Exception as exc:
-        preview, error = None, f"{type(exc).__name__}: {exc}"
+    except Exception:
+        logger.exception("Notitia Civica preview failed for %s", draft_id)
+        preview, error = None, "preview rendering failed (details in the server log)"
     else:
         error = None if preview is not None else "Notitia Civica template not found"
     return {
