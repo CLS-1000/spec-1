@@ -34,6 +34,8 @@ from starlette.middleware.base import BaseHTTPMiddleware
 # Paths that never require authentication
 _PUBLIC_PATHS = frozenset({
     "/",
+    "/desk/legislative",      # page shell only; its data calls carry the key
+    "/desk/legislative/",
     "/health",
     "/metrics",
     "/metrics/json",

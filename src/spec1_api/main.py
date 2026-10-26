@@ -39,6 +39,7 @@ from spec1_api.routers import (
     metrics,
     psyop,
     publication,
+    legislative_desk,
     runs,
     signals,
     verdicts,
@@ -192,6 +193,16 @@ def create_app() -> FastAPI:
     app.include_router(adapters.router, prefix=_V1)
     app.include_router(congress_brief.router, prefix=_V1)
     app.include_router(runs.router, prefix=_V1)
+    app.include_router(legislative_desk.router, prefix=_V1)
+
+    @app.get("/desk/legislative", include_in_schema=False)
+    @app.get("/desk/legislative/", include_in_schema=False)
+    async def legislative_desk_ui() -> FileResponse:
+        """Serve the Legislative & Judicial Desk view (``ui/legislative.html``)."""
+        path = ui_dir / "legislative.html"
+        if not path.is_file():
+            raise HTTPException(status_code=404, detail="Legislative desk UI not found")
+        return FileResponse(path, media_type="text/html")
 
     @app.get("/verdicts/", include_in_schema=False)
     async def verdicts_ui() -> FileResponse:

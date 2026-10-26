@@ -117,6 +117,7 @@ def test_measure_signal_shape():
     assert s.metadata["domain"] == "state_leg.or.measure"
     assert s.metadata["priority"] == "ELEVATED"          # chapter number → signed
     assert s.metadata["bill"] == "HB 4177"
+    assert s.metadata["chamber"] == "House"
     assert s.url.endswith("/2026R1/Measures/Overview/HB4177")
     assert "prohibitions.." not in s.text
     assert s.published_at.date().isoformat() == "2026-09-28"

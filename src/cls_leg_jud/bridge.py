@@ -129,6 +129,7 @@ def olis_measure_signals(
                 "domain": "state_leg.or.measure",
                 "priority": _measure_priority(status),
                 "state": "OR",
+                "chamber": bill.chamber,
                 "bill": bill.external_id,
                 "title": bill.title,
                 "sponsor": bill.sponsor or "",
