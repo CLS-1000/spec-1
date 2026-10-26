@@ -39,6 +39,10 @@ DEFAULT_FEEDS: dict[str, str] = {
     "nk_news": "https://www.nknews.org/feed/",
     "csis_korea": "https://beyondparallel.csis.org/feed/",
     "yonhap": "https://en.yna.co.kr/RSS/news.xml",
+    # Law / accountability / politics (already calibrated in SOURCE_CREDIBILITY)
+    "lawfare": "https://www.lawfaremedia.org/feeds/articles",
+    "propublica": "https://www.propublica.org/feeds/propublica/main",
+    "politico": "https://rss.politico.com/politics-news.xml",
 }
 
 TIMEOUT = 15
