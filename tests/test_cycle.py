@@ -158,7 +158,7 @@ def test_harvest_error_captured(fake_feed_xml):
 
 
 def test_default_feeds_has_expected_sources():
-    assert len(DEFAULT_FEEDS) == 10
+    assert len(DEFAULT_FEEDS) == 13
 
 
 def test_default_feeds_includes_rand():
@@ -740,3 +740,14 @@ def test_run_cycle_updates_last_run_state(tmp_path):
         )
     assert cycle_mod.last_run_state["run_id"] == "run-state-test"
     assert cycle_mod.last_run_state["signal_count"] == 1
+
+
+def test_every_default_feed_is_calibrated():
+    """An uncalibrated feed scores DEFAULT_CREDIBILITY (below threshold) and is
+    silently blocked at the credibility gate, so every harvested feed must have
+    an explicit SOURCE_CREDIBILITY entry that clears CREDIBILITY_THRESHOLD."""
+    from spec1_core.config.calibration import CREDIBILITY_THRESHOLD, SOURCE_CREDIBILITY
+
+    for name in DEFAULT_FEEDS:
+        assert name in SOURCE_CREDIBILITY, f"{name} has no credibility score"
+        assert SOURCE_CREDIBILITY[name] >= CREDIBILITY_THRESHOLD, name
