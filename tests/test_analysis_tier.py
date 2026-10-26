@@ -35,6 +35,9 @@ from spec1_labels import (
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
+# Enough words to clear writer.BRIEF_MIN_WORDS: the guard refuses degenerate briefs.
+_BODY = " ".join(["The committee advanced the measure after a recorded vote, citing the fiscal note."] * 15)
+
 _VERDICT = json.dumps({"verified": True, "confidence": 0.8, "reasoning": "Named official.",
                        "classification": "ESCALATE"})
 
@@ -139,7 +142,7 @@ def test_triage_only_cycle(tmp_path):
 def test_full_cycle_with_model_writes_publishable_sidecar(tmp_path):
     with patch("spec1_core.app.cycle.verify_investigation",
                return_value=_outcome(ANALYSIS_TIER_LLM_VERIFIED)), \
-         patch("spec1_core.briefing.generator.generate_brief", return_value=("# Brief\n\nModel text.", "")):
+         patch("spec1_core.briefing.generator.generate_brief", return_value=(f"# Brief\n\n{_BODY}", "")):
         stats = _cycle(tmp_path)
     records = JsonlStore(tmp_path / "intel.jsonl").read_all()
     assert {r["analysis_tier"] for r in records} == {ANALYSIS_TIER_LLM_VERIFIED}
@@ -171,7 +174,7 @@ def test_hand_written_brief_over_verified_records_publishes(tmp_path, monkeypatc
                return_value=_outcome(ANALYSIS_TIER_LLM_VERIFIED)):
         stats = _cycle(tmp_path)
     assert writer.publish_block_reason(stats["brief_path"])          # fallback text: blocked
-    Path(stats["brief_path"]).write_text("# World State Brief\n\nWritten by hand from the handoff.\n",
+    Path(stats["brief_path"]).write_text(f"# World State Brief\n\nWritten by hand from the handoff. {_BODY}\n",
                                          encoding="utf-8")
     writer.mark_hand_written(stats["brief_path"])
     assert writer.publish_block_reason(stats["brief_path"]) is None  # hand-written: allowed
@@ -227,7 +230,7 @@ def test_local_paths_in_brief_are_blocked(tmp_path, leak):
 
 
 def test_urls_with_home_segments_are_not_paths(tmp_path):
-    brief = _labelled(tmp_path, "# Brief\n\nSource: https://example.org/home/user/report\n",
+    brief = _labelled(tmp_path, f"# Brief\n\n{_BODY}\nSource: https://example.org/home/user/report\n",
                       {ANALYSIS_TIER_LLM_VERIFIED: 3})
     assert writer.publish_block_reason(brief) is None
 
@@ -264,7 +267,7 @@ def _inject_module():
 ])
 def test_publisher_script_guard(tmp_path, tier, expect_rc):
     brief = tmp_path / "spec1_brief_latest.md"
-    brief.write_text("# Brief\n\nBody.\n")
+    brief.write_text(f"# Brief\n\n{_BODY}\n")
     if tier is not None:
         (tmp_path / "spec1_brief_latest.meta.json").write_text(json.dumps(
             {"analysis_tier": tier, "record_tiers": {tier: 3}}))
@@ -301,3 +304,59 @@ def test_issue_counter_continues_from_restored_issues(tmp_path):
     path = pg.generate_publication(records=[], brief_text="# x", cycle_stats={"run_id": "r"},
                                    output_dir=str(out))
     assert "spec1_issue_008_" in Path(path).name
+
+
+# ── Content floor (run-fe8f2b8df1af, 2026-10-26) ──────────────────────────────
+# qwen2.5:3b returned 62 "━" characters; it was stamped llm_verified and passed --check.
+
+def test_rule_only_brief_with_verified_sidecar_is_blocked(tmp_path):
+    brief = _labelled(tmp_path, "━" * 62 + "\n", {ANALYSIS_TIER_LLM_VERIFIED: 14})
+    why = writer.publish_block_reason(brief)
+    assert why and "0 words of content" in why
+
+
+def test_rule_only_brief_with_pdf_footer_is_blocked(tmp_path):
+    # write_brief appends the PDF-conversion footer; its boilerplate must not clear the floor.
+    text = "━" * 62 + writer._pdf_instructions("spec1_brief_2026-10-26.md")
+    assert len(text.split()) > 30
+    assert writer.brief_content_words(text) == 0
+    brief = _labelled(tmp_path, text, {ANALYSIS_TIER_LLM_VERIFIED: 14})
+    assert "words of content" in writer.publish_block_reason(brief)
+
+
+def test_brief_just_under_floor_is_blocked_and_at_floor_passes(tmp_path):
+    under = "# Brief\n\n" + " ".join(["word"] * (writer.BRIEF_MIN_WORDS - 2)) + "\n"
+    assert writer.brief_content_words(under) == writer.BRIEF_MIN_WORDS - 1
+    assert "words of content" in writer.publish_block_reason(
+        _labelled(tmp_path, under, {ANALYSIS_TIER_LLM_VERIFIED: 3}))
+    at = "# Brief\n\n" + " ".join(["word"] * (writer.BRIEF_MIN_WORDS - 1)) + "\n"
+    assert writer.publish_block_reason(_labelled(tmp_path, at, {ANALYSIS_TIER_LLM_VERIFIED: 3})) is None
+
+
+def test_normal_brief_with_footer_passes(tmp_path):
+    text = f"# World State Brief\n\n{_BODY}" + writer._pdf_instructions("spec1_brief_2026-10-26.md")
+    assert writer.publish_block_reason(_labelled(tmp_path, text, {ANALYSIS_TIER_LLM_VERIFIED: 3})) is None
+
+
+def test_writer_check_cli_refuses_degenerate_brief(tmp_path):
+    import subprocess
+    import sys
+    brief = _labelled(tmp_path, "━" * 62 + "\n", {ANALYSIS_TIER_LLM_VERIFIED: 14})
+    rc = subprocess.run([sys.executable, "-m", "spec1_core.briefing.writer", "--check", str(brief)],
+                        cwd=REPO_ROOT, env={"PYTHONPATH": str(REPO_ROOT / "src"), "PATH": ""},
+                        capture_output=True, text=True)
+    assert rc.returncode == 1 and "REFUSED" in rc.stdout
+
+
+def test_degenerate_local_brief_in_cycle_is_stamped_rules(tmp_path, monkeypatch):
+    # End to end: the local model returns only a rule; the cycle must not stamp it model/llm_verified.
+    from spec1_core.llm.fallback_client import LocalTier3Client
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.setattr(LocalTier3Client, "chat", lambda self, *a, **k: "━" * 62)
+    with patch("spec1_core.app.cycle.verify_investigation",
+               return_value=_outcome(ANALYSIS_TIER_LLM_VERIFIED)):
+        stats = _cycle(tmp_path)
+    meta = writer.read_brief_meta(stats["brief_path"])
+    assert meta["brief_source"] == BRIEF_SOURCE_RULES
+    assert meta["analysis_tier"] == ANALYSIS_TIER_RULE_BASED
+    assert writer.publish_block_reason(stats["brief_path"])

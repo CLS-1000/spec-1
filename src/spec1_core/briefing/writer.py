@@ -32,6 +32,16 @@ _lock = threading.Lock()
 
 PDF_INSTRUCTIONS_HEADING = "### PDF Conversion"
 
+# Content floor for a brief, in words, counted by brief_content_words() (the
+# PDF-conversion footer and symbol-only tokens such as ``━━━`` rules are not
+# counted). A model reply below this is treated as a failed generation, and the
+# publish guard refuses a brief below it whatever its sidecar says.
+# run-fe8f2b8df1af (2026-10-26): qwen2.5:3b returned 62 ``━`` characters and it
+# was stamped llm_verified and passed --check. The value is a human call.
+BRIEF_MIN_WORDS = 150
+
+_WORD_RE = re.compile(r"\w")
+
 _PLACEHOLDER_RE = re.compile(r"\{[A-Za-z_][A-Za-z0-9_ /\-]*\}")
 _HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)$")
 
@@ -69,6 +79,17 @@ def _strip_unresolved_placeholders(brief: str) -> str:
         i += 1
     result = "\n".join(out)
     return result + "\n" if brief.endswith("\n") else result
+
+
+def brief_content_words(text: str) -> int:
+    """Words of actual content in *text*.
+
+    Drops everything from the PDF-conversion footer on, and counts only tokens
+    with at least one letter or digit, so rules, bullets and box-drawing
+    characters do not count.
+    """
+    body = text.split(PDF_INSTRUCTIONS_HEADING, 1)[0]
+    return sum(1 for tok in body.split() if _WORD_RE.search(tok))
 
 
 def _pdf_instructions(md_name: str) -> str:
@@ -355,7 +376,7 @@ def evidence_block_reason(meta: dict, text: str) -> str | None:
 
     The label alone is not enough: the sidecar's record counts must show
     model-verified records and nothing rule-based, and the text must not be the
-    rule fallback or carry local file paths.
+    rule fallback, carry local file paths, or fall below BRIEF_MIN_WORDS.
     """
     tiers = meta.get("record_tiers") or {}
     counts = {}
@@ -377,6 +398,10 @@ def evidence_block_reason(meta: dict, text: str) -> str | None:
     hit = LOCAL_PATH_RE.search(text)
     if hit:
         return f"brief contains a local file path ({hit.group(0)}...); remove machine output before publishing"
+    words = brief_content_words(text)
+    if words < BRIEF_MIN_WORDS:
+        return (f"brief has {words} words of content (minimum {BRIEF_MIN_WORDS}, excluding the "
+                "PDF-conversion footer); a degenerate model reply is not a brief")
     return None
 
 
