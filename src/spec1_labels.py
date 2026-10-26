@@ -69,6 +69,8 @@ LLM_TIERS_REAL = frozenset({"claude", "local", "ollama"})
 BRIEF_SOURCE_MODEL        = "model"          # written by a model inside the cycle
 BRIEF_SOURCE_RULES        = "rule_fallback"  # rule-based fallback brief
 BRIEF_SOURCE_HAND_WRITTEN = "hand_written"   # written by hand (e.g. Claude in chat) from the handoff
+# Sentence the rule-based fallback brief always carries; the publish guard refuses any brief containing it.
+BRIEF_RULE_FALLBACK_NOTE = "Rule-based brief generated from cycle data"
 
 # ── Cross-source verification classification ──────────────────────────────────
 VERIF_CORROBORATED = "CORROBORATED"

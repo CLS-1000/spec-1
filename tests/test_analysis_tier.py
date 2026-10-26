@@ -27,6 +27,8 @@ from spec1_core.schemas.models import Investigation, Outcome
 from spec1_labels import (
     ANALYSIS_TIER_LLM_VERIFIED,
     ANALYSIS_TIER_RULE_BASED,
+    BRIEF_RULE_FALLBACK_NOTE,
+    BRIEF_SOURCE_HAND_WRITTEN,
     BRIEF_SOURCE_MODEL,
     BRIEF_SOURCE_RULES,
 )
@@ -169,8 +171,65 @@ def test_hand_written_brief_over_verified_records_publishes(tmp_path, monkeypatc
                return_value=_outcome(ANALYSIS_TIER_LLM_VERIFIED)):
         stats = _cycle(tmp_path)
     assert writer.publish_block_reason(stats["brief_path"])          # fallback text: blocked
+    Path(stats["brief_path"]).write_text("# World State Brief\n\nWritten by hand from the handoff.\n",
+                                         encoding="utf-8")
     writer.mark_hand_written(stats["brief_path"])
     assert writer.publish_block_reason(stats["brief_path"]) is None  # hand-written: allowed
+
+
+def test_marking_the_fallback_text_hand_written_stays_blocked(tmp_path, monkeypatch):
+    # Marking is a claim about the text. If the text is still the rule fallback, refuse.
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    with patch("spec1_core.app.cycle.verify_investigation",
+               return_value=_outcome(ANALYSIS_TIER_LLM_VERIFIED)):
+        stats = _cycle(tmp_path)
+    writer.mark_hand_written(stats["brief_path"])
+    assert "rule-based fallback" in writer.publish_block_reason(stats["brief_path"])
+
+
+def _labelled(tmp_path, text, record_tiers):
+    brief = tmp_path / "spec1_brief_2026-10-25.md"
+    brief.write_text(text, encoding="utf-8")
+    writer.meta_path_for(brief).write_text(json.dumps({
+        "run_id": "run-8a88a4bd2e23", "records_tier": ANALYSIS_TIER_LLM_VERIFIED,
+        "brief_source": BRIEF_SOURCE_HAND_WRITTEN, "record_tiers": record_tiers,
+        "analysis_tier": ANALYSIS_TIER_LLM_VERIFIED}), encoding="utf-8")
+    return brief
+
+
+def test_label_without_verified_records_is_blocked(tmp_path):
+    # 2026-10-25: sidecar said llm_verified/hand_written with record_tiers {} and was published.
+    brief = _labelled(tmp_path, "# Brief\n\nBody.\n", {})
+    assert "no llm_verified records" in writer.publish_block_reason(brief)
+
+
+def test_rule_based_records_in_counts_are_blocked(tmp_path):
+    brief = _labelled(tmp_path, "# Brief\n\nBody.\n",
+                      {ANALYSIS_TIER_LLM_VERIFIED: 5, ANALYSIS_TIER_RULE_BASED: 2})
+    assert "not llm_verified" in writer.publish_block_reason(brief)
+
+
+def test_fallback_text_under_verified_label_is_blocked(tmp_path):
+    text = ("## SPEC-1 DAILY BRIEF — 2026-10-25\n\n*AI brief unavailable — API call failed. "
+            f"{BRIEF_RULE_FALLBACK_NOTE}.*\n")
+    brief = _labelled(tmp_path, text, {ANALYSIS_TIER_LLM_VERIFIED: 3})
+    assert "rule-based fallback" in writer.publish_block_reason(brief)
+
+
+@pytest.mark.parametrize("leak", [
+    "cannot import name 'X' (/home/mjlak/spec-1/src/spec1_core/llm/fallback_client.py)",
+    "saved to C:\\Users\\mjlak\\Downloads\\brief.md",
+    "see /Users/matt/notes.md",
+])
+def test_local_paths_in_brief_are_blocked(tmp_path, leak):
+    brief = _labelled(tmp_path, f"# Brief\n\n{leak}\n", {ANALYSIS_TIER_LLM_VERIFIED: 3})
+    assert "local file path" in writer.publish_block_reason(brief)
+
+
+def test_urls_with_home_segments_are_not_paths(tmp_path):
+    brief = _labelled(tmp_path, "# Brief\n\nSource: https://example.org/home/user/report\n",
+                      {ANALYSIS_TIER_LLM_VERIFIED: 3})
+    assert writer.publish_block_reason(brief) is None
 
 
 def test_hand_written_brief_over_rule_based_records_stays_blocked(tmp_path):
@@ -207,7 +266,8 @@ def test_publisher_script_guard(tmp_path, tier, expect_rc):
     brief = tmp_path / "spec1_brief_latest.md"
     brief.write_text("# Brief\n\nBody.\n")
     if tier is not None:
-        (tmp_path / "spec1_brief_latest.meta.json").write_text(json.dumps({"analysis_tier": tier}))
+        (tmp_path / "spec1_brief_latest.meta.json").write_text(json.dumps(
+            {"analysis_tier": tier, "record_tiers": {tier: 3}}))
     template = tmp_path / "t.html"
     template.write_text("<html><body><div class=\"seal\"></div></body></html>")
     out = tmp_path / "out" / "pub.html"
