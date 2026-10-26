@@ -40,6 +40,7 @@ COPY --from=builder /wheels /wheels
 COPY pyproject.toml requirements.txt ./
 COPY src/ src/
 COPY mcp_server.py ./
+COPY ui/ ui/
 
 RUN pip install --no-cache-dir --no-index --find-links=/wheels \
         -e . \

@@ -49,13 +49,26 @@ def test_root_returns_html(client):
     assert "text/html" in r.headers["content-type"]
 
 
-def test_root_contains_spec1_title(client):
+def test_root_serves_triage_desk(client):
     r = client.get("/")
+    assert "SPEC-1 TRIAGE DESK" in r.text
+    assert "EVASTARARCANA LLC" in r.text
+
+
+def test_ui_directory_served_at_root(client):
+    r = client.get("/index.html")
+    assert r.status_code == 200
+    assert "SPEC-1 TRIAGE DESK" in r.text
+
+
+def test_console_contains_spec1_title(client):
+    r = client.get("/console/")
+    assert r.status_code == 200
     assert "SPEC-1 Intelligence Engine" in r.text
 
 
-def test_root_contains_layout_div(client):
-    r = client.get("/")
+def test_console_contains_layout_div(client):
+    r = client.get("/console/")
     assert 'class="layout"' in r.text
 
 

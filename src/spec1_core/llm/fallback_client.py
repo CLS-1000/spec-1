@@ -33,7 +33,11 @@ import uuid
 from pathlib import Path
 from typing import Any
 
+import httpx
+from pydantic import ValidationError
+
 from spec1_core.llm import ollama_manager, tier3_rules
+from spec1_core.schemas.models import Tier3TriageVerdict
 from spec1_labels import VERIF_CORROBORATED, VERIF_CONFLICTED, THREAT_HIGH, THREAT_MEDIUM, THREAT_LOW
 
 logger = logging.getLogger(__name__)
@@ -363,3 +367,99 @@ class FallbackLLMClient:
                 fh.write(entry + "\n")
         except Exception:
             pass  # logging must never crash the pipeline
+
+
+# ── Local Tier-3 client (Qwen 2.5 via Ollama) ─────────────────────────────────
+
+OLLAMA_BASE_URL = "http://127.0.0.1:11434"
+DEFAULT_MODEL = "qwen2.5:3b"       # constrained-JSON triage verification
+CHAT_MODEL = "qwen2.5:3b"          # unconstrained markdown chat (briefs); 7B needs >4.5 GiB free
+# A full brief on a CPU-bound local model can take several minutes.
+CHAT_TIMEOUT = float(os.environ.get("SPEC1_LOCAL_CHAT_TIMEOUT", "600"))
+
+
+class LocalTier3Client:
+    """Direct Ollama client: schema-constrained triage verdicts and free-form chat."""
+
+    def __init__(self, base_url: str = OLLAMA_BASE_URL, model: str = DEFAULT_MODEL):
+        self.base_url = base_url.rstrip("/")
+        self.model = model
+        # 120s timeout to allow cold-start model weight allocation
+        self.client = httpx.Client(base_url=self.base_url, timeout=120.0)
+
+    def verify_triage_record(self, record: dict[str, Any]) -> Tier3TriageVerdict | None:
+        """Runs candidate triage record through Qwen 2.5 with constrained JSON schema."""
+        prompt = (
+            f"You are the SPEC-1 Tier-3 verification engine. Audit this candidate triage record:\n"
+            f"Record ID: {record.get('record_id')}\n"
+            f"Source: {record.get('source')}\n"
+            f"Composite Score: {record.get('composite', 0.0)}\n"
+            f"Payload: {json.dumps(record.get('raw', {}))[:1500]}\n\n"
+            f"Evaluate credibility, gate thresholds, and classify domain."
+        )
+
+        payload = {
+            "model": self.model,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": (
+                        "You are an OSINT intelligence verifier. Output strictly valid JSON matching "
+                        "the requested schema. Do not add markdown backticks or preamble."
+                    ),
+                },
+                {"role": "user", "content": prompt},
+            ],
+            "format": Tier3TriageVerdict.model_json_schema(),
+            "options": {
+                "temperature": 0.0,
+                "top_p": 0.2,
+                "num_ctx": 4096,
+            },
+            "stream": False,
+        }
+
+        try:
+            res = self.client.post("/api/chat", json=payload)
+            res.raise_for_status()
+            raw_content = res.json()["message"]["content"]
+            verdict = Tier3TriageVerdict.model_validate_json(raw_content)
+            logger.info("Successfully verified record %s -> tier=%s", verdict.record_id, verdict.analysis_tier)
+            return verdict
+
+        except httpx.ConnectError:
+            logger.error("Ollama service unreachable on %s. Ensure 'ollama serve' is active.", self.base_url)
+            return None
+        except httpx.ReadTimeout:
+            logger.error("Ollama request timed out after 120s. Check system resource allocation.")
+            return None
+        except (ValidationError, KeyError, json.JSONDecodeError) as e:
+            logger.error("Schema validation failed for record %s: %s", record.get("record_id"), e)
+            return None
+
+    def chat(self, user_prompt: str, system_prompt: str = "", temperature: float = 0.2) -> str:
+        """Free-form markdown chat against the local Ollama model.
+
+        Unlike ``verify_triage_record`` this raises on connection, HTTP or
+        empty-response failures so callers can fall through to another tier.
+        """
+        messages = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": user_prompt})
+
+        payload = {
+            "model": os.environ.get("OLLAMA_MODEL") or CHAT_MODEL,
+            "messages": messages,
+            "options": {
+                "temperature": temperature,
+                "num_ctx": 8192,
+            },
+            "stream": False,
+        }
+        res = self.client.post("/api/chat", json=payload, timeout=CHAT_TIMEOUT)
+        res.raise_for_status()
+        text = strip_reasoning(res.json().get("message", {}).get("content", ""))
+        if not text:
+            raise RuntimeError(f"Ollama returned an empty chat response ({payload['model']})")
+        return text

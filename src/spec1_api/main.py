@@ -20,6 +20,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import HTTPException
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from spec1_api import __version__
 from spec1_api import metrics as _metrics
@@ -38,6 +39,8 @@ from spec1_api.routers import (
     metrics,
     psyop,
     publication,
+    legislative_desk,
+    runs,
     signals,
     verdicts,
     workspace,
@@ -56,6 +59,14 @@ _DEV_ORIGINS = [
     "null",  # file:// origin sent by browsers opening spec1_ui.html directly
 ]
 _STATIC_DIR = Path(__file__).parent / "static"
+
+
+def _ui_dir() -> Path:
+    """Triage Desk directory: ``SPEC1_UI_DIR`` if set, else ``<repo>/ui``."""
+    override = os.environ.get("SPEC1_UI_DIR", "").strip()
+    if override:
+        return Path(override)
+    return Path(__file__).resolve().parents[2] / "ui"
 
 
 def _env_flag(*names: str) -> bool:
@@ -113,12 +124,24 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    ui_dir = _ui_dir()
+
     @app.get("/", include_in_schema=False)
     async def ui_root() -> FileResponse:
-        """Serve the SPEC-1 UI."""
-        path = _STATIC_DIR / "index.html"
+        """Serve the Triage Desk (``ui/index.html``); the console if it is absent."""
+        path = ui_dir / "index.html"
+        if not path.is_file():
+            path = _STATIC_DIR / "index.html"
         if not path.is_file():
             raise HTTPException(status_code=404, detail="UI not found")
+        return FileResponse(path, media_type="text/html")
+
+    @app.get("/console/", include_in_schema=False)
+    async def console_ui() -> FileResponse:
+        """Serve the original SPEC-1 console UI (previously at ``/``)."""
+        path = _STATIC_DIR / "index.html"
+        if not path.is_file():
+            raise HTTPException(status_code=404, detail="Console UI not found")
         return FileResponse(path, media_type="text/html")
 
     @app.get("/spec1_political_web.html", include_in_schema=False)
@@ -169,6 +192,17 @@ def create_app() -> FastAPI:
     app.include_router(leg_jud.router, prefix=_V1)
     app.include_router(adapters.router, prefix=_V1)
     app.include_router(congress_brief.router, prefix=_V1)
+    app.include_router(runs.router, prefix=_V1)
+    app.include_router(legislative_desk.router, prefix=_V1)
+
+    @app.get("/desk/legislative", include_in_schema=False)
+    @app.get("/desk/legislative/", include_in_schema=False)
+    async def legislative_desk_ui() -> FileResponse:
+        """Serve the Legislative & Judicial Desk view (``ui/legislative.html``)."""
+        path = ui_dir / "legislative.html"
+        if not path.is_file():
+            raise HTTPException(status_code=404, detail="Legislative desk UI not found")
+        return FileResponse(path, media_type="text/html")
 
     @app.get("/verdicts/", include_in_schema=False)
     async def verdicts_ui() -> FileResponse:
@@ -191,6 +225,10 @@ def create_app() -> FastAPI:
 
         app.include_router(nodes.router, prefix="/api/v1")
         app.include_router(ingest.router, prefix="/api/v1")
+
+    # The ui/ directory at "/" — mounted last so every route above wins.
+    if ui_dir.is_dir():
+        app.mount("/", StaticFiles(directory=ui_dir, html=True), name="ui")
 
     return app
 

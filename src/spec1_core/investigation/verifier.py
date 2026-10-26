@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import uuid
 
 from spec1_core.schemas.models import Investigation, Outcome
@@ -85,14 +86,50 @@ def _fallback_outcome() -> Outcome:
     )
 
 
+_FIELD_PATTERNS = {
+    "classification": re.compile(r'"classification"\s*:\s*"([A-Za-z_]+)"'),
+    "verified": re.compile(r'"verified"\s*:\s*(true|false)', re.IGNORECASE),
+    "confidence": re.compile(r'"confidence"\s*:\s*"?(\d*\.?\d+)'),
+    # Non-greedy up to the quote that closes the value: the one followed by
+    # another known key or the closing brace, so inner unescaped quotes survive.
+    "reasoning": re.compile(
+        r'"reasoning"\s*:\s*"(.*?)"\s*(?:,\s*"(?:classification|verified|confidence)"\s*:|\})',
+        re.DOTALL,
+    ),
+}
+
+
+def _regex_fields(raw: str) -> dict:
+    """Pull verifier fields out of almost-JSON (e.g. unescaped quotes in reasoning).
+
+    Returns {} unless a classification or confidence was found.
+    """
+    data: dict = {}
+    for key, pattern in _FIELD_PATTERNS.items():
+        m = pattern.search(raw)
+        if not m:
+            continue
+        value = m.group(1)
+        if key == "verified":
+            data[key] = value.lower() == "true"
+        elif key == "classification":
+            data[key] = value.upper()
+        else:
+            data[key] = value
+    if "classification" not in data and "confidence" not in data:
+        return {}
+    return data
+
+
 def _extract_json(raw: str) -> dict:
     """Parse the reply as JSON, or the first {...} object in it.
 
-    Small local models often add a sentence before or after the JSON.
+    Small local models often add a sentence before or after the JSON, or leave
+    quotes unescaped inside "reasoning"; the last resort is a per-field regex.
     """
     try:
         return json.loads(raw)
-    except json.JSONDecodeError:
+    except json.JSONDecodeError as exc:
         start = raw.find("{")
         while start != -1:
             depth = 0
@@ -110,7 +147,12 @@ def _extract_json(raw: str) -> dict:
                             pass
                         break
             start = raw.find("{", start + 1)
-        raise
+        data = _regex_fields(raw)
+        if data:
+            logger.warning("Verifier reply was not valid JSON; recovered fields by regex: %s",
+                           sorted(data))
+            return data
+        raise exc
 
 
 def verify_investigation(
