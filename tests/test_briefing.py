@@ -30,11 +30,32 @@ REQUIRED_SECTIONS = [
     "### Signal Notes",
 ]
 
+# A realistic body paragraph: model briefs below writer.BRIEF_MIN_WORDS are
+# rejected as degenerate, so sample briefs need real length.
+BODY_PARAGRAPH = (
+    "Committee staff confirmed that the appropriations package moved out of the joint "
+    "subcommittee on a party-line vote after two amendments were withdrawn. The lead "
+    "sponsor said the revised language narrows the reporting window for agency contracts "
+    "from ninety days to thirty, and the fiscal office estimates the change adds no new "
+    "general fund cost. Opponents argued the shorter window favours incumbent vendors who "
+    "already hold master agreements, and a coalition of county clerks filed written "
+    "testimony asking for a delayed effective date. Two of the three named vendors appear "
+    "in state campaign finance records as donors to members of the subcommittee during the "
+    "last cycle, which is a disclosure question worth putting to the sponsor directly. The "
+    "floor vote is expected within the week; the governor has not said whether she will "
+    "sign. Primary documents are the committee agenda, the fiscal impact statement, the "
+    "recorded vote and the written testimony file, all of which are posted on the "
+    "legislature's public site and can be cited by measure number. Confidence in the "
+    "sequence of events is high; confidence in motive is low and should not be stated as "
+    "fact."
+)
+
 SAMPLE_BRIEF = "\n".join([
     "## SPEC-1 DAILY BRIEF — 2026-04-11",
     "",
     "### Executive Summary",
     "Three things happened. They mean something. Uncertainty remains.",
+    BODY_PARAGRAPH,
     "",
     "### Elevated Signals",
     "No elevated signals today.",
@@ -956,6 +977,7 @@ GEO_SAMPLE_BRIEF = "\n".join([
     "## GEOPOLITICS & POLICY DESK — 2026-04-11",
     "### Executive Summary",
     "Three developments intersect foreign policy and domestic legislation.",
+    BODY_PARAGRAPH,
     "### The Geopolitics Brief",
     "Strategic realignments observed.",
     "### Capitol Hill & Lobbying Watch",
@@ -1044,6 +1066,7 @@ LEG_SAMPLE_BRIEF = "\n".join([
     "## LEGISLATIVE & JUDICIAL DESK — 2026-04-11",
     "### Executive Summary",
     "• run_id abc12345: Senate Finance Committee advanced SB 201 (8–4 vote).",
+    BODY_PARAGRAPH,
     "### Federal — Members, Votes, Hearings",
     "NO SIGNAL THIS CYCLE",
     "### Federal — Lobbying & Disclosure Watch",
@@ -1222,3 +1245,56 @@ def test_generate_brief_local_down_no_key_uses_rules(monkeypatch):
     assert stats["brief_fallback"] is True
     assert "brief_backend" not in stats
     assert "local model unavailable" in brief
+
+
+# ─── Content floor (run-fe8f2b8df1af) ─────────────────────────────────────────
+
+DEGENERATE_REPLY = "━" * 62
+
+
+def test_generate_brief_degenerate_local_reply_falls_through_to_claude():
+    from spec1_core.briefing import generator
+    from spec1_core.llm.fallback_client import LocalTier3Client
+    stats = make_cycle_stats()
+    with patch.object(LocalTier3Client, "chat", return_value=DEGENERATE_REPLY), \
+            patch.dict("os.environ", {"ANTHROPIC_API_KEY": "test-key"}), \
+            patch("anthropic.Anthropic") as MockClient:
+        MockClient.return_value.messages.create.return_value = make_mock_claude_response(SAMPLE_BRIEF)
+        brief, _ = generator.generate_brief([make_record()], stats)
+    MockClient.assert_called_once()
+    assert brief == SAMPLE_BRIEF.strip()
+    assert stats["brief_backend"] == "claude"
+
+
+def test_generate_brief_degenerate_local_reply_no_key_uses_rules(monkeypatch):
+    from spec1_core.briefing import generator
+    from spec1_core.llm.fallback_client import LocalTier3Client
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    stats = make_cycle_stats()
+    with patch.object(LocalTier3Client, "chat", return_value=DEGENERATE_REPLY):
+        brief, _ = generator.generate_brief([make_record()], stats)
+    assert stats["brief_fallback"] is True
+    assert "brief_backend" not in stats
+    assert DEGENERATE_REPLY not in brief
+
+
+def test_generate_brief_short_local_reply_falls_through():
+    # A few real words is still below the floor.
+    from spec1_core.briefing import generator
+    from spec1_core.llm.fallback_client import LocalTier3Client
+    stats = make_cycle_stats()
+    with patch.object(LocalTier3Client, "chat", return_value="## Brief\n\nNothing to report."), \
+            patch.dict("os.environ", {"ANTHROPIC_API_KEY": ""}):
+        generator.generate_brief([make_record()], stats)
+    assert stats["brief_fallback"] is True
+
+
+def test_generate_brief_degenerate_claude_reply_uses_rules():
+    from spec1_core.briefing import generator
+    stats = make_cycle_stats()
+    with patch.dict("os.environ", {"ANTHROPIC_API_KEY": "test-key"}), \
+            patch("anthropic.Anthropic") as MockClient:
+        MockClient.return_value.messages.create.return_value = make_mock_claude_response(DEGENERATE_REPLY)
+        brief, _ = generator.generate_brief([make_record()], stats)
+    assert stats["brief_fallback"] is True
+    assert "brief_backend" not in stats

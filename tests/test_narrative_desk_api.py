@@ -30,7 +30,10 @@ DRAFT_MD = (
     "## LEGISLATIVE BRIEF — Oregon closes the interim\n\n"
     "*Ten measures and four committees, verified locally.*\n\n"
     "The interim session moved appropriations bills to chapter.\n\n"
-    "### Executive Summary\n- **SB 5701** signed.\n"
+    "### Executive Summary\n- **SB 5701** signed.\n\n"
+    # Enough body to clear writer.BRIEF_MIN_WORDS (the shared publish guard).
+    + "The committee advanced the measure after a recorded vote, citing the fiscal note. " * 15
+    + "\n"
 )
 TEMPLATE = (
     "<html><head><title>NOTITIA CIVICA — Civic Intelligence Brief — X</title>"
