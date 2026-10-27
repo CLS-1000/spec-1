@@ -4,9 +4,9 @@
 # @status:   stable
 # @depends:  NONE
 
-"""Publication trigger evaluation for Metro Citizens Brief.
+"""Publication trigger evaluation for Metro Citizens Narrative.
 
-The brief is signal-gated, not calendar-gated. This module evaluates
+The narrative is signal-gated, not calendar-gated. This module evaluates
 accumulated signals and anomalies and decides whether publication should fire.
 """
 

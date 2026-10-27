@@ -4,7 +4,7 @@
 # @status:   stable
 # @depends:  NONE
 
-"""IssueBuilder — assembles Metro Citizens Brief issues.
+"""IssueBuilder — assembles Metro Citizens Narrative issues.
 
 Enforces neutrality gate on every section before accepting it.
 Produces markdown text. PDF and diagram are separate renderers.
@@ -78,7 +78,7 @@ class IssueBuilder:
         return Issue(
             issue_id=issue_id,
             issue_number=self.issue_number,
-            title=title or f"Metro Citizens Brief — Issue {self.issue_number}",
+            title=title or f"Metro Citizens Narrative — Issue {self.issue_number}",
             published_at=now,
             sections=list(self._sections),
             signal_ids=list(self._signal_ids),

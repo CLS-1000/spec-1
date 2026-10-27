@@ -4,7 +4,7 @@
 # @status:   stable
 # @depends:  NONE
 
-"""Markdown + PDF newsletter renderer for Metro Citizens Brief."""
+"""Markdown + PDF newsletter renderer for Metro Citizens Narrative."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ from cls_pdx1.models import Issue
 logger = logging.getLogger(__name__)
 
 _HEADER = """\
-# Metro Citizens Brief
+# Metro Citizens Narrative
 **Portland Metro Intelligence — PDX-1i**
 
 ---
@@ -25,8 +25,8 @@ _HEADER = """\
 
 _FOOTER = """\
 ---
-*Metro Citizens Brief is produced by SPEC-1 / PDX-1i. Every factual claim carries
-a source citation. Raw source links appear inline. This brief is for informational
+*Metro Citizens Narrative is produced by SPEC-1 / PDX-1i. Every factual claim carries
+a source citation. Raw source links appear inline. This narrative is for informational
 purposes only.*
 """
 
@@ -79,7 +79,7 @@ def write_pdf(issue: Issue, output_dir: Path) -> Optional[Path]:
     doc = SimpleDocTemplate(str(path), pagesize=LETTER)
     story = []
 
-    story.append(Paragraph("Metro Citizens Brief", styles["Title"]))
+    story.append(Paragraph("Metro Citizens Narrative", styles["Title"]))
     story.append(Paragraph(f"Issue #{issue.issue_number} — {issue.title}", styles["Heading1"]))
     story.append(Paragraph(f"Published: {issue.published_at.strftime('%B %d, %Y')}", styles["Normal"]))
     story.append(Spacer(1, 0.2 * inch))

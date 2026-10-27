@@ -289,7 +289,7 @@ class Anomaly(BaseModel):
 
 
 class IssueSection(BaseModel):
-    """A single section within a Metro Citizens Brief issue."""
+    """A single section within a Metro Citizens Narrative issue."""
 
     title: str
     body: str
@@ -301,7 +301,7 @@ class IssueSection(BaseModel):
 
 
 class Issue(BaseModel):
-    """A published Metro Citizens Brief issue."""
+    """A published Metro Citizens Narrative issue."""
 
     issue_id: str
     issue_number: int

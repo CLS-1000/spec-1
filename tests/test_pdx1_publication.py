@@ -128,7 +128,7 @@ class TestNewsletterRenderer:
 
     def test_markdown_contains_title(self):
         md = to_markdown(self._issue())
-        assert "Metro Citizens Brief" in md
+        assert "Metro Citizens Narrative" in md
         assert "Spring 2025 Update" in md
 
     def test_markdown_contains_section(self):
@@ -145,7 +145,7 @@ class TestNewsletterRenderer:
         assert path.exists()
         assert path.suffix == ".md"
         content = path.read_text()
-        assert "Metro Citizens Brief" in content
+        assert "Metro Citizens Narrative" in content
 
     def test_empty_issue_markdown(self):
         empty = Issue(

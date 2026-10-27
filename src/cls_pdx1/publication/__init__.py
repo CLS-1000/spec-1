@@ -1,4 +1,4 @@
-"""Metro Citizens Brief publication layer.
+"""Metro Citizens Narrative publication layer.
 
 Produces: markdown text, PDF (ReportLab), and D3 diagram snapshot per issue.
 """
