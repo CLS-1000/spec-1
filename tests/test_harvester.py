@@ -30,6 +30,7 @@ from spec1_core.signal.harvester import (
     _ILLEGAL_XML_RE,
 )
 from spec1_core.schemas.models import Signal
+from spec1_labels import SIGNAL_DATE_MISSING_KEY
 
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -323,6 +324,38 @@ def test_fetch_feed_yields_signals_with_correct_source():
         signals = list(fetch_feed("my_source", "https://example.com"))
     assert len(signals) == 1
     assert signals[0].source == "my_source"
+
+
+def test_fetch_feed_flags_undated_entry():
+    """An entry with no date is stamped now() but flagged, so the scorer can't treat it as fresh."""
+    fake_xml = """<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"><channel>
+  <item>
+    <title>Undated Article</title>
+    <link>https://example.com/undated</link>
+    <description>No pubDate on this item.</description>
+  </item>
+</channel></rss>"""
+    parsed = feedparser.parse(fake_xml)
+    with patch("spec1_core.signal.harvester._parse_feed", return_value=parsed):
+        signals = list(fetch_feed("my_source", "https://example.com"))
+    assert signals[0].metadata[SIGNAL_DATE_MISSING_KEY] is True
+
+
+def test_fetch_feed_dated_entry_not_flagged():
+    fake_xml = """<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"><channel>
+  <item>
+    <title>Dated Article</title>
+    <link>https://example.com/dated</link>
+    <pubDate>Mon, 26 Oct 2026 12:00:00 GMT</pubDate>
+  </item>
+</channel></rss>"""
+    parsed = feedparser.parse(fake_xml)
+    with patch("spec1_core.signal.harvester._parse_feed", return_value=parsed):
+        signals = list(fetch_feed("my_source", "https://example.com"))
+    assert SIGNAL_DATE_MISSING_KEY not in signals[0].metadata
+    assert signals[0].published_at.year == 2026
 
 
 # ─── harvest_all tests ────────────────────────────────────────────────────────
