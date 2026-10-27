@@ -32,7 +32,11 @@ from spec1_core.config.calibration import (
     VELOCITY_THRESHOLD,
     NOVELTY_THRESHOLD,
     VOLUME_TIERS,
+    COMPOSITE_WEIGHTS,
+    PRIORITY_ELEVATED,
+    PRIORITY_STANDARD,
 )
+from spec1_labels import SIGNAL_DATE_MISSING_KEY
 
 
 
@@ -70,9 +74,15 @@ def _score_volume(word_count: int) -> float:
 
 
 def _score_velocity(signal: Signal) -> float:
-    """Score velocity based on signal.velocity field or age."""
+    """Score velocity based on signal.velocity field or age.
+
+    Failure-first: an undated or unparseable published_at scores 0.0, below
+    VELOCITY_THRESHOLD, so the item is blocked rather than treated as fresh.
+    """
     if signal.velocity > 0:
         return signal.velocity
+    if (signal.metadata or {}).get(SIGNAL_DATE_MISSING_KEY):
+        return 0.0
     # Derive from age: fresh signals (< 24h) score higher
     try:
         if isinstance(signal.published_at, datetime):
@@ -94,7 +104,7 @@ def _score_velocity(signal: Signal) -> float:
         else:
             return 0.10
     except Exception:
-        return 0.50
+        return 0.0
 
 
 def _score_novelty(text: str, keywords: list[str]) -> tuple[float, int]:
@@ -113,9 +123,9 @@ def _score_novelty(text: str, keywords: list[str]) -> tuple[float, int]:
 
 
 def _priority(score: float) -> str:
-    if score >= 0.75:
+    if score >= PRIORITY_ELEVATED:
         return "ELEVATED"
-    elif score >= 0.55:
+    elif score >= PRIORITY_STANDARD:
         return "STANDARD"
     else:
         return "MONITOR"
@@ -154,11 +164,12 @@ def evaluate_gates(signal: Signal, parsed: ParsedSignal) -> dict:
 def composite_score(evaluation: dict) -> float:
     """Weighted composite of an ``evaluate_gates`` result, whether or not it passed."""
     g = evaluation["gates"]
+    w = COMPOSITE_WEIGHTS
     return round(
-        g["credibility"]["value"] * 0.30
-        + g["volume"]["value"] * 0.20
-        + g["velocity"]["value"] * 0.20
-        + g["novelty"]["score"] * 0.30,
+        g["credibility"]["value"] * w["credibility"]
+        + g["volume"]["value"] * w["volume"]
+        + g["velocity"]["value"] * w["velocity"]
+        + g["novelty"]["score"] * w["novelty"],
         4,
     )
 
