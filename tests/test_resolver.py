@@ -4,7 +4,7 @@
 # @status:   testing
 # @depends:  NONE
 
-"""Tests for cls_pdx1.resolver — EntityResolver name resolution."""
+"""Tests for titan.resolver — EntityResolver name resolution."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 
 import pytest
 
-from cls_pdx1.models import (
+from titan.models import (
     Entity,
     Jurisdiction,
     Official,
@@ -20,7 +20,7 @@ from cls_pdx1.models import (
     Sector,
     _make_id,
 )
-from cls_pdx1.resolver import EntityResolver
+from titan.resolver import EntityResolver
 
 
 def _prov() -> Provenance:

@@ -17,8 +17,8 @@ import pytest
 
 from cls_leg_jud import bridge
 from cls_osint.schemas import StateLegRecord
-from cls_pdx1.sources import olis
-from cls_pdx1.sources.olis import OlisAdapter
+from titan.sources import olis
+from titan.sources.olis import OlisAdapter
 from spec1_core.schemas.models import Outcome, Signal
 from spec1_labels import ANALYSIS_TIER_LLM_VERIFIED, ANALYSIS_TIER_RULE_BASED
 

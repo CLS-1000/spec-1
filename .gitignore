@@ -77,7 +77,7 @@ research/dossiers/
 # Generated coverage report — CI regenerates it, never commit
 coverage.xml
 
-# Scratch drafts superseded by src/cls_pdx1/ — do not resurrect at repo root
+# Scratch drafts superseded by src/titan/ (was src/cls_pdx1/) — do not resurrect at repo root
 /cls_pdx1/
 
 # Plan-mode leftovers and runtime analyst-loop output
