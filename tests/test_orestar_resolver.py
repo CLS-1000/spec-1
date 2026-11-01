@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from cls_pdx1.models import (
+from titan.models import (
     ConfidenceTier,
     EdgeType,
     Entity,
@@ -22,8 +22,8 @@ from cls_pdx1.models import (
     Sector,
     _make_id,
 )
-from cls_pdx1.resolver import EntityResolver
-from cls_pdx1.sources.orestar import OrestarAdapter
+from titan.resolver import EntityResolver
+from titan.sources.orestar import OrestarAdapter
 
 
 _CSV_SINGLE = """\

@@ -42,14 +42,14 @@ NAMESPACE_PATHS = {
     "cls_leads":        "src/cls_leads",
     "cls_leg_jud":      "src/cls_leg_jud",
     "cls_osint":        "src/cls_osint",
-    "cls_pdx1":         "src/cls_pdx1",
+    "titan":         "src/titan",
     "cls_psyop":        "src/cls_psyop",
     "cls_verdicts":     "src/cls_verdicts",
     "cls_world_brief":  "src/cls_world_brief",
     "tests":            "tests",
     "scripts":          "scripts",
     "tools":            "tools",
-    "citizens_source": "src/cls_pdx1",
+    "citizens_source": "src/titan",
 }
 
 def update_tags(filepath: Path, new_loc: str, new_status: str, dry_run: bool) -> tuple[bool, str, str]:

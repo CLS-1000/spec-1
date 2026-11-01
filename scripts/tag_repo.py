@@ -36,7 +36,7 @@ DOMAIN_RULES = [
     ("src/spec1_core",        "spec-1"),
     ("src/spec1_api",         "spec-1"),
     ("src/spec1_analytics",   "spec-1"),
-    ("src/cls_pdx1",          "citizens_source"),
+    ("src/titan",          "citizens_source"),
     ("src/cls_osint",         "spec-1"),
     ("src/cls_db",            "spec-1"),
     ("src/cls_analyst_loop",  "spec-1"),
@@ -47,7 +47,7 @@ DOMAIN_RULES = [
     ("src/cls_verdicts",      "spec-1"),
     ("src/cls_world_brief",   "spec-1"),
     # root-level
-    ("cls_pdx1/",             "citizens_source"),
+    ("titan/",             "citizens_source"),
     ("tests/",                "spec-1"),
     ("scripts/",              "spec-1"),
     ("tools/",                "spec-1"),

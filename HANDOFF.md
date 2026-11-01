@@ -27,7 +27,7 @@ cat ~/spec-1/DESIGN_INTENT.md
 Summarize these three before doing anything:
 1. Where the publication gate runs
 2. What neutrality means in this system
-3. The cls_pdx1 preservation rule
+3. The titan preservation rule
 
 ## CURRENT STATE
 
@@ -82,7 +82,7 @@ PYTHONPATH=src pytest tests/ -q --tb=short 2>&1 | tail -20
 - Gate thresholds — not modified by agents
 - Failure-first — log and continue, never crash
 - run_id — single source of truth per cycle
-- cls_pdx1 — never move, rename, squash, or restructure
+- titan — never move, rename, squash, or restructure
 
 ## DESIGN SYSTEM
 Black canvas · IBM Plex Mono · Courier Prime (data)
@@ -94,7 +94,7 @@ Severity = brightness not hue
 - Branch: develop only
 - No PRs · No new branches · Commit directly to develop
 - Read DESIGN_INTENT.md first, every session
-- Do not touch cls_pdx1 structure
+- Do not touch titan structure
 - Do not write to spec1_engine
 - Do not modify calibration values
 - Ask before any destructive operation

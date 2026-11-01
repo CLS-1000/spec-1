@@ -42,7 +42,7 @@ The durability story is obvious: source of truth is plain text on disk. If anyth
 
 ### 4. Test discipline as a calibration anchor
 
-The repo has 1,359 collected pytest tests across 37+ files — covering the engine, OSINT adapters, psyop detection, briefing, persistence, API, MCP server, operator tools, and recent additions (`[ cls_pdx1 ]`, LLM fallback, workspace case management). Test coverage isn't the story — what's in the tests is. Most of them encode a specific decision: this is the threshold we chose, this is the boundary case it has to handle, this is the failure mode we don't want to regress.
+The repo has 1,359 collected pytest tests across 37+ files — covering the engine, OSINT adapters, psyop detection, briefing, persistence, API, MCP server, operator tools, and recent additions (`[ titan ]`, LLM fallback, workspace case management). Test coverage isn't the story — what's in the tests is. Most of them encode a specific decision: this is the threshold we chose, this is the boundary case it has to handle, this is the failure mode we don't want to regress.
 
 When calibration changes, the tests check that nothing else moved silently. That's the property I needed — I can adjust thresholds without lying awake wondering what I broke.
 
@@ -62,7 +62,7 @@ When calibration changes, the tests check that nothing else moved silently. That
 
 After a few production cycles, every analysis point calling Claude exposed the system to a single-point-of-failure: API downtime, quota exhaustion, or cost spikes. The fix: a fallback chain — Claude Sonnet (primary) → Ollama (local, offline-capable) → rule-based templating (always available, zero latency). The infrastructure must be resilient without being smart. Fallback outputs are deliberately worse, and the analyst knows to weight them accordingly.
 
-### Regional intelligence (`[ cls_pdx1 ]`)
+### Regional intelligence (`[ titan ]`)
 
 I added a Portland metro module to test whether the same 4-gate framework applies to local political data. It does, but the data sources are different: OLIS (Oregon Legislature OData feed), ORESTAR (campaign finance), SEI (entity registry). Live data, not RSS.
 
