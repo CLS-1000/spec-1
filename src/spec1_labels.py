@@ -16,6 +16,11 @@ SOURCE_FARA          = "FARA"
 SOURCE_CONGRESSIONAL = "CONGRESSIONAL"
 SOURCE_NARRATIVE     = "NARRATIVE"
 
+# ── Signal metadata keys ──────────────────────────────────────────────────────
+# Set by the harvester when a feed entry carries no usable date; the scorer
+# then scores velocity 0.0 so an undated item is never treated as fresh.
+SIGNAL_DATE_MISSING_KEY = "date_missing"
+
 # ── Congressional record types ────────────────────────────────────────────────
 RECORD_BILL       = "BILL"
 RECORD_RESOLUTION = "RESOLUTION"

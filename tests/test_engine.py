@@ -1062,8 +1062,8 @@ def test_velocity_from_string_published_at():
     assert 0.0 <= result <= 1.0
 
 
-def test_velocity_exception_returns_default():
-    """_score_velocity returns 0.50 fallback on exception."""
+def test_velocity_exception_returns_zero():
+    """Failure-first: an unparseable published_at scores 0.0 and fails the velocity gate."""
     from spec1_core.signal.scorer import _score_velocity
     sig = Signal(
         signal_id="sig-exc-date",
@@ -1080,7 +1080,41 @@ def test_velocity_exception_returns_default():
         metadata={},
     )
     result = _score_velocity(sig)
-    assert result == pytest.approx(0.50)
+    assert result == pytest.approx(0.0)
+    from spec1_core.config.calibration import VELOCITY_THRESHOLD
+    assert result < VELOCITY_THRESHOLD
+
+
+def test_undated_signal_blocked_at_velocity_gate():
+    """Failure-first: a harvester-flagged undated signal scores 0.0 and is not an Opportunity."""
+    from spec1_core.signal.scorer import _score_velocity, evaluate_gates, score_signal
+    from spec1_labels import SIGNAL_DATE_MISSING_KEY
+    sig = _make_aged_signal(hours_ago=0)  # stamped now(), as the harvester does
+    sig.metadata[SIGNAL_DATE_MISSING_KEY] = True
+    assert _score_velocity(sig) == pytest.approx(0.0)
+    parsed = ParsedSignal(
+        signal_id=sig.signal_id,
+        cleaned_text="Federal investigation into classified intelligence leak and espionage. " * 40,
+        keywords=["investigation"],
+        entities=[],
+        language="en",
+        word_count=400,
+    )
+    ev = evaluate_gates(sig, parsed)
+    assert ev["failed_gates"] == ["velocity"]
+    assert score_signal(sig, parsed) is None
+
+
+def test_composite_and_priority_read_calibration():
+    """composite_score uses COMPOSITE_WEIGHTS, not a private copy of the weights."""
+    from spec1_core.config.calibration import COMPOSITE_WEIGHTS
+    from spec1_core.signal.scorer import composite_score
+    ev = {"gates": {
+        "credibility": {"value": 1.0}, "volume": {"value": 0.0},
+        "velocity": {"value": 0.0}, "novelty": {"score": 0.0},
+    }}
+    assert composite_score(ev) == pytest.approx(COMPOSITE_WEIGHTS["credibility"])
+    assert abs(sum(COMPOSITE_WEIGHTS.values()) - 1.0) < 1e-9
 
 
 def test_score_volume_fallback_unreachable():

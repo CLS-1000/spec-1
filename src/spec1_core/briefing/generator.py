@@ -394,6 +394,11 @@ def generate_brief(records: list[dict], cycle_stats: dict, mode: str = "standard
           Legislative mode is triggered by cls_legislative when that module
           feeds into the brief pipeline. Not yet auto-triggered by cycle.py.
     """
+    # Failure-first: with nothing past the gates there is nothing to synthesise.
+    # Never hand a model an empty record set — write the explicit empty brief.
+    if not records:
+        return _fallback_brief(cycle_stats, [], reason="no records cleared the gates this cycle"), ""
+
     try:
         sys_prompt, user_prompt = build_brief_prompts(records, cycle_stats, mode=mode)
         prompts_text = f"## SYSTEM PROMPT\n\n{sys_prompt.strip()}\n\n---\n\n## USER PROMPT\n\n{user_prompt.strip()}\n"

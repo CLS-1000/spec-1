@@ -1298,3 +1298,21 @@ def test_generate_brief_degenerate_claude_reply_uses_rules():
         brief, _ = generator.generate_brief([make_record()], stats)
     assert stats["brief_fallback"] is True
     assert "brief_backend" not in stats
+
+
+def test_generate_brief_empty_records_never_calls_a_model():
+    """Failure-first: no records → explicit rule-based empty brief, no model call."""
+    from spec1_core.briefing import generator
+    stats = make_cycle_stats(records_stored=0)
+    with patch.dict("os.environ", {"ANTHROPIC_API_KEY": "test-key"}), \
+            patch("spec1_core.llm.fallback_client.LocalTier3Client.chat") as local_chat, \
+            patch("anthropic.Anthropic") as MockClient:
+        brief, prompts = generator.generate_brief([], stats)
+    local_chat.assert_not_called()
+    MockClient.assert_not_called()
+    assert prompts == ""
+    assert stats["brief_fallback"] is True
+    assert "brief_backend" not in stats
+    assert "no records cleared the gates" in brief
+    assert "No signals cleared the elevated threshold this cycle." in brief
+    assert "No leads this cycle." in brief
