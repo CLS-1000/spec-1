@@ -329,8 +329,8 @@ def run_cycle(
         logger.error("Briefing step failed: %s — trying rule-based fallback", exc)
         stats["errors"].append(f"briefing:{exc}")
         try:
-            from spec1_engine.cls_world_brief.producer import produce_brief
-            from spec1_engine.cls_world_brief.formatter import to_markdown
+            from cls_world_brief.producer import produce_brief
+            from cls_world_brief.formatter import to_markdown
             if verbose:
                 print(f"\n[Briefing] Claude API unavailable — using rule-based brief fallback...")
             fallback_brief = produce_brief(stored_records)

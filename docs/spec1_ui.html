@@ -1,0 +1,1692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPEC-1 Intelligence Engine</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;600;700&family=Courier+Prime&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --background:     #000000;
+    --surface:        #0A0A0A;
+    --border:         #FFFFFF;
+    --text-primary:   #FFFFFF;
+    --text-secondary: #CCCCCC;
+    --text-muted:     #666666;
+    --mono: 'IBM Plex Mono', 'Courier Prime', monospace;
+  }
+
+  html, body { height: 100%; background: var(--background); color: var(--text-primary); font-family: var(--mono); font-size: 14px; }
+
+  #fol-bg { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+
+  /* ── Layout ── */
+  .layout { display: flex; flex-direction: column; height: 100vh; overflow: hidden; position: relative; z-index: 1; }
+
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 20px; height: 52px;
+    background: rgba(0,0,0,.94); border-bottom: 1px solid var(--border); flex-shrink: 0;
+  }
+  .logo { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 15px; letter-spacing: .08em; color: var(--text-primary); }
+  .logo-badge { border: 1px solid var(--border); color: var(--text-primary); font-size: 10px; font-weight: 700; padding: 2px 7px; letter-spacing: .14em; }
+  #api-status { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary); }
+  .status-geo { width: 8px; height: 8px; border: 1px solid var(--border); flex-shrink: 0; transform: rotate(45deg); transition: background .3s; }
+  .status-geo.online { background: var(--text-primary); }
+  .status-geo.offline { background: transparent; }
+  .start-btn { margin-left: 8px; padding: 3px 10px; background: transparent; border: 1px solid var(--text-muted); color: var(--text-muted); cursor: pointer; font-size: 11px; font-family: var(--mono); transition: border-color .15s, color .15s; letter-spacing: .06em; }
+  .start-btn:hover { border-color: var(--text-primary); color: var(--text-primary); }
+
+  .body { display: flex; flex: 1; overflow: hidden; }
+
+  /* ── Sidebar ── */
+  nav { width: 210px; flex-shrink: 0; background: rgba(10,10,10,.96); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow-y: auto; padding: 12px 0; }
+  .nav-section { padding: 8px 16px 4px; font-size: 10px; font-weight: 600; letter-spacing: .14em; color: var(--text-muted); text-transform: uppercase; }
+  .nav-item { display: flex; align-items: center; gap: 8px; padding: 8px 16px; cursor: pointer; font-size: 12px; color: var(--text-muted); border-left: 2px solid transparent; transition: all .12s; user-select: none; letter-spacing: .04em; }
+  .nav-item:hover { color: var(--text-secondary); }
+  .nav-item.active { color: var(--text-primary); border-left-color: var(--border); }
+  .nav-glyph { font-size: 11px; width: 18px; text-align: center; }
+  .nav-divider { height: 1px; background: rgba(255,255,255,.15); margin: 8px 16px; }
+
+  /* ── Main ── */
+  main { flex: 1; overflow-y: auto; padding: 24px 28px; }
+  .panel { display: none; max-width: 900px; }
+  .panel.active { display: block; }
+  .panel-title { font-size: 20px; font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 10px; letter-spacing: .06em; }
+  .panel-sub { color: var(--text-muted); font-size: 12px; margin-bottom: 24px; }
+
+  /* ── Spinner ── */
+  .loading { color: var(--text-muted); font-size: 12px; padding: 24px 0; display: flex; align-items: center; gap: 8px; letter-spacing: .06em; }
+  .loading::before { content: ''; display: inline-block; width: 14px; height: 14px; border: 1px solid rgba(255,255,255,.25); border-top-color: var(--text-primary); animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Brief ── */
+  .brief-wrap { background: rgba(10,10,10,.92); border: 1px solid var(--border); padding: 24px; }
+  .brief-id-row { display: flex; gap: 12px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
+  .tag { font-size: 11px; padding: 2px 8px; border: 1px solid rgba(255,255,255,.3); color: var(--text-secondary); letter-spacing: .04em; }
+
+  /* ── Markdown ── */
+  .md h1 { font-size: 18px; font-weight: 700; margin: 0 0 14px; line-height: 1.4; letter-spacing: .05em; }
+  .md h2 { font-size: 15px; font-weight: 600; margin: 22px 0 8px; color: var(--text-primary); letter-spacing: .06em; }
+  .md h3 { font-size: 12px; font-weight: 600; margin: 18px 0 6px; text-transform: uppercase; letter-spacing: .12em; color: var(--text-secondary); }
+  .md h4 { font-size: 13px; font-weight: 600; margin: 14px 0 5px; }
+  .md p  { line-height: 1.75; margin-bottom: 10px; color: var(--text-secondary); font-size: 13px; }
+  .md ul, .md ol { margin: 8px 0 10px 22px; }
+  .md li { line-height: 1.65; margin-bottom: 4px; color: var(--text-secondary); font-size: 13px; }
+  .md strong { font-weight: 700; color: var(--text-primary); }
+  .md em { font-style: italic; color: var(--text-secondary); }
+  .md code { font-family: 'Courier Prime', monospace; font-size: 11px; background: var(--background); border: 1px solid rgba(255,255,255,.3); padding: 1px 5px; color: var(--text-primary); }
+  .md blockquote { border-left: 2px solid rgba(255,255,255,.4); padding: 6px 14px; margin: 10px 0; color: var(--text-secondary); }
+  .md hr { border: none; border-top: 1px solid rgba(255,255,255,.15); margin: 18px 0; }
+
+  /* ── Archive cards ── */
+  .archive-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+  .archive-count { font-size: 11px; color: var(--text-muted); border: 1px solid rgba(255,255,255,.3); padding: 3px 10px; letter-spacing: .06em; }
+  .brief-cards { display: flex; flex-direction: column; gap: 10px; }
+  .brief-card { background: rgba(10,10,10,.92); border: 1px solid rgba(255,255,255,.3); padding: 16px 20px; cursor: pointer; transition: border-color .15s, background .15s; }
+  .brief-card:hover { border-color: var(--border); background: rgba(255,255,255,.04); }
+  .card-date { font-size: 11px; color: var(--text-primary); margin-bottom: 6px; letter-spacing: .1em; font-weight: 600; }
+  .card-headline { font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; line-height: 1.5; }
+  .card-meta { display: flex; gap: 14px; font-size: 11px; color: var(--text-muted); margin-top: 8px; }
+
+  /* ── Back button ── */
+  .back-btn { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 20px; padding: 6px 14px; background: transparent; border: 1px solid rgba(255,255,255,.3); color: var(--text-muted); cursor: pointer; font-size: 12px; transition: all .12s; letter-spacing: .05em; }
+  .back-btn:hover { border-color: var(--border); color: var(--text-primary); }
+
+  /* ── State box ── */
+  .state-box { background: rgba(10,10,10,.92); border: 1px solid rgba(255,255,255,.3); padding: 28px 24px; }
+  .state-box p { color: var(--text-muted); margin-bottom: 14px; line-height: 1.6; font-size: 13px; }
+  .state-box pre { background: var(--background); border: 1px solid rgba(255,255,255,.2); padding: 12px 14px; font-family: 'Courier Prime', monospace; font-size: 12px; color: var(--text-primary); overflow-x: auto; white-space: pre; margin-bottom: 10px; line-height: 1.65; }
+
+  /* ── Copy button ── */
+  .copy-btn { padding: 4px 12px; background: transparent; border: 1px solid rgba(255,255,255,.3); color: var(--text-muted); cursor: pointer; font-size: 11px; font-family: var(--mono); transition: all .12s; letter-spacing: .04em; }
+  .copy-btn:hover { border-color: var(--border); color: var(--text-primary); }
+  .copy-btn.copied { border-color: var(--border); color: var(--text-primary); }
+
+  /* ── Local Access ── */
+  .cmd-grid { display: flex; flex-direction: column; gap: 16px; }
+  .cmd-block { background: rgba(10,10,10,.92); border: 1px solid rgba(255,255,255,.3); overflow: hidden; }
+  .cmd-label { padding: 8px 16px; background: rgba(0,0,0,.85); border-bottom: 1px solid rgba(255,255,255,.2); font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .12em; color: var(--text-muted); }
+  .cmd-body { padding: 14px 16px; }
+  .cmd-body pre { font-family: 'Courier Prime', monospace; font-size: 12px; color: var(--text-primary); overflow-x: auto; white-space: pre; line-height: 1.7; margin-bottom: 10px; }
+
+  /* ── Filter bar ── */
+  .filter-bar { display: flex; gap: 10px; margin-bottom: 18px; align-items: center; flex-wrap: wrap; }
+  .filter-bar label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; color: var(--text-muted); }
+  .filter-input, .filter-select {
+    background: var(--background); color: var(--text-primary);
+    border: 1px solid rgba(255,255,255,.3);
+    padding: 5px 10px; font-family: var(--mono); font-size: 12px;
+    outline: none; transition: border-color .12s;
+  }
+  .filter-input:focus, .filter-select:focus { border-color: var(--border); }
+  .filter-select option { background: var(--surface); }
+  .filter-btn { padding: 5px 14px; background: transparent; border: 1px solid rgba(255,255,255,.3); color: var(--text-muted); cursor: pointer; font-family: var(--mono); font-size: 11px; transition: all .12s; letter-spacing: .04em; }
+  .filter-btn:hover { border-color: var(--border); color: var(--text-primary); }
+
+  /* ── Data table ── */
+  .table-wrap { overflow-x: auto; }
+  .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .data-table th { text-align: left; padding: 7px 12px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; color: var(--text-muted); border-bottom: 1px solid rgba(255,255,255,.2); white-space: nowrap; }
+  .data-table td { padding: 8px 12px; color: var(--text-secondary); border-bottom: 1px solid rgba(255,255,255,.06); vertical-align: middle; }
+  .data-table tr:hover td { background: rgba(255,255,255,.03); }
+  .mono-id { font-size: 10px; color: var(--text-muted); font-family: 'Courier Prime', monospace; }
+  .cell-trunc { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* ── Confidence bar ── */
+  .conf-wrap { display: flex; align-items: center; gap: 6px; }
+  .conf-track { width: 50px; height: 3px; background: rgba(255,255,255,.1); flex-shrink: 0; }
+  .conf-fill { height: 100%; background: var(--text-primary); }
+  .conf-val { font-size: 11px; color: var(--text-secondary); min-width: 32px; font-family: 'Courier Prime', monospace; }
+
+  /* ── Badges ── */
+  .badge { font-size: 10px; padding: 1px 6px; border: 1px solid rgba(255,255,255,.25); color: rgba(255,255,255,.6); letter-spacing: .06em; white-space: nowrap; display: inline-block; }
+  .badge-critical, .badge-high-risk, .badge-corroborated { border-color: #fff; color: #fff; }
+  .badge-high, .badge-escalate    { border-color: rgba(255,255,255,.7); color: rgba(255,255,255,.9); }
+  .badge-medium, .badge-medium-risk, .badge-investigate { border-color: rgba(255,255,255,.45); color: rgba(255,255,255,.7); }
+  .badge-low, .badge-low-risk, .badge-monitor, .badge-clean { border-color: rgba(255,255,255,.2); color: rgba(255,255,255,.4); }
+  .badge-archive { border-color: rgba(255,255,255,.1); color: rgba(255,255,255,.25); }
+
+  /* ── Pagination ── */
+  .pager { display: flex; align-items: center; gap: 10px; margin-top: 16px; font-size: 12px; color: var(--text-muted); }
+  .page-btn { padding: 3px 10px; background: transparent; border: 1px solid rgba(255,255,255,.25); color: var(--text-muted); cursor: pointer; font-family: var(--mono); font-size: 11px; transition: all .12s; }
+  .page-btn:hover:not(:disabled) { border-color: var(--border); color: var(--text-primary); }
+  .page-btn:disabled { opacity: .3; cursor: not-allowed; }
+
+  /* ── Forms ── */
+  .form-grid { display: flex; flex-direction: column; gap: 14px; max-width: 520px; }
+  .form-field {}
+  .form-label { display: block; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; color: var(--text-muted); margin-bottom: 5px; }
+  .form-input, .form-select, .form-textarea { width: 100%; background: var(--background); color: var(--text-primary); border: 1px solid rgba(255,255,255,.3); padding: 8px 12px; font-family: var(--mono); font-size: 12px; outline: none; transition: border-color .12s; }
+  .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--border); }
+  .form-select option { background: var(--surface); }
+  .form-textarea { resize: vertical; min-height: 80px; }
+  .form-submit { padding: 7px 20px; background: transparent; border: 1px solid var(--border); color: var(--text-primary); cursor: pointer; font-family: var(--mono); font-size: 12px; letter-spacing: .06em; transition: background .12s; }
+  .form-submit:hover { background: rgba(255,255,255,.06); }
+  .form-submit:disabled { opacity: .4; cursor: not-allowed; }
+  .form-msg { font-size: 12px; color: var(--text-muted); margin-top: 8px; min-height: 18px; }
+  .form-msg.ok  { color: var(--text-primary); }
+  .form-msg.err { color: rgba(255,100,100,.9); }
+
+  /* ── Stats grid ── */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-bottom: 20px; }
+  .stat-box { border: 1px solid rgba(255,255,255,.25); padding: 14px 16px; }
+  .stat-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 5px; }
+  .stat-value { font-size: 22px; font-weight: 700; color: var(--text-primary); line-height: 1; }
+  .stat-sub { font-size: 10px; color: var(--text-muted); margin-top: 4px; }
+
+  /* ── Lead cards ── */
+  .lead-card { border: 1px solid rgba(255,255,255,.25); padding: 16px 20px; margin-bottom: 10px; background: rgba(10,10,10,.9); transition: border-color .12s; }
+  .lead-card:hover { border-color: rgba(255,255,255,.6); }
+  .lead-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+  .lead-title { font-size: 13px; font-weight: 600; color: var(--text-primary); line-height: 1.4; }
+  .lead-summary { font-size: 12px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 10px; }
+  .lead-actions { display: flex; flex-direction: column; gap: 3px; margin-bottom: 10px; }
+  .lead-action-item { font-size: 11px; color: var(--text-muted); padding-left: 14px; position: relative; }
+  .lead-action-item::before { content: '▸'; position: absolute; left: 0; color: rgba(255,255,255,.3); }
+  .lead-meta { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 11px; color: var(--text-muted); }
+
+  /* ── Psyop cards ── */
+  .psyop-card { border: 1px solid rgba(255,255,255,.2); padding: 16px 20px; margin-bottom: 10px; background: rgba(10,10,10,.9); }
+  .psyop-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .psyop-score-display { display: flex; align-items: center; gap: 8px; }
+  .psyop-score-val { font-size: 20px; font-weight: 700; font-family: 'Courier Prime', monospace; }
+  .psyop-excerpt { font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-bottom: 8px; font-style: italic; }
+  .psyop-patterns { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+  .psyop-pattern { font-size: 10px; padding: 2px 7px; border: 1px solid rgba(255,255,255,.15); color: rgba(255,255,255,.5); letter-spacing: .04em; }
+  .psyop-meta { font-size: 11px; color: var(--text-muted); }
+
+  /* ── Calibration ── */
+  .cal-section { margin-bottom: 28px; }
+  .cal-section-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; color: var(--text-muted); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,.1); }
+  .cal-overview { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin-bottom: 20px; }
+  .cal-kv { border: 1px solid rgba(255,255,255,.15); padding: 10px 14px; }
+  .cal-kv-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 4px; }
+  .cal-kv-value { font-size: 18px; font-weight: 700; color: var(--text-primary); }
+  .cal-bucket-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,.05); font-size: 12px; color: var(--text-secondary); }
+  .cal-bucket-label { width: 150px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cal-bucket-count { width: 40px; flex-shrink: 0; text-align: right; color: var(--text-muted); font-size: 11px; }
+  .cal-bucket-bar { flex: 1; height: 3px; background: rgba(255,255,255,.08); }
+  .cal-bucket-fill { height: 100%; background: rgba(255,255,255,.55); transition: width .3s; }
+  .cal-bucket-acc { width: 46px; flex-shrink: 0; text-align: right; font-family: 'Courier Prime', monospace; font-size: 11px; }
+
+  /* ── Verdict colors ── */
+  .v-correct   { color: #fff; }
+  .v-partial   { color: rgba(255,255,255,.7); }
+  .v-incorrect { color: rgba(255,255,255,.4); }
+  .v-unclear   { color: rgba(255,255,255,.25); }
+
+  /* ── Section divider ── */
+  .section-sep { height: 1px; background: rgba(255,255,255,.1); margin: 22px 0; }
+  .section-heading { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .12em; color: var(--text-muted); margin-bottom: 14px; }
+
+  /* ── Cycle panel ── */
+  .cycle-run-box { border: 1px solid rgba(255,255,255,.25); padding: 20px 24px; margin-bottom: 20px; }
+  .cycle-status-box { border: 1px solid rgba(255,255,255,.2); padding: 20px 24px; }
+  .run-btn { padding: 8px 24px; background: transparent; border: 1px solid var(--border); color: var(--text-primary); cursor: pointer; font-family: var(--mono); font-size: 13px; letter-spacing: .08em; transition: background .12s; }
+  .run-btn:hover:not(:disabled) { background: rgba(255,255,255,.07); }
+  .run-btn:disabled { opacity: .4; cursor: not-allowed; }
+  .run-msg { font-size: 12px; color: var(--text-muted); margin-top: 10px; min-height: 18px; }
+  .run-msg.running { color: var(--text-secondary); }
+  .run-msg.done    { color: var(--text-primary); }
+  .run-msg.err     { color: rgba(255,100,100,.9); }
+
+  /* ── Workbench panel ── */
+  .wb-bar { display: flex; flex-wrap: wrap; gap: 18px; padding: 14px 16px; border: 1px solid rgba(255,255,255,.25); margin-bottom: 18px; font-size: 11px; color: var(--text-muted); letter-spacing: .04em; }
+  .wb-bar b { color: var(--text-primary); font-weight: 600; }
+  .wb-bar .wb-pill { padding: 2px 8px; border: 1px solid rgba(255,255,255,.3); color: var(--text-secondary); }
+  .wb-section { margin-bottom: 28px; }
+  .wb-section-title { font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--text-primary); border-bottom: 1px solid rgba(255,255,255,.3); padding-bottom: 6px; margin-bottom: 14px; }
+  .wb-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 12px; line-height: 1.6; }
+  .wb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+  .wb-card { background: rgba(10,10,10,.92); border: 1px solid rgba(255,255,255,.25); padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+  .wb-card .wb-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .wb-card .wb-name { font-size: 12px; font-weight: 600; color: var(--text-primary); letter-spacing: .04em; }
+  .wb-card .wb-meta { font-size: 10px; color: var(--text-muted); letter-spacing: .04em; }
+  .wb-card .wb-desc { font-size: 11px; color: var(--text-secondary); line-height: 1.55; }
+  .wb-card .wb-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+  .wb-btn { padding: 3px 10px; font-size: 11px; font-family: var(--mono); border: 1px solid rgba(255,255,255,.3); background: transparent; color: var(--text-muted); cursor: pointer; letter-spacing: .04em; transition: all .12s; }
+  .wb-btn:hover:not(:disabled) { color: var(--text-primary); border-color: var(--border); }
+  .wb-btn:disabled { opacity: .35; cursor: not-allowed; }
+  .wb-btn.run { color: var(--text-primary); }
+  .wb-btn.copied { color: var(--text-primary); border-color: var(--border); }
+  .wb-msg { font-size: 10px; color: var(--text-muted); min-height: 14px; }
+  .wb-msg.running { color: var(--text-secondary); }
+  .wb-msg.done    { color: var(--text-primary); }
+  .wb-msg.err     { color: rgba(255,100,100,.9); }
+  .wb-cmd { font-family: 'Courier Prime', monospace; font-size: 11px; color: var(--text-primary); background: var(--background); border: 1px solid rgba(255,255,255,.2); padding: 4px 8px; overflow-x: auto; white-space: nowrap; }
+  .wb-tag { display: inline-block; font-size: 9px; padding: 1px 6px; border: 1px solid rgba(255,255,255,.3); color: var(--text-secondary); letter-spacing: .06em; margin-right: 4px; }
+  .wb-tag.method-GET  { color: #9ae6b4; border-color: rgba(154,230,180,.45); }
+  .wb-tag.method-POST { color: #fbd38d; border-color: rgba(251,211,141,.45); }
+  .wb-tag.model       { color: var(--text-secondary); border-color: rgba(255,255,255,.4); }
+  .wb-env-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  .wb-env-table th, .wb-env-table td { padding: 6px 10px; text-align: left; border-bottom: 1px solid rgba(255,255,255,.12); }
+  .wb-env-table th { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .1em; font-weight: 600; }
+  .wb-env-table td { color: var(--text-secondary); vertical-align: top; }
+  .wb-env-table td.k { color: var(--text-primary); font-weight: 600; white-space: nowrap; }
+  details.wb-fold { margin-top: 6px; }
+  details.wb-fold > summary { cursor: pointer; font-size: 11px; color: var(--text-muted); padding: 6px 0; letter-spacing: .04em; }
+  details.wb-fold[open] > summary { color: var(--text-primary); }
+</style>
+</head>
+<body>
+
+<!-- Flower of Life background -->
+<svg id="fol-bg" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <defs>
+    <pattern id="fol-pattern" patternUnits="userSpaceOnUse" width="80" height="69.28">
+      <circle cx="0"   cy="0"     r="40" fill="none" stroke="white" stroke-width="0.6"/>
+      <circle cx="40"  cy="0"     r="40" fill="none" stroke="white" stroke-width="0.6"/>
+      <circle cx="80"  cy="0"     r="40" fill="none" stroke="white" stroke-width="0.6"/>
+      <circle cx="-20" cy="34.64" r="40" fill="none" stroke="white" stroke-width="0.6"/>
+      <circle cx="20"  cy="34.64" r="40" fill="none" stroke="white" stroke-width="0.6"/>
+      <circle cx="60"  cy="34.64" r="40" fill="none" stroke="white" stroke-width="0.6"/>
+      <circle cx="100" cy="34.64" r="40" fill="none" stroke="white" stroke-width="0.6"/>
+      <circle cx="0"   cy="69.28" r="40" fill="none" stroke="white" stroke-width="0.6"/>
+      <circle cx="40"  cy="69.28" r="40" fill="none" stroke="white" stroke-width="0.6"/>
+      <circle cx="80"  cy="69.28" r="40" fill="none" stroke="white" stroke-width="0.6"/>
+    </pattern>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#fol-pattern)" opacity="0.05"/>
+</svg>
+
+<div class="layout">
+
+  <!-- ── Header ── -->
+  <header>
+    <div class="logo">
+      <span class="logo-badge">S1</span>
+      SPEC-1 Intelligence Engine
+    </div>
+    <div id="api-status">
+      <span class="status-geo offline" id="status-dot"></span>
+      <span id="status-text">Checking API…</span>
+    </div>
+  </header>
+
+  <div class="body">
+
+    <!-- ── Sidebar ── -->
+    <nav>
+      <div class="nav-section">Intelligence</div>
+      <div class="nav-item active" data-panel="panel-brief" onclick="showPanel('panel-brief')">
+        <span class="nav-glyph">◈</span> Daily Brief
+      </div>
+      <div class="nav-item" data-panel="panel-archive" onclick="showPanel('panel-archive')">
+        <span class="nav-glyph">◻</span> Archive
+      </div>
+
+      <div class="nav-divider"></div>
+      <div class="nav-section">Signals</div>
+      <div class="nav-item" data-panel="panel-signals" onclick="showPanel('panel-signals')">
+        <span class="nav-glyph">⊹</span> Raw Signals
+      </div>
+      <div class="nav-item" data-panel="panel-intel" onclick="showPanel('panel-intel')">
+        <span class="nav-glyph">▣</span> Intel Records
+      </div>
+      <div class="nav-item" data-panel="panel-leads" onclick="showPanel('panel-leads')">
+        <span class="nav-glyph">◈</span> Leads
+      </div>
+
+      <div class="nav-divider"></div>
+      <div class="nav-section">Analysis</div>
+      <div class="nav-item" data-panel="panel-psyop" onclick="showPanel('panel-psyop')">
+        <span class="nav-glyph">⊗</span> Psyop
+      </div>
+      <div class="nav-item" data-panel="panel-fara" onclick="showPanel('panel-fara')">
+        <span class="nav-glyph">⊡</span> FARA
+      </div>
+
+      <div class="nav-divider"></div>
+      <div class="nav-section">Operations</div>
+      <div class="nav-item" data-panel="panel-cycle" onclick="showPanel('panel-cycle')">
+        <span class="nav-glyph">▷</span> Cycle
+      </div>
+      <div class="nav-item" data-panel="panel-verdicts" onclick="showPanel('panel-verdicts')">
+        <span class="nav-glyph">◻</span> Verdicts
+      </div>
+      <div class="nav-item" data-panel="panel-calibration" onclick="showPanel('panel-calibration')">
+        <span class="nav-glyph">⊞</span> Calibration
+      </div>
+
+      <div class="nav-divider"></div>
+      <div class="nav-section">Tools</div>
+      <div class="nav-item" data-panel="panel-workbench" onclick="showPanel('panel-workbench')">
+        <span class="nav-glyph">⌬</span> Workbench
+      </div>
+      <div class="nav-item" data-panel="panel-local" onclick="showPanel('panel-local')">
+        <span class="nav-glyph">▷</span> Local Access
+      </div>
+    </nav>
+
+    <!-- ── Main content ── -->
+    <main>
+
+      <!-- ─────────────────────────── Daily Brief ─────────────────────────── -->
+      <div class="panel active" id="panel-brief">
+        <div class="panel-title">◈ Daily Brief</div>
+        <div class="panel-sub">Latest world intelligence brief</div>
+        <div id="brief-content"><div class="loading">Loading latest brief…</div></div>
+      </div>
+
+      <!-- ─────────────────────────── Archive ─────────────────────────────── -->
+      <div class="panel" id="panel-archive">
+        <div class="panel-title">◻ Brief Archive</div>
+        <div class="panel-sub">All generated briefs, newest first — click a card to read</div>
+        <div id="archive-content"><div class="loading">Loading archive…</div></div>
+      </div>
+
+      <!-- ─────────────────────────── Raw Signals ─────────────────────────── -->
+      <div class="panel" id="panel-signals">
+        <div class="panel-title">⊹ Raw Signals</div>
+        <div class="panel-sub">OSINT signals from all adapters (RSS, FARA, Congressional, Narrative)</div>
+        <div class="filter-bar">
+          <label>Source type</label>
+          <input id="sig-source" class="filter-input" placeholder="e.g. RSS" style="width:130px">
+          <button class="filter-btn" onclick="loadSignals(0)">Filter</button>
+          <button class="filter-btn" onclick="document.getElementById('sig-source').value='';loadSignals(0)">Clear</button>
+        </div>
+        <div id="signals-content"><div class="loading">Loading signals…</div></div>
+      </div>
+
+      <!-- ─────────────────────────── Intel Records ───────────────────────── -->
+      <div class="panel" id="panel-intel">
+        <div class="panel-title">▣ Intel Records</div>
+        <div class="panel-sub">Analyzed intelligence records scored through the 4-gate pipeline</div>
+        <div class="filter-bar">
+          <label>Classification</label>
+          <select id="intel-cls" class="filter-select" style="width:160px">
+            <option value="">All</option>
+            <option value="CORROBORATED">CORROBORATED</option>
+            <option value="ESCALATE">ESCALATE</option>
+            <option value="INVESTIGATE">INVESTIGATE</option>
+            <option value="MONITOR">MONITOR</option>
+            <option value="ARCHIVE">ARCHIVE</option>
+          </select>
+          <label>Min confidence</label>
+          <input id="intel-conf" class="filter-input" type="number" min="0" max="1" step="0.05" value="0" style="width:80px">
+          <button class="filter-btn" onclick="loadIntel(0)">Filter</button>
+          <button class="filter-btn" onclick="document.getElementById('intel-cls').value='';document.getElementById('intel-conf').value='0';loadIntel(0)">Clear</button>
+        </div>
+        <div id="intel-content"><div class="loading">Loading intelligence records…</div></div>
+      </div>
+
+      <!-- ─────────────────────────── Leads ───────────────────────────────── -->
+      <div class="panel" id="panel-leads">
+        <div class="panel-title">◈ Leads</div>
+        <div class="panel-sub">Actionable intelligence leads generated from verified records</div>
+        <div class="filter-bar">
+          <label>Priority</label>
+          <select id="leads-pri" class="filter-select" style="width:130px">
+            <option value="">All</option>
+            <option value="CRITICAL">CRITICAL</option>
+            <option value="HIGH">HIGH</option>
+            <option value="MEDIUM">MEDIUM</option>
+            <option value="LOW">LOW</option>
+          </select>
+          <label>Category</label>
+          <select id="leads-cat" class="filter-select" style="width:150px">
+            <option value="">All</option>
+            <option value="military">MILITARY</option>
+            <option value="cyber">CYBER</option>
+            <option value="geopolitical">GEOPOLITICAL</option>
+            <option value="fara">FARA</option>
+            <option value="psyop">PSYOP</option>
+            <option value="quant">QUANT</option>
+          </select>
+          <button class="filter-btn" onclick="loadLeads(0)">Filter</button>
+          <button class="filter-btn" onclick="document.getElementById('leads-pri').value='';document.getElementById('leads-cat').value='';loadLeads(0)">Clear</button>
+        </div>
+        <div id="leads-content"><div class="loading">Loading leads…</div></div>
+      </div>
+
+      <!-- ─────────────────────────── Psyop ───────────────────────────────── -->
+      <div class="panel" id="panel-psyop">
+        <div class="panel-title">⊗ Psyop Detection</div>
+        <div class="panel-sub">Psychological-operation pattern scoring and evidence chains</div>
+
+        <div class="section-heading">Analyse Text</div>
+        <div class="state-box" style="margin-bottom:22px;">
+          <div class="form-grid">
+            <div class="form-field">
+              <label class="form-label">Text to analyse</label>
+              <textarea id="psyop-text" class="form-textarea" rows="4" placeholder="Paste a news headline, social media post, or narrative text…"></textarea>
+            </div>
+            <div>
+              <button class="form-submit" id="psyop-submit-btn" onclick="analysePsyopText()">Analyse for Psyop Patterns</button>
+              <div class="form-msg" id="psyop-analyse-msg"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-sep"></div>
+        <div class="section-heading">Stored Scores</div>
+        <div class="filter-bar">
+          <label>Classification</label>
+          <select id="psyop-cls" class="filter-select" style="width:160px">
+            <option value="">All</option>
+            <option value="HIGH_RISK">HIGH_RISK</option>
+            <option value="MEDIUM_RISK">MEDIUM_RISK</option>
+            <option value="LOW_RISK">LOW_RISK</option>
+            <option value="CLEAN">CLEAN</option>
+          </select>
+          <button class="filter-btn" onclick="loadPsyop(0)">Filter</button>
+          <button class="filter-btn" onclick="document.getElementById('psyop-cls').value='';loadPsyop(0)">Clear</button>
+        </div>
+        <div id="psyop-content"><div class="loading">Loading psyop scores…</div></div>
+      </div>
+
+      <!-- ─────────────────────────── FARA ────────────────────────────────── -->
+      <div class="panel" id="panel-fara">
+        <div class="panel-title">⊡ FARA Records</div>
+        <div class="panel-sub">Foreign Agents Registration Act filings from the OSINT store</div>
+        <div class="filter-bar">
+          <label>Country</label>
+          <input id="fara-country" class="filter-input" placeholder="e.g. Russia" style="width:140px">
+          <label>Registrant</label>
+          <input id="fara-reg" class="filter-input" placeholder="Name fragment" style="width:160px">
+          <button class="filter-btn" onclick="loadFara(0)">Filter</button>
+          <button class="filter-btn" onclick="document.getElementById('fara-country').value='';document.getElementById('fara-reg').value='';loadFara(0)">Clear</button>
+        </div>
+        <div id="fara-content"><div class="loading">Loading FARA records…</div></div>
+      </div>
+
+      <!-- ─────────────────────────── Cycle ───────────────────────────────── -->
+      <div class="panel" id="panel-cycle">
+        <div class="panel-title">▷ Cycle</div>
+        <div class="panel-sub">Trigger and monitor the full SPEC-1 intelligence pipeline</div>
+
+        <div class="cycle-run-box">
+          <div class="section-heading">Run Cycle</div>
+          <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px;line-height:1.6;">
+            Harvest signals → parse → 4-gate score → investigate → verify → store. Runs synchronously; may take 30–90 seconds depending on feed volume.
+          </p>
+          <button class="run-btn" id="cycle-run-btn" onclick="runCycle()">▷ Run Intelligence Cycle</button>
+          <div class="run-msg" id="cycle-run-msg"></div>
+        </div>
+
+        <div class="section-heading" style="margin-top:20px;">Last Run Status</div>
+        <div id="cycle-status-content"><div class="loading">Loading cycle status…</div></div>
+      </div>
+
+      <!-- ─────────────────────────── Verdicts ────────────────────────────── -->
+      <div class="panel" id="panel-verdicts">
+        <div class="panel-title">◻ Verdicts</div>
+        <div class="panel-sub">Human ground truth on intelligence records — Phase 1 calibration feedback</div>
+
+        <div class="section-heading">File a Verdict</div>
+        <div class="state-box" style="margin-bottom:22px;">
+          <div class="form-grid">
+            <div class="form-field">
+              <label class="form-label">Record ID</label>
+              <input id="v-record-id" class="form-input" placeholder="rec_… or full record_id">
+            </div>
+            <div class="form-field">
+              <label class="form-label">Verdict</label>
+              <select id="v-verdict" class="form-select">
+                <option value="correct">correct — assessment was right</option>
+                <option value="partial">partial — partially right</option>
+                <option value="incorrect">incorrect — assessment was wrong</option>
+                <option value="unclear">unclear — cannot determine</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label class="form-label">Reviewer (optional)</label>
+              <input id="v-reviewer" class="form-input" placeholder="analyst handle or name">
+            </div>
+            <div class="form-field">
+              <label class="form-label">Notes (optional)</label>
+              <textarea id="v-notes" class="form-textarea" rows="3" placeholder="Why this verdict? What evidence?"></textarea>
+            </div>
+            <div>
+              <button class="form-submit" id="v-submit-btn" onclick="submitVerdict()">Submit Verdict</button>
+              <div class="form-msg" id="v-msg"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-sep"></div>
+        <div class="section-heading">Verdict Log</div>
+        <div class="filter-bar">
+          <label>Filter record</label>
+          <input id="vf-record" class="filter-input" placeholder="record_id" style="width:200px">
+          <label>Verdict</label>
+          <select id="vf-verdict" class="filter-select" style="width:130px">
+            <option value="">All</option>
+            <option value="correct">correct</option>
+            <option value="partial">partial</option>
+            <option value="incorrect">incorrect</option>
+            <option value="unclear">unclear</option>
+          </select>
+          <button class="filter-btn" onclick="loadVerdicts(0)">Filter</button>
+          <button class="filter-btn" onclick="document.getElementById('vf-record').value='';document.getElementById('vf-verdict').value='';loadVerdicts(0)">Clear</button>
+        </div>
+        <div id="verdicts-content"><div class="loading">Loading verdicts…</div></div>
+      </div>
+
+      <!-- ─────────────────────────── Calibration ─────────────────────────── -->
+      <div class="panel" id="panel-calibration">
+        <div class="panel-title">⊞ Calibration</div>
+        <div class="panel-sub">Accuracy drift surfacing across confidence, source weight, and classification — descriptive only, never auto-applied</div>
+        <div id="calibration-content"><div class="loading">Loading calibration report…</div></div>
+      </div>
+
+      <!-- ─────────────────────────── Workbench ────────────────────────────── -->
+      <div class="panel" id="panel-workbench">
+        <div class="panel-title">⌬ Workbench</div>
+        <div class="panel-sub">Every executable action in SPEC-1 — Make targets, API endpoints, MCP tools, models, env vars. Run via the API when reachable; copy commands when terminal-only. See <a href="docs/ACCESS_AUDIT.md" style="color:var(--text-secondary);">ACCESS_AUDIT.md</a> and <a href="docs/SHOP_MANUAL.md" style="color:var(--text-secondary);">SHOP_MANUAL.md</a>.</div>
+
+        <div class="wb-bar" id="wb-status-bar">
+          <span><b>API:</b> <span class="wb-pill" id="wb-api-state">checking…</span></span>
+          <span><b>Endpoints:</b> <span class="wb-pill">41</span></span>
+          <span><b>MCP tools:</b> <span class="wb-pill">15</span></span>
+          <span><b>Make targets:</b> <span class="wb-pill">15</span></span>
+          <span><b>Models:</b> <span class="wb-pill">3 Anthropic IDs</span></span>
+          <span><b>Env keys:</b> <span class="wb-pill">33</span></span>
+        </div>
+
+        <!-- Pipeline -->
+        <div class="wb-section">
+          <div class="wb-section-title">Pipeline</div>
+          <div class="wb-sub">The canonical cycle. Runs automatically on cron; trigger manually here.</div>
+          <div class="wb-grid">
+            <div class="wb-card">
+              <div class="wb-head"><span class="wb-name">Run intelligence cycle</span><span class="wb-meta">POST /cycle/run</span></div>
+              <div class="wb-desc">harvest → parse → 4-gate score → investigate → verify → store. 30–90s.</div>
+              <div class="wb-btns">
+                <button class="wb-btn run" onclick="wbApi(this, 'POST', '/cycle/run', {})">Run</button>
+                <button class="wb-btn" onclick="copyText(this, 'curl -s -X POST http://127.0.0.1:8000/cycle/run -H \\'Content-Type: application/json\\' -d \\'{}\\'')">Copy curl</button>
+                <button class="wb-btn" onclick="copyText(this, 'cd ~/spec-1 && make cycle')">Copy make</button>
+              </div>
+              <div class="wb-msg" data-msg></div>
+            </div>
+            <div class="wb-card">
+              <div class="wb-head"><span class="wb-name">Cycle status</span><span class="wb-meta">GET /cycle/status</span></div>
+              <div class="wb-desc">Last run metadata: run_id, started_at, finished_at, counts.</div>
+              <div class="wb-btns">
+                <button class="wb-btn run" onclick="wbApi(this, 'GET', '/cycle/status')">Fetch</button>
+                <button class="wb-btn" onclick="copyText(this, 'curl -s http://127.0.0.1:8000/cycle/status | jq')">Copy curl</button>
+              </div>
+              <div class="wb-msg" data-msg></div>
+            </div>
+            <div class="wb-card">
+              <div class="wb-head"><span class="wb-name">Ingest a signal</span><span class="wb-meta">POST /signal</span></div>
+              <div class="wb-desc">Manually submit a Signal payload for ingestion outside the cron path.</div>
+              <div class="wb-btns">
+                <button class="wb-btn" onclick="copyText(this, 'curl -s -X POST http://127.0.0.1:8000/signal -H \\'Content-Type: application/json\\' -d \\'{...}\\'')">Copy curl</button>
+              </div>
+            </div>
+            <div class="wb-card">
+              <div class="wb-head"><span class="wb-name">Bulk-ingest signals</span><span class="wb-meta">POST /signals/ingest</span></div>
+              <div class="wb-desc">Async bulk ingest. Returns 202.</div>
+              <div class="wb-btns">
+                <button class="wb-btn" onclick="copyText(this, 'curl -s -X POST http://127.0.0.1:8000/signals/ingest -H \\'Content-Type: application/json\\' -d \\'{...}\\'')">Copy curl</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Operator Tools -->
+        <div class="wb-section">
+          <div class="wb-section-title">Operator Tools</div>
+          <div class="wb-sub">Manual, on-demand. Never run as cycle side-effects.</div>
+          <div class="wb-grid">
+            <div class="wb-card">
+              <div class="wb-head"><span class="wb-name">Generate daily brief</span><span class="wb-meta">POST /brief/generate <span class="wb-tag model">claude-sonnet-4-6</span></span></div>
+              <div class="wb-desc">Daily world intelligence brief. Claude Sonnet primary; rule-based fallback if Anthropic fails.</div>
+              <div class="wb-btns">
+                <button class="wb-btn run" onclick="wbApi(this, 'POST', '/brief/generate', {})">Run</button>
+                <button class="wb-btn" onclick="copyText(this, 'cd ~/spec-1 && make brief')">Copy make</button>
+              </div>
+              <div class="wb-msg" data-msg></div>
+            </div>
+            <div class="wb-card">
+              <div class="wb-head"><span class="wb-name">Generate leads</span><span class="wb-meta">POST /leads/generate</span></div>
+              <div class="wb-desc">Derive Lead objects from intelligence records.</div>
+              <div class="wb-btns">
+                <button class="wb-btn run" onclick="wbApi(this, 'POST', '/leads/generate', {})">Run</button>
+                <button class="wb-btn" onclick="copyText(this, 'cd ~/spec-1 && make leads')">Copy make</button>
+              </div>
+              <div class="wb-msg" data-msg></div>
+            </div>
+            <div class="wb-card">
+              <div class="wb-head"><span class="wb-name">Score psyop across all records</span><span class="wb-meta">POST /psyop/run</span></div>
+              <div class="wb-desc">Re-score every intel record for psyop patterns; appends to psyop store.</div>
+              <div class="wb-btns">
+                <button class="wb-btn run" onclick="wbApi(this, 'POST', '/psyop/run', {})">Run</button>
+                <button class="wb-btn" onclick="copyText(this, 'cd ~/spec-1 && make psyop')">Copy make</button>
+              </div>
+              <div class="wb-msg" data-msg></div>
+            </div>
+            <div class="wb-card">
+              <div class="wb-head"><span class="wb-name">Calibration drift report</span><span class="wb-meta">GET /calibration/report</span></div>
+              <div class="wb-desc">Descriptive only — never auto-tunes scoring weights.</div>
+              <div class="wb-btns">
+                <button class="wb-btn run" onclick="wbApi(this, 'GET', '/calibration/report')">Fetch</button>
+                <button class="wb-btn" onclick="copyText(this, 'cd ~/spec-1 && make calibration')">Copy make</button>
+              </div>
+              <div class="wb-msg" data-msg></div>
+            </div>
+            <div class="wb-card">
+              <div class="wb-head"><span class="wb-name">Calibration proposals</span><span class="wb-meta">GET /calibration/proposals</span></div>
+              <div class="wb-desc">Suggested adjustments. Human-applied, never automatic.</div>
+              <div class="wb-btns">
+                <button class="wb-btn run" onclick="wbApi(this, 'GET', '/calibration/proposals')">Fetch</button>
+              </div>
+              <div class="wb-msg" data-msg></div>
+            </div>
+            <div class="wb-card">
+              <div class="wb-head"><span class="wb-name">Backfill historical briefs</span><span class="wb-meta">terminal</span></div>
+              <div class="wb-desc">Walks intel store, writes briefs for missing run_ids.</div>
+              <div class="wb-btns">
+                <button class="wb-btn" onclick="copyText(this, 'cd ~/spec-1 && make backfill')">Copy make</button>
+              </div>
+            </div>
+            <div class="wb-card">
+              <div class="wb-head"><span class="wb-name">Generate publication</span><span class="wb-meta">POST /publication/generate</span></div>
+              <div class="wb-desc">Generate a publication artifact from latest analysis.</div>
+              <div class="wb-btns">
+                <button class="wb-btn run" onclick="wbApi(this, 'POST', '/publication/generate', {})">Run</button>
+              </div>
+              <div class="wb-msg" data-msg></div>
+            </div>
+            <div class="wb-card">
+              <div class="wb-head"><span class="wb-name">Workspace CLI</span><span class="wb-meta">terminal</span></div>
+              <div class="wb-desc">Interactive case-file CLI. Uses <span class="wb-tag model">claude-sonnet-4-20250514</span></div>
+              <div class="wb-btns">
+                <button class="wb-btn" onclick="copyText(this, 'cd ~/spec-1 && make workspace')">Copy make</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- HTTP API -->
+        <div class="wb-section">
+          <div class="wb-section-title">HTTP API — 17 routers, 41 routes</div>
+          <div class="wb-sub">Browse all routes. <code>GET</code> verbs are safe; <code>POST</code> verbs mutate state.</div>
+          <details class="wb-fold" open>
+            <summary>Read endpoints (GET)</summary>
+            <div class="wb-grid" style="margin-top:10px;">
+              <div class="wb-card"><div class="wb-head"><span class="wb-name"><span class="wb-tag method-GET">GET</span>/health</span></div><div class="wb-btns"><button class="wb-btn run" onclick="wbApi(this,'GET','/health')">Fetch</button></div><div class="wb-msg" data-msg></div></div>
+              <div class="wb-card"><div class="wb-head"><span class="wb-name"><span class="wb-tag method-GET">GET</span>/metrics</span></div><div class="wb-btns"><button class="wb-btn" onclick="copyText(this,'curl -s http://127.0.0.1:8000/metrics')">Copy curl</button></div></div>
+              <div class="wb-card"><div class="wb-head"><span class="wb-name"><span class="wb-tag method-GET">GET</span>/metrics/json</span></div><div class="wb-btns"><button class="wb-btn run" onclick="wbApi(this,'GET','/metrics/json')">Fetch</button></div><div class="wb-msg" data-msg></div></div>
+              <div class="wb-card"><div class="wb-head"><span class="wb-name"><span class="wb-tag method-GET">GET</span>/signals</span></div><div class="wb-btns"><button class="wb-btn run" onclick="wbApi(this,'GET','/signals')">Fetch</button></div><div class="wb-msg" data-msg></div></div>
+              <div class="wb-card"><div class="wb-head"><span class="wb-name"><span class="wb-tag method-GET">GET</span>/intel</span></div><div class="wb-btns"><button class="wb-btn run" onclick="wbApi(this,'GET','/intel')">Fetch</button></div><div class="wb-msg" data-msg></div></div>
+              <div class="wb-card"><div class="wb-head"><span class="wb-name"><span class="wb-tag method-GET">GET</span>/leads</span></div><div class="wb-btns"><button class="wb-btn run" onclick="wbApi(this,'GET','/leads')">Fetch</button></div><div class="wb-msg" data-msg></div></div>
+              <div class="wb-card"><div class="wb-head"><span class="wb-name"><span class="wb-tag method-GET">GET</span>/fara</span></div><div class="wb-btns"><button class="wb-btn run" onclick="wbApi(this,'GET','/fara')">Fetch</button></div><div class="wb-msg" data-msg></div></div>
+              <div class="wb-card"><div class="wb-head"><span class="wb-name"><span class="wb-tag method-GET">GET</span>/psyop</span></div><div class="wb-btns"><button class="wb-btn run" onclick="wbApi(this,'GET','/psyop')">Fetch</button></div><div class="wb-msg" data-msg></div></div>
+              <div class="wb-card"><div class="wb-head"><span class="wb-name"><span class="wb-tag method-GET">GET</span>/verdicts</span></div><div class="wb-btns"><button class="wb-btn run" onclick="wbApi(this,'GET','/verdicts')">Fetch</button></div><div class="wb-msg" data-msg></div></div>
+              <div class="wb-card"><div class="wb-head"><span class="wb-name"><span class="wb-tag method-GET">GET</span>/brief/latest</span></div><div class="wb-btns"><button class="wb-btn run" onclick="wbApi(this,'GET','/brief/latest')">Fetch</button></div><div class="wb-msg" data-msg></div></div>
+              <div class="wb-card"><div class="wb-head"><span class="wb-name"><span class="wb-tag method-GET">GET</span>/brief/index</span></div><div class="wb-btns"><button class="wb-btn run" onclick="wbApi(this,'GET','/brief/index')">Fetch</button></div><div class="wb-msg" data-msg></div></div>
+              <div class="wb-card"><div class="wb-head"><span class="wb-name"><span class="wb-tag method-GET">GET</span>/brief/history</span></div><div class="wb-btns"><button class="wb-btn run" onclick="wbApi(this,'GET','/brief/history')">Fetch</button></div><div class="wb-msg" data-msg></div></div>
+              <div class="wb-card"><div class="wb-head"><span class="wb-name"><span class="wb-tag method-GET">GET</span>/adapters</span></div><div class="wb-btns"><button class="wb-btn run" onclick="wbApi(this,'GET','/adapters')">Fetch</button></div><div class="wb-msg" data-msg></div></div>
+              <div class="wb-card"><div class="wb-head"><span class="wb-name"><span class="wb-tag method-GET">GET</span>/workspace/cases</span></div><div class="wb-btns"><button class="wb-btn run" onclick="wbApi(this,'GET','/workspace/cases')">Fetch</button></div><div class="wb-msg" data-msg></div></div>
+              <div class="wb-card"><div class="wb-head"><span class="wb-name"><span class="wb-tag method-GET">GET</span>/leg_jud/brief</span></div><div class="wb-btns"><button class="wb-btn run" onclick="wbApi(this,'GET','/leg_jud/brief')">Fetch</button></div><div class="wb-msg" data-msg></div></div>
+              <div class="wb-card"><div class="wb-head"><span class="wb-name"><span class="wb-tag method-GET">GET</span>/leg_jud/judicial</span></div><div class="wb-btns"><button class="wb-btn run" onclick="wbApi(this,'GET','/leg_jud/judicial')">Fetch</button></div><div class="wb-msg" data-msg></div></div>
+              <div class="wb-card"><div class="wb-head"><span class="wb-name"><span class="wb-tag method-GET">GET</span>/leg_jud/state_leg</span></div><div class="wb-btns"><button class="wb-btn run" onclick="wbApi(this,'GET','/leg_jud/state_leg')">Fetch</button></div><div class="wb-msg" data-msg></div></div>
+              <div class="wb-card"><div class="wb-head"><span class="wb-name"><span class="wb-tag method-GET">GET</span>/publication/latest</span></div><div class="wb-btns"><button class="wb-btn run" onclick="wbApi(this,'GET','/publication/latest')">Fetch</button></div><div class="wb-msg" data-msg></div></div>
+              <div class="wb-card"><div class="wb-head"><span class="wb-name"><span class="wb-tag method-GET">GET</span>/publication/list</span></div><div class="wb-btns"><button class="wb-btn run" onclick="wbApi(this,'GET','/publication/list')">Fetch</button></div><div class="wb-msg" data-msg></div></div>
+              <div class="wb-card"><div class="wb-head"><span class="wb-name"><span class="wb-tag method-GET">GET</span>/calibration/report</span></div><div class="wb-btns"><button class="wb-btn run" onclick="wbApi(this,'GET','/calibration/report')">Fetch</button></div><div class="wb-msg" data-msg></div></div>
+              <div class="wb-card"><div class="wb-head"><span class="wb-name"><span class="wb-tag method-GET">GET</span>/calibration/proposals</span></div><div class="wb-btns"><button class="wb-btn run" onclick="wbApi(this,'GET','/calibration/proposals')">Fetch</button></div><div class="wb-msg" data-msg></div></div>
+            </div>
+          </details>
+          <details class="wb-fold">
+            <summary>Write endpoints (POST)</summary>
+            <div class="wb-grid" style="margin-top:10px;">
+              <div class="wb-card"><div class="wb-head"><span class="wb-name"><span class="wb-tag method-POST">POST</span>/cycle/run</span></div><div class="wb-btns"><button class="wb-btn run" onclick="wbApi(this,'POST','/cycle/run',{})">Run</button></div><div class="wb-msg" data-msg></div></div>
+              <div class="wb-card"><div class="wb-head"><span class="wb-name"><span class="wb-tag method-POST">POST</span>/signal</span></div><div class="wb-btns"><button class="wb-btn" onclick="copyText(this,'curl -s -X POST http://127.0.0.1:8000/signal -H \\'Content-Type: application/json\\' -d \\'{}\\'')">Copy curl</button></div></div>
+              <div class="wb-card"><div class="wb-head"><span class="wb-name"><span class="wb-tag method-POST">POST</span>/signals/ingest</span></div><div class="wb-btns"><button class="wb-btn" onclick="copyText(this,'curl -s -X POST http://127.0.0.1:8000/signals/ingest -H \\'Content-Type: application/json\\' -d \\'{}\\'')">Copy curl</button></div></div>
+              <div class="wb-card"><div class="wb-head"><span class="wb-name"><span class="wb-tag method-POST">POST</span>/brief/generate</span></div><div class="wb-btns"><button class="wb-btn run" onclick="wbApi(this,'POST','/brief/generate',{})">Run</button></div><div class="wb-msg" data-msg></div></div>
+              <div class="wb-card"><div class="wb-head"><span class="wb-name"><span class="wb-tag method-POST">POST</span>/leads/generate</span></div><div class="wb-btns"><button class="wb-btn run" onclick="wbApi(this,'POST','/leads/generate',{})">Run</button></div><div class="wb-msg" data-msg></div></div>
+              <div class="wb-card"><div class="wb-head"><span class="wb-name"><span class="wb-tag method-POST">POST</span>/psyop/analyse</span></div><div class="wb-btns"><button class="wb-btn" onclick="copyText(this,'curl -s -X POST http://127.0.0.1:8000/psyop/analyse -H \\'Content-Type: application/json\\' -d \\'{\"text\":\"…\"}\\'')">Copy curl</button></div></div>
+              <div class="wb-card"><div class="wb-head"><span class="wb-name"><span class="wb-tag method-POST">POST</span>/psyop/run</span></div><div class="wb-btns"><button class="wb-btn run" onclick="wbApi(this,'POST','/psyop/run',{})">Run</button></div><div class="wb-msg" data-msg></div></div>
+              <div class="wb-card"><div class="wb-head"><span class="wb-name"><span class="wb-tag method-POST">POST</span>/verdicts</span></div><div class="wb-btns"><button class="wb-btn" onclick="copyText(this,'curl -s -X POST http://127.0.0.1:8000/verdicts -H \\'Content-Type: application/json\\' -d \\'{\"record_id\":\"rec_…\",\"verdict\":\"correct\"}\\'')">Copy curl</button></div></div>
+              <div class="wb-card"><div class="wb-head"><span class="wb-name"><span class="wb-tag method-POST">POST</span>/workspace/cases</span></div><div class="wb-btns"><button class="wb-btn" onclick="copyText(this,'curl -s -X POST http://127.0.0.1:8000/workspace/cases -H \\'Content-Type: application/json\\' -d \\'{}\\'')">Copy curl</button></div></div>
+              <div class="wb-card"><div class="wb-head"><span class="wb-name"><span class="wb-tag method-POST">POST</span>/workspace/cases/{id}/findings</span></div><div class="wb-btns"><button class="wb-btn" onclick="copyText(this,'curl -s -X POST http://127.0.0.1:8000/workspace/cases/CASE_ID/findings -H \\'Content-Type: application/json\\' -d \\'{}\\'')">Copy curl</button></div></div>
+              <div class="wb-card"><div class="wb-head"><span class="wb-name"><span class="wb-tag method-POST">POST</span>/workspace/cases/{id}/close</span></div><div class="wb-btns"><button class="wb-btn" onclick="copyText(this,'curl -s -X POST http://127.0.0.1:8000/workspace/cases/CASE_ID/close -H \\'Content-Type: application/json\\' -d \\'{}\\'')">Copy curl</button></div></div>
+              <div class="wb-card"><div class="wb-head"><span class="wb-name"><span class="wb-tag method-POST">POST</span>/publication/generate</span></div><div class="wb-btns"><button class="wb-btn run" onclick="wbApi(this,'POST','/publication/generate',{})">Run</button></div><div class="wb-msg" data-msg></div></div>
+            </div>
+          </details>
+        </div>
+
+        <!-- MCP Tools -->
+        <div class="wb-section">
+          <div class="wb-section-title">MCP Tools — 15</div>
+          <div class="wb-sub">JSON-RPC over stdio. Boot with <span class="wb-cmd" style="white-space:normal;">make mcp</span>. UI cannot reach stdio directly — copy the JSON-RPC payload and pipe it into the server.</div>
+          <div class="wb-grid">
+            <div class="wb-card"><div class="wb-head"><span class="wb-name">run_cycle</span></div><div class="wb-desc">Run a full intelligence cycle.</div><div class="wb-btns"><button class="wb-btn" onclick="wbCopyMcp(this,'run_cycle',{})">Copy JSON-RPC</button></div></div>
+            <div class="wb-card"><div class="wb-head"><span class="wb-name">get_signals</span></div><div class="wb-desc">Return recent OSINT signals.</div><div class="wb-btns"><button class="wb-btn" onclick="wbCopyMcp(this,'get_signals',{limit:20})">Copy JSON-RPC</button></div></div>
+            <div class="wb-card"><div class="wb-head"><span class="wb-name">get_intel</span></div><div class="wb-desc">Intel records with optional min_confidence filter.</div><div class="wb-btns"><button class="wb-btn" onclick="wbCopyMcp(this,'get_intel',{limit:20})">Copy JSON-RPC</button></div></div>
+            <div class="wb-card"><div class="wb-head"><span class="wb-name">get_leads</span></div><div class="wb-desc">Leads optionally filtered by priority.</div><div class="wb-btns"><button class="wb-btn" onclick="wbCopyMcp(this,'get_leads',{limit:20})">Copy JSON-RPC</button></div></div>
+            <div class="wb-card"><div class="wb-head"><span class="wb-name">get_brief</span></div><div class="wb-desc">Latest world brief.</div><div class="wb-btns"><button class="wb-btn" onclick="wbCopyMcp(this,'get_brief',{})">Copy JSON-RPC</button></div></div>
+            <div class="wb-card"><div class="wb-head"><span class="wb-name">get_psyop</span></div><div class="wb-desc">Stored psyop scores by classification.</div><div class="wb-btns"><button class="wb-btn" onclick="wbCopyMcp(this,'get_psyop',{limit:20})">Copy JSON-RPC</button></div></div>
+            <div class="wb-card"><div class="wb-head"><span class="wb-name">get_fara</span></div><div class="wb-desc">FARA filings; filter by country.</div><div class="wb-btns"><button class="wb-btn" onclick="wbCopyMcp(this,'get_fara',{limit:20})">Copy JSON-RPC</button></div></div>
+            <div class="wb-card"><div class="wb-head"><span class="wb-name">analyse_psyop</span></div><div class="wb-desc">Score one text snippet for psyop patterns.</div><div class="wb-btns"><button class="wb-btn" onclick="wbCopyMcp(this,'analyse_psyop',{text:'…'})">Copy JSON-RPC</button></div></div>
+            <div class="wb-card"><div class="wb-head"><span class="wb-name">get_stats</span></div><div class="wb-desc">Counts across every store.</div><div class="wb-btns"><button class="wb-btn" onclick="wbCopyMcp(this,'get_stats',{})">Copy JSON-RPC</button></div></div>
+            <div class="wb-card"><div class="wb-head"><span class="wb-name">file_verdict</span></div><div class="wb-desc">Append a human verdict to a record.</div><div class="wb-btns"><button class="wb-btn" onclick="wbCopyMcp(this,'file_verdict',{record_id:'rec_…',verdict:'correct'})">Copy JSON-RPC</button></div></div>
+            <div class="wb-card"><div class="wb-head"><span class="wb-name">get_verdicts</span></div><div class="wb-desc">All verdicts or by record_id.</div><div class="wb-btns"><button class="wb-btn" onclick="wbCopyMcp(this,'get_verdicts',{limit:20})">Copy JSON-RPC</button></div></div>
+            <div class="wb-card"><div class="wb-head"><span class="wb-name">run_psyop</span></div><div class="wb-desc">Re-score every intel record for psyop.</div><div class="wb-btns"><button class="wb-btn" onclick="wbCopyMcp(this,'run_psyop',{})">Copy JSON-RPC</button></div></div>
+            <div class="wb-card"><div class="wb-head"><span class="wb-name">generate_brief <span class="wb-tag model">claude-sonnet-4-6</span></span></div><div class="wb-desc">Daily brief; falls back to rule-based on failure.</div><div class="wb-btns"><button class="wb-btn" onclick="wbCopyMcp(this,'generate_brief',{})">Copy JSON-RPC</button></div></div>
+            <div class="wb-card"><div class="wb-head"><span class="wb-name">generate_leads</span></div><div class="wb-desc">Derive Lead objects from intel.</div><div class="wb-btns"><button class="wb-btn" onclick="wbCopyMcp(this,'generate_leads',{})">Copy JSON-RPC</button></div></div>
+            <div class="wb-card"><div class="wb-head"><span class="wb-name">get_calibration</span></div><div class="wb-desc">Drift report. Descriptive only — never auto-applies tuning.</div><div class="wb-btns"><button class="wb-btn" onclick="wbCopyMcp(this,'get_calibration',{})">Copy JSON-RPC</button></div></div>
+          </div>
+        </div>
+
+        <!-- Make targets -->
+        <div class="wb-section">
+          <div class="wb-section-title">Make Targets — 15</div>
+          <div class="wb-sub">Run from the repo root. Each maps to a single <code>python -m</code> entry point (see SHOP_MANUAL §4.2).</div>
+          <div class="wb-grid">
+            <div class="wb-card"><div class="wb-head"><span class="wb-name">make install</span></div><div class="wb-desc">pip install -e ".[dev]"</div><div class="wb-btns"><button class="wb-btn" onclick="copyText(this,'cd ~/spec-1 && make install')">Copy</button></div></div>
+            <div class="wb-card"><div class="wb-head"><span class="wb-name">make test</span></div><div class="wb-desc">Full pytest suite.</div><div class="wb-btns"><button class="wb-btn" onclick="copyText(this,'cd ~/spec-1 && make test')">Copy</button></div></div>
+            <div class="wb-card"><div class="wb-head"><span class="wb-name">make test-fast</span></div><div class="wb-desc">Stop at first failure.</div><div class="wb-btns"><button class="wb-btn" onclick="copyText(this,'cd ~/spec-1 && make test-fast')">Copy</button></div></div>
+            <div class="wb-card"><div class="wb-head"><span class="wb-name">make test-cov</span></div><div class="wb-desc">Coverage report.</div><div class="wb-btns"><button class="wb-btn" onclick="copyText(this,'cd ~/spec-1 && make test-cov')">Copy</button></div></div>
+            <div class="wb-card"><div class="wb-head"><span class="wb-name">make lint</span></div><div class="wb-desc">flake8.</div><div class="wb-btns"><button class="wb-btn" onclick="copyText(this,'cd ~/spec-1 && make lint')">Copy</button></div></div>
+            <div class="wb-card"><div class="wb-head"><span class="wb-name">make run</span></div><div class="wb-desc">Start FastAPI on :8000.</div><div class="wb-btns"><button class="wb-btn" onclick="copyText(this,'cd ~/spec-1 && make run')">Copy</button></div></div>
+            <div class="wb-card"><div class="wb-head"><span class="wb-name">make mcp</span></div><div class="wb-desc">MCP server on stdio.</div><div class="wb-btns"><button class="wb-btn" onclick="copyText(this,'cd ~/spec-1 && make mcp')">Copy</button></div></div>
+            <div class="wb-card"><div class="wb-head"><span class="wb-name">make cycle</span></div><div class="wb-desc">One-shot intelligence cycle.</div><div class="wb-btns"><button class="wb-btn" onclick="copyText(this,'cd ~/spec-1 && make cycle')">Copy</button></div></div>
+            <div class="wb-card"><div class="wb-head"><span class="wb-name">make backfill</span></div><div class="wb-desc">Backfill historical briefs.</div><div class="wb-btns"><button class="wb-btn" onclick="copyText(this,'cd ~/spec-1 && make backfill')">Copy</button></div></div>
+            <div class="wb-card"><div class="wb-head"><span class="wb-name">make brief</span></div><div class="wb-desc">Daily brief for latest run_id.</div><div class="wb-btns"><button class="wb-btn" onclick="copyText(this,'cd ~/spec-1 && make brief')">Copy</button></div></div>
+            <div class="wb-card"><div class="wb-head"><span class="wb-name">make leads</span></div><div class="wb-desc">Derive Leads from intel.</div><div class="wb-btns"><button class="wb-btn" onclick="copyText(this,'cd ~/spec-1 && make leads')">Copy</button></div></div>
+            <div class="wb-card"><div class="wb-head"><span class="wb-name">make psyop</span></div><div class="wb-desc">Score psyop on every record.</div><div class="wb-btns"><button class="wb-btn" onclick="copyText(this,'cd ~/spec-1 && make psyop')">Copy</button></div></div>
+            <div class="wb-card"><div class="wb-head"><span class="wb-name">make calibration</span></div><div class="wb-desc">Drift proposal report → generated/.</div><div class="wb-btns"><button class="wb-btn" onclick="copyText(this,'cd ~/spec-1 && make calibration')">Copy</button></div></div>
+            <div class="wb-card"><div class="wb-head"><span class="wb-name">make workspace</span></div><div class="wb-desc">Workspace CLI.</div><div class="wb-btns"><button class="wb-btn" onclick="copyText(this,'cd ~/spec-1 && make workspace')">Copy</button></div></div>
+            <div class="wb-card"><div class="wb-head"><span class="wb-name">make clean</span></div><div class="wb-desc">Remove pycache + pytest cache.</div><div class="wb-btns"><button class="wb-btn" onclick="copyText(this,'cd ~/spec-1 && make clean')">Copy</button></div></div>
+          </div>
+        </div>
+
+        <!-- Models -->
+        <div class="wb-section">
+          <div class="wb-section-title">Models — 3 distinct Anthropic IDs</div>
+          <div class="wb-sub">Override knob: <code>SPEC1_LLM_CLAUDE_MODEL</code> (honored by <code>llm/fallback_client.py</code> only). See ACCESS_AUDIT findings F-1 and F-2.</div>
+          <div class="wb-grid">
+            <div class="wb-card"><div class="wb-head"><span class="wb-name">claude-sonnet-4-6</span><span class="wb-meta">Briefing</span></div><div class="wb-desc">src/spec1_core/briefing/generator.py — daily brief.</div></div>
+            <div class="wb-card"><div class="wb-head"><span class="wb-name">claude-sonnet-4-6</span><span class="wb-meta">PDX1 narrative</span></div><div class="wb-desc">src/cls_pdx1/explain/summarize.py — regional narrative summary.</div></div>
+            <div class="wb-card"><div class="wb-head"><span class="wb-name">claude-haiku-4-5-20251001</span><span class="wb-meta">Investigation</span></div><div class="wb-desc">src/spec1_core/investigation/verifier.py — verifier loop.</div></div>
+            <div class="wb-card"><div class="wb-head"><span class="wb-name">claude-haiku-4-5-20251001</span><span class="wb-meta">LLM fallback default</span></div><div class="wb-desc">src/spec1_core/llm/fallback_client.py — tier 1. Honors SPEC1_LLM_CLAUDE_MODEL.</div></div>
+            <div class="wb-card"><div class="wb-head"><span class="wb-name">claude-sonnet-4-20250514</span><span class="wb-meta">Workspace</span></div><div class="wb-desc">src/spec1_core/workspace/researcher.py — case-file researcher. <b>F-1 drift candidate.</b></div></div>
+          </div>
+        </div>
+
+        <!-- Env vars -->
+        <div class="wb-section">
+          <div class="wb-section-title">Environment Variables — 33</div>
+          <div class="wb-sub">Full definitions in SHOP_MANUAL §8. There is no <code>.env.example</code> in the repo today (F-6).</div>
+          <details class="wb-fold">
+            <summary>Show all 33 keys</summary>
+            <table class="wb-env-table" style="margin-top:10px;">
+              <thead><tr><th>Key</th><th>Default</th><th>Consumer</th></tr></thead>
+              <tbody>
+                <tr><td class="k">ANTHROPIC_API_KEY</td><td>(required)</td><td>briefing, verifier, fallback_client, workspace, pdx1</td></tr>
+                <tr><td class="k">QUIVER_API_KEY</td><td>(optional)</td><td>congressional collector</td></tr>
+                <tr><td class="k">LEGISCAN_API_KEY</td><td>(optional)</td><td>leg_jud router</td></tr>
+                <tr><td class="k">OPENSTATES_API_KEY</td><td>(optional)</td><td>leg_jud router</td></tr>
+                <tr><td class="k">OLLAMA_AUTO_SPAWN</td><td>true</td><td>llm/fallback_client</td></tr>
+                <tr><td class="k">SPEC1_API_HOST</td><td>127.0.0.1</td><td>spec1_api.main</td></tr>
+                <tr><td class="k">SPEC1_API_PORT</td><td>8000</td><td>spec1_api.main</td></tr>
+                <tr><td class="k">SPEC1_API_KEY</td><td>(unset = open)</td><td>spec1_api.auth</td></tr>
+                <tr><td class="k">SPEC1_ENVIRONMENT</td><td>production</td><td>many</td></tr>
+                <tr><td class="k">SPEC1_CORS_ORIGINS</td><td>(none)</td><td>spec1_api.main</td></tr>
+                <tr><td class="k">SPEC1_STORE_PATH</td><td>spec1_intelligence.jsonl</td><td>many</td></tr>
+                <tr><td class="k">SPEC1_DB_PATH</td><td>(cls_db default)</td><td>cls_db.database</td></tr>
+                <tr><td class="k">SPEC1_VERDICTS_PATH</td><td>verdicts.jsonl</td><td>verdicts router</td></tr>
+                <tr><td class="k">SPEC1_PSYOP_PATH</td><td>generated/psyop_scores.jsonl</td><td>psyop router, run_psyop</td></tr>
+                <tr><td class="k">SPEC1_LEADS_PATH</td><td>leads.jsonl</td><td>leads router</td></tr>
+                <tr><td class="k">SPEC1_OSINT_PATH</td><td>(cls_osint default)</td><td>OSINT routers</td></tr>
+                <tr><td class="k">SPEC1_BRIEFS_DIR</td><td>briefs</td><td>publication router</td></tr>
+                <tr><td class="k">SPEC1_BRIEFS_PATH</td><td>(varies)</td><td>other brief lookups (F-5)</td></tr>
+                <tr><td class="k">SPEC1_LEG_JUD_PATH</td><td>leg_jud_briefs.jsonl</td><td>leg_jud router</td></tr>
+                <tr><td class="k">SPEC1_PUBLISH_LOG</td><td>publish_log.jsonl</td><td>cls_db.publish_log</td></tr>
+                <tr><td class="k">SPEC1_LLM_CLAUDE_MODEL</td><td>claude-haiku-4-5-20251001</td><td>llm/fallback_client (partial — F-2)</td></tr>
+                <tr><td class="k">SPEC1_LLM_LOG_PATH</td><td>(per llm)</td><td>llm package</td></tr>
+                <tr><td class="k">SPEC1_OLLAMA_URL</td><td>(ollama default)</td><td>llm/fallback_client</td></tr>
+                <tr><td class="k">SPEC1_TIMEZONE</td><td>America/Los_Angeles</td><td>scheduler</td></tr>
+                <tr><td class="k">SPEC1_CRON_HOUR</td><td>6</td><td>scheduler</td></tr>
+                <tr><td class="k">SPEC1_CRON_MINUTE</td><td>0</td><td>scheduler</td></tr>
+                <tr><td class="k">SPEC1_RUN_ON_START</td><td>(false)</td><td>scheduler</td></tr>
+                <tr><td class="k">SPEC1_DEV_MODE</td><td>(false)</td><td>various</td></tr>
+                <tr><td class="k">SPEC1_HEADERS</td><td>(none)</td><td>various</td></tr>
+                <tr><td class="k">SPEC1_POLITICAL_WEB_ENABLED</td><td>(false)</td><td>spec1_api.main</td></tr>
+                <tr><td class="k">SPEC1_WEBHOOK_URLS</td><td>(none)</td><td>webhooks</td></tr>
+                <tr><td class="k">SPEC1_WEBHOOK_SECRET</td><td>(none)</td><td>webhooks</td></tr>
+                <tr><td class="k">SPEC1_WEBHOOK_TIMEOUT</td><td>(default)</td><td>webhooks</td></tr>
+              </tbody>
+            </table>
+          </details>
+        </div>
+
+      </div>
+
+      <!-- ─────────────────────────── Local Access ─────────────────────────── -->
+      <div class="panel" id="panel-local">
+        <div class="panel-title">▷ Local Access</div>
+        <div class="panel-sub">Terminal shortcuts for working with SPEC-1 directly</div>
+        <div class="cmd-grid">
+
+          <div class="cmd-block">
+            <div class="cmd-label">Read latest brief</div>
+            <div class="cmd-body">
+              <pre>cat ~/spec-1/briefs/spec1_brief_latest.md</pre>
+              <button class="copy-btn" onclick="copyText(this, 'cat ~/spec-1/briefs/spec1_brief_latest.md')">Copy</button>
+            </div>
+          </div>
+
+          <div class="cmd-block">
+            <div class="cmd-label">List all briefs</div>
+            <div class="cmd-body">
+              <pre>ls ~/spec-1/briefs/spec1_brief_*.md</pre>
+              <button class="copy-btn" onclick="copyText(this, 'ls ~/spec-1/briefs/spec1_brief_*.md')">Copy</button>
+            </div>
+          </div>
+
+          <div class="cmd-block">
+            <div class="cmd-label">Start API server</div>
+            <div class="cmd-body">
+              <pre>cd ~/spec-1 &amp;&amp; PYTHONPATH=src python -m spec1_api.main</pre>
+              <button class="copy-btn" onclick="copyText(this, 'cd ~/spec-1 && PYTHONPATH=src python -m spec1_api.main')">Copy</button>
+            </div>
+          </div>
+
+          <div class="cmd-block">
+            <div class="cmd-label">Run intelligence cycle manually</div>
+            <div class="cmd-body">
+<pre>cd ~/spec-1 &amp;&amp; PYTHONPATH=src \
+ANTHROPIC_API_KEY=$(grep ANTHROPIC_API_KEY .env | cut -d= -f2 | tr -d '\r') \
+python -m spec1_engine.app.cycle</pre>
+              <button class="copy-btn" onclick="copyText(this, 'cd ~/spec-1 && PYTHONPATH=src ANTHROPIC_API_KEY=$(grep ANTHROPIC_API_KEY .env | cut -d= -f2 | tr -d \'\\r\') python -m spec1_engine.app.cycle')">Copy</button>
+            </div>
+          </div>
+
+          <div class="cmd-block">
+            <div class="cmd-label">Run pytest</div>
+            <div class="cmd-body">
+              <pre>cd ~/spec-1 &amp;&amp; PYTHONPATH=src pytest tests/ -v --tb=short</pre>
+              <button class="copy-btn" onclick="copyText(this, 'cd ~/spec-1 && PYTHONPATH=src pytest tests/ -v --tb=short')">Copy</button>
+            </div>
+          </div>
+
+          <div class="cmd-block">
+            <div class="cmd-label">Build calibration proposal report</div>
+            <div class="cmd-body">
+<pre>cd ~/spec-1 &amp;&amp; PYTHONPATH=src python -m spec1_engine.tools.calibration_propose \
+  --intel spec1_intelligence.jsonl \
+  --verdicts verdicts.jsonl \
+  --out-dir generated/</pre>
+              <button class="copy-btn" onclick="copyText(this, 'cd ~/spec-1 && PYTHONPATH=src python -m spec1_engine.tools.calibration_propose --intel spec1_intelligence.jsonl --verdicts verdicts.jsonl --out-dir generated/')">Copy</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- ── Start-API overlay ── -->
+<div id="start-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.88); z-index:100; align-items:center; justify-content:center;">
+  <div style="background:#0A0A0A; border:1px solid #FFFFFF; padding:28px; max-width:560px; width:90%;">
+    <div style="font-size:15px; font-weight:700; margin-bottom:12px; font-family:'IBM Plex Mono',monospace; letter-spacing:.06em; color:#FFFFFF;">API Offline</div>
+    <p style="color:#666666; font-size:13px; margin-bottom:16px; line-height:1.6; font-family:'IBM Plex Mono',monospace;">
+      The SPEC-1 API is not running. Start it with:
+    </p>
+    <pre style="background:#000000; border:1px solid rgba(255,255,255,.3); padding:14px; font-family:'Courier Prime',monospace; font-size:12px; color:#FFFFFF; overflow-x:auto; margin-bottom:14px; line-height:1.6;">cd ~/spec-1 &amp;&amp; PYTHONPATH=src python -m spec1_api.main</pre>
+    <div style="display:flex; gap:10px;">
+      <button class="copy-btn" onclick="copyText(this, 'cd ~/spec-1 && PYTHONPATH=src python -m spec1_api.main')">Copy command</button>
+      <button class="copy-btn" onclick="closeOverlay()" style="margin-left:auto;">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// API base — relative so this works when served by the API itself at /
+const API = 'http://localhost:8000';
+const PAGE = 20;
+let _online = false;
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function pct(v) {
+  if (v == null) return '—';
+  return (parseFloat(v) * 100).toFixed(0) + '%';
+}
+
+function confBar(v) {
+  const pv = Math.min(1, Math.max(0, parseFloat(v) || 0));
+  return `<div class="conf-wrap">
+    <div class="conf-track"><div class="conf-fill" style="width:${pv*100}%"></div></div>
+    <span class="conf-val">${pv.toFixed(2)}</span>
+  </div>`;
+}
+
+function badge(text) {
+  if (!text) return '';
+  const cls = 'badge-' + String(text).toLowerCase().replace(/[^a-z0-9]/g,'-');
+  return `<span class="badge ${cls}">${esc(text)}</span>`;
+}
+
+function ts(s) {
+  if (!s) return '—';
+  try { return new Date(s).toLocaleString('en-US', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}); }
+  catch { return esc(s); }
+}
+
+function trunc(s, n) {
+  s = String(s || '');
+  return s.length > n ? s.slice(0, n) + '…' : s;
+}
+
+function emptyState(msg) {
+  return `<div class="state-box"><p>${msg}</p></div>`;
+}
+
+function pager(total, offset, limit, loadFn) {
+  const page = Math.floor(offset / limit) + 1;
+  const pages = Math.max(1, Math.ceil(total / limit));
+  return `<div class="pager">
+    <button class="page-btn" onclick="${loadFn}(${offset - limit})" ${offset <= 0 ? 'disabled' : ''}>← Prev</button>
+    <span>${page} / ${pages}</span>
+    <button class="page-btn" onclick="${loadFn}(${offset + limit})" ${offset + limit >= total ? 'disabled' : ''}>Next →</button>
+    <span style="margin-left:4px;font-size:11px;">(${total} total)</span>
+  </div>`;
+}
+
+// ── Markdown → HTML ───────────────────────────────────────────────────────────
+
+function renderMd(raw) {
+  if (!raw) return '';
+  let t = raw.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  t = t.replace(/`([^`\n]+)`/g,'<code>$1</code>');
+  t = t.replace(/\*\*\*(.+?)\*\*\*/g,'<strong><em>$1</em></strong>');
+  t = t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  t = t.replace(/\*(.+?)\*/g,'<em>$1</em>');
+
+  const lines = t.split('\n');
+  const out = [];
+  let inUL = false, inOL = false, inBQ = false;
+  const closeAll = () => {
+    if (inUL) { out.push('</ul>'); inUL=false; }
+    if (inOL) { out.push('</ol>'); inOL=false; }
+    if (inBQ) { out.push('</blockquote>'); inBQ=false; }
+  };
+  for (const line of lines) {
+    if (/^#{4} /.test(line)) { closeAll(); out.push('<h4>'+line.replace(/^#{4} /,'')+'</h4>'); continue; }
+    if (/^#{3} /.test(line)) { closeAll(); out.push('<h3>'+line.replace(/^#{3} /,'')+'</h3>'); continue; }
+    if (/^#{2} /.test(line)) { closeAll(); out.push('<h2>'+line.replace(/^#{2} /,'')+'</h2>'); continue; }
+    if (/^# /.test(line))    { closeAll(); out.push('<h1>'+line.replace(/^# /,'')+'</h1>'); continue; }
+    if (/^---+$/.test(line.trim())) { closeAll(); out.push('<hr>'); continue; }
+    if (/^> /.test(line)) {
+      if (!inBQ) { if(inUL){out.push('</ul>');inUL=false;} if(inOL){out.push('</ol>');inOL=false;} out.push('<blockquote>'); inBQ=true; }
+      out.push('<p>'+line.replace(/^> /,'')+'</p>'); continue;
+    }
+    if (inBQ && !/^> /.test(line)) { out.push('</blockquote>'); inBQ=false; }
+    if (/^[-*] /.test(line)) {
+      if(inOL){out.push('</ol>');inOL=false;} if(!inUL){out.push('<ul>');inUL=true;}
+      out.push('<li>'+line.replace(/^[-*] /,'')+'</li>'); continue;
+    }
+    if (/^\d+\. /.test(line)) {
+      if(inUL){out.push('</ul>');inUL=false;} if(!inOL){out.push('<ol>');inOL=true;}
+      out.push('<li>'+line.replace(/^\d+\. /,'')+'</li>'); continue;
+    }
+    if(inUL){out.push('</ul>');inUL=false;} if(inOL){out.push('</ol>');inOL=false;}
+    if (line.trim() === '') { out.push(''); } else { out.push('<p>'+line+'</p>'); }
+  }
+  if(inUL) out.push('</ul>'); if(inOL) out.push('</ol>'); if(inBQ) out.push('</blockquote>');
+  return out.join('\n');
+}
+
+// ── API fetch ─────────────────────────────────────────────────────────────────
+
+async function apiFetch(path, opts) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 10000);
+  try {
+    const r = await fetch(API + path, { signal: ctrl.signal, ...opts });
+    clearTimeout(t);
+    if (!r.ok) return null;
+    return await r.json();
+  } catch {
+    clearTimeout(t);
+    return null;
+  }
+}
+
+async function apiPost(path, body) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 90000);
+  try {
+    const r = await fetch(API + path, {
+      method: 'POST', signal: ctrl.signal,
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(body),
+    });
+    clearTimeout(t);
+    const data = await r.json().catch(() => null);
+    return { ok: r.ok, status: r.status, data };
+  } catch (e) {
+    clearTimeout(t);
+    return { ok: false, status: 0, data: null };
+  }
+}
+
+// ── Connection status ─────────────────────────────────────────────────────────
+
+async function checkStatus() {
+  const data = await apiFetch('/health');
+  const dot = document.getElementById('status-dot');
+  const txt = document.getElementById('status-text');
+  if (data && data.status === 'ok') {
+    _online = true;
+    dot.className = 'status-geo online';
+    txt.textContent = 'API Live' + (data.version ? ' · v' + data.version : '');
+  } else {
+    _online = false;
+    dot.className = 'status-geo offline';
+    txt.innerHTML = 'API Offline &nbsp;<button class="start-btn" onclick="openOverlay()">Start API →</button>';
+  }
+  return _online;
+}
+
+function openOverlay()  { document.getElementById('start-overlay').style.display='flex'; }
+function closeOverlay() { document.getElementById('start-overlay').style.display='none'; }
+document.getElementById('start-overlay').addEventListener('click', e => { if(e.target===e.currentTarget) closeOverlay(); });
+
+// ── Navigation ────────────────────────────────────────────────────────────────
+
+const _panelLoaders = {
+  'panel-brief':       () => loadLatestBrief(),
+  'panel-archive':     () => loadBriefIndex(),
+  'panel-signals':     () => loadSignals(0),
+  'panel-intel':       () => loadIntel(0),
+  'panel-leads':       () => loadLeads(0),
+  'panel-psyop':       () => loadPsyop(0),
+  'panel-fara':        () => loadFara(0),
+  'panel-cycle':       () => loadCycleStatus(),
+  'panel-verdicts':    () => loadVerdicts(0),
+  'panel-calibration': () => loadCalibration(),
+  'panel-workbench':   () => initWorkbench(),
+  'panel-local':       () => {},
+};
+
+function showPanel(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const nav = document.querySelector('[data-panel="'+id+'"]');
+  if (nav) nav.classList.add('active');
+  if (_panelLoaders[id]) _panelLoaders[id]();
+}
+
+// ── Brief panel ───────────────────────────────────────────────────────────────
+
+function renderWorldBrief(data) {
+  const tags = [
+    data.date         ? `<span class="tag">${esc(data.date)}</span>`                         : '',
+    data.confidence   ? `<span class="tag">CONF ${pct(data.confidence)}</span>`              : '',
+    data.produced_at  ? `<span class="tag">${esc(ts(data.produced_at))}</span>`              : '',
+    data.brief_id     ? `<span class="tag" style="opacity:.5">${esc(data.brief_id)}</span>`  : '',
+  ].filter(Boolean).join('');
+
+  const sections = (data.sections || []).map(s =>
+    `<h2>${esc(s.title || '')}</h2><div>${renderMd(s.body || '')}</div>`
+  ).join('');
+
+  return `<div class="brief-wrap">
+    ${tags ? `<div class="brief-id-row">${tags}</div>` : ''}
+    <div class="md">
+      ${data.headline ? `<h1>${esc(data.headline)}</h1>` : ''}
+      ${renderMd(data.summary || '')}
+      ${sections}
+      ${(data.sources||[]).length ? `<p style="font-size:11px;color:var(--text-muted);margin-top:18px;">Sources: ${data.sources.map(s=>`<a href="${esc(s)}" style="color:var(--text-muted)">${esc(s)}</a>`).join(', ')}</p>` : ''}
+    </div>
+  </div>`;
+}
+
+function renderBriefData(data) {
+  if (!data) return emptyState('No brief available yet. Run a cycle to generate the first brief.');
+  if (data.message) return emptyState(esc(data.message));
+  if (data.headline) return renderWorldBrief(data);
+  if (data.brief) {
+    const tags = [
+      data.run_id      ? `<span class="tag">${esc(data.run_id)}</span>`                : '',
+      data.generated_at? `<span class="tag">Generated: ${esc(ts(data.generated_at))}</span>` : '',
+    ].filter(Boolean).join('');
+    return `<div class="brief-wrap">${tags?`<div class="brief-id-row">${tags}</div>`:''}<div class="md">${renderMd(data.brief)}</div></div>`;
+  }
+  return emptyState('Unrecognised brief format.');
+}
+
+async function loadLatestBrief() {
+  const el = document.getElementById('brief-content');
+  el.innerHTML = '<div class="loading">Loading latest brief…</div>';
+  const data = await apiFetch('/brief/latest');
+  el.innerHTML = renderBriefData(data);
+}
+
+// ── Archive panel ─────────────────────────────────────────────────────────────
+
+async function loadBriefIndex() {
+  const el = document.getElementById('archive-content');
+  el.innerHTML = '<div class="loading">Loading archive…</div>';
+  const data = await apiFetch('/brief/index');
+
+  if (!data) { el.innerHTML = emptyState('API offline — cannot load archive.'); return; }
+
+  const items = Array.isArray(data) ? data : (data.items || []);
+  if (!items.length) { el.innerHTML = emptyState('No briefs found yet. Run a cycle to generate the first brief.'); return; }
+
+  const cards = items.map(item => `
+    <div class="brief-card" onclick="loadBriefDetail('${esc(item.date||item.brief_id||'')}')">
+      <div class="card-date">${esc(item.date||'—')}</div>
+      ${item.headline ? `<div class="card-headline">${esc(trunc(item.headline,120))}</div>` : ''}
+      <div class="card-meta">
+        <span>${item.word_count||0} words</span>
+        ${item.confidence ? `<span>CONF ${pct(item.confidence)}</span>` : ''}
+        <span style="opacity:.5">${esc(trunc(item.brief_id||'',28))}</span>
+      </div>
+    </div>`).join('');
+
+  el.innerHTML = `
+    <div class="archive-bar">
+      <span></span>
+      <span class="archive-count">${items.length} brief${items.length!==1?'s':''}</span>
+    </div>
+    <div class="brief-cards">${cards}</div>`;
+}
+
+async function loadBriefDetail(dateOrId) {
+  const el = document.getElementById('archive-content');
+  el.innerHTML = '<div class="loading">Loading brief…</div>';
+  const data = await apiFetch('/brief/' + encodeURIComponent(dateOrId));
+  const back = '<button class="back-btn" onclick="loadBriefIndex()">← Back to Archive</button>';
+  el.innerHTML = back + renderBriefData(data);
+}
+
+// ── Signals panel ─────────────────────────────────────────────────────────────
+
+let _sigOff = 0;
+async function loadSignals(offset) {
+  if (offset < 0) offset = 0;
+  _sigOff = offset;
+  const el = document.getElementById('signals-content');
+  el.innerHTML = '<div class="loading">Loading signals…</div>';
+
+  const src = document.getElementById('sig-source').value.trim();
+  let url = `/signals?limit=${PAGE}&offset=${offset}`;
+  if (src) url += `&source_type=${encodeURIComponent(src)}`;
+
+  const data = await apiFetch(url);
+  if (!data) { el.innerHTML = emptyState('API offline — cannot load signals.'); return; }
+
+  const items = data.items || [];
+  if (!items.length) { el.innerHTML = emptyState('No signals found.'); return; }
+
+  const rows = items.map(r => `<tr>
+    <td><span class="mono-id">${esc(trunc(r.signal_id||r.id||'',22))}</span></td>
+    <td>${esc(r.source||'—')}</td>
+    <td>${badge(r.source_type||'')}</td>
+    <td><span class="cell-trunc" title="${esc(r.text||r.title||'')}">${esc(trunc(r.text||r.title||r.headline||'',80))}</span></td>
+    <td>${ts(r.published_at||r.created_at||'')}</td>
+  </tr>`).join('');
+
+  el.innerHTML = `<div class="table-wrap">
+    <table class="data-table">
+      <thead><tr><th>ID</th><th>Source</th><th>Type</th><th>Text</th><th>Published</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>` + pager(data.total||items.length, offset, PAGE, 'loadSignals');
+}
+
+// ── Intel Records panel ───────────────────────────────────────────────────────
+
+let _intelOff = 0;
+async function loadIntel(offset) {
+  if (offset < 0) offset = 0;
+  _intelOff = offset;
+  const el = document.getElementById('intel-content');
+  el.innerHTML = '<div class="loading">Loading intel records…</div>';
+
+  const cls  = document.getElementById('intel-cls').value;
+  const conf = parseFloat(document.getElementById('intel-conf').value) || 0;
+  let url = `/intel?limit=${PAGE}&offset=${offset}&min_confidence=${conf}`;
+  if (cls) url += `&classification=${encodeURIComponent(cls)}`;
+
+  const data = await apiFetch(url);
+  if (!data) { el.innerHTML = emptyState('API offline — cannot load intel records.'); return; }
+
+  const items = data.items || [];
+  if (!items.length) { el.innerHTML = emptyState('No intel records found matching the current filter.'); return; }
+
+  const rows = items.map(r => `<tr>
+    <td><span class="mono-id">${esc(trunc(r.record_id||'',22))}</span></td>
+    <td><span class="cell-trunc" title="${esc(r.pattern||r.headline||'')}">${esc(trunc(r.pattern||r.headline||r.title||'',80))}</span></td>
+    <td>${badge(r.classification||'')}</td>
+    <td>${confBar(r.confidence)}</td>
+    <td>${confBar(r.source_weight)}</td>
+    <td>${confBar(r.analyst_weight)}</td>
+  </tr>`).join('');
+
+  el.innerHTML = `<div class="table-wrap">
+    <table class="data-table">
+      <thead><tr><th>ID</th><th>Pattern</th><th>Class</th><th>Confidence</th><th>Src Wt</th><th>Ana Wt</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>` + pager(data.total||items.length, offset, PAGE, 'loadIntel');
+}
+
+// ── Leads panel ───────────────────────────────────────────────────────────────
+
+let _leadsOff = 0;
+async function loadLeads(offset) {
+  if (offset < 0) offset = 0;
+  _leadsOff = offset;
+  const el = document.getElementById('leads-content');
+  el.innerHTML = '<div class="loading">Loading leads…</div>';
+
+  const pri = document.getElementById('leads-pri').value;
+  const cat = document.getElementById('leads-cat').value;
+  let url = `/leads?limit=${PAGE}&offset=${offset}`;
+  if (pri) url += `&priority=${encodeURIComponent(pri)}`;
+  if (cat) url += `&category=${encodeURIComponent(cat)}`;
+
+  const data = await apiFetch(url);
+  if (!data) { el.innerHTML = emptyState('API offline — cannot load leads.'); return; }
+
+  const items = data.items || [];
+  if (!items.length) { el.innerHTML = emptyState('No leads found. Generate leads via POST /leads/generate.'); return; }
+
+  const cards = items.map(r => {
+    const actions = (r.action_items||[]).slice(0,3).map(a =>
+      `<div class="lead-action-item">${esc(a)}</div>`).join('');
+    return `<div class="lead-card">
+      <div class="lead-header">
+        <div class="lead-title">${esc(r.title||'—')}</div>
+        <div style="flex-shrink:0">${badge(r.priority||'')} ${badge(r.category||'')}</div>
+      </div>
+      <div class="lead-summary">${esc(trunc(r.summary||'',240))}</div>
+      ${actions ? `<div class="lead-actions">${actions}</div>` : ''}
+      <div class="lead-meta">
+        ${confBar(r.confidence)}
+        <span>${ts(r.generated_at||'')}</span>
+        ${r.expires_at ? `<span>Expires: ${ts(r.expires_at)}</span>` : ''}
+        <span style="opacity:.4">${esc(trunc(r.lead_id||'',20))}</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = cards + pager(data.total||items.length, offset, PAGE, 'loadLeads');
+}
+
+// ── Psyop panel ───────────────────────────────────────────────────────────────
+
+let _psyopOff = 0;
+
+async function analysePsyopText() {
+  const text = document.getElementById('psyop-text').value.trim();
+  const msg  = document.getElementById('psyop-analyse-msg');
+  const btn  = document.getElementById('psyop-submit-btn');
+  if (!text) { msg.textContent = 'Enter text to analyse.'; msg.className='form-msg err'; return; }
+  btn.disabled = true;
+  msg.textContent = 'Analysing…'; msg.className = 'form-msg';
+  const res = await apiPost('/psyop/analyse', { text });
+  btn.disabled = false;
+  if (!res.ok || !res.data) { msg.textContent = 'Analysis failed — is the API online?'; msg.className='form-msg err'; return; }
+  const d = res.data;
+  msg.innerHTML = `
+    <span class="${'form-msg ok'}">Score: <strong>${(d.score||0).toFixed(3)}</strong> &nbsp;
+    ${badge(d.classification||'')} &nbsp;
+    Patterns: ${(d.patterns_matched||[]).length}</span>`;
+  msg.className = 'form-msg ok';
+  loadPsyop(0);
+}
+
+async function loadPsyop(offset) {
+  if (offset < 0) offset = 0;
+  _psyopOff = offset;
+  const el = document.getElementById('psyop-content');
+  el.innerHTML = '<div class="loading">Loading psyop scores…</div>';
+
+  const cls = document.getElementById('psyop-cls').value;
+  let url = `/psyop?limit=${PAGE}&offset=${offset}`;
+  if (cls) url += `&classification=${encodeURIComponent(cls)}`;
+
+  const data = await apiFetch(url);
+  if (!data) { el.innerHTML = emptyState('API offline — cannot load psyop data.'); return; }
+
+  const items = data.items || [];
+  if (!items.length) { el.innerHTML = emptyState('No psyop scores found. Use the analyse form above to score a text.'); return; }
+
+  const cards = items.map(r => {
+    const score = parseFloat(r.score||0);
+    const patterns = (r.pattern_names||r.patterns_matched||[]).slice(0,6);
+    return `<div class="psyop-card">
+      <div class="psyop-header">
+        <div class="psyop-score-display">
+          <span class="psyop-score-val">${score.toFixed(3)}</span>
+          <span class="psyop-meta">&nbsp;psyop index</span>
+        </div>
+        <div>${badge(r.classification||'')} &nbsp;<span style="font-size:11px;color:var(--text-muted)">${ts(r.scored_at||'')}</span></div>
+      </div>
+      <div class="psyop-excerpt">${esc(trunc(r.text_excerpt||'',200))}</div>
+      ${patterns.length ? `<div class="psyop-patterns">${patterns.map(p=>`<span class="psyop-pattern">${esc(p)}</span>`).join('')}</div>` : ''}
+      ${(r.threat_categories||[]).length ? `<div class="psyop-meta">Threat categories: ${(r.threat_categories||[]).map(c=>esc(c)).join(', ')}</div>` : ''}
+    </div>`;
+  }).join('');
+
+  el.innerHTML = cards + pager(data.total||items.length, offset, PAGE, 'loadPsyop');
+}
+
+// ── FARA panel ────────────────────────────────────────────────────────────────
+
+let _faraOff = 0;
+async function loadFara(offset) {
+  if (offset < 0) offset = 0;
+  _faraOff = offset;
+  const el = document.getElementById('fara-content');
+  el.innerHTML = '<div class="loading">Loading FARA records…</div>';
+
+  const country = document.getElementById('fara-country').value.trim();
+  const reg     = document.getElementById('fara-reg').value.trim();
+  let url = `/fara?limit=${PAGE}&offset=${offset}`;
+  if (country) url += `&country=${encodeURIComponent(country)}`;
+  if (reg)     url += `&registrant=${encodeURIComponent(reg)}`;
+
+  const data = await apiFetch(url);
+  if (!data) { el.innerHTML = emptyState('API offline — cannot load FARA records.'); return; }
+
+  const items = data.items || [];
+  if (!items.length) { el.innerHTML = emptyState('No FARA records found. Filters: country and/or registrant name fragment.'); return; }
+
+  const rows = items.map(r => {
+    const meta = r.metadata || {};
+    return `<tr>
+      <td><span class="cell-trunc" title="${esc(meta.registrant||r.registrant||'')}">${esc(trunc(meta.registrant||r.registrant||'—',36))}</span></td>
+      <td>${esc(meta.country||r.country||'—')}</td>
+      <td>${esc(meta.filing_type||r.source_type||'—')}</td>
+      <td>${ts(meta.filing_date||r.published_at||r.created_at||'')}</td>
+      <td><span class="cell-trunc" title="${esc(r.text||r.summary||'')}">${esc(trunc(r.text||r.summary||r.headline||'',80))}</span></td>
+    </tr>`;
+  }).join('');
+
+  el.innerHTML = `<div class="table-wrap">
+    <table class="data-table">
+      <thead><tr><th>Registrant</th><th>Country</th><th>Type</th><th>Filed</th><th>Summary</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>` + pager(data.total||items.length, offset, PAGE, 'loadFara');
+}
+
+// ── Cycle panel ───────────────────────────────────────────────────────────────
+
+async function loadCycleStatus() {
+  const el = document.getElementById('cycle-status-content');
+  el.innerHTML = '<div class="loading">Loading cycle status…</div>';
+  const data = await apiFetch('/cycle/status');
+  if (!data) { el.innerHTML = emptyState('API offline — cannot load cycle status.'); return; }
+  if (data.status === 'no_run') { el.innerHTML = emptyState(data.message || 'No cycle has been run yet.'); return; }
+  el.innerHTML = renderCycleStats(data);
+}
+
+function renderCycleStats(d) {
+  const fields = [
+    ['Signals Harvested', d.signals_harvested],
+    ['Signals Parsed',    d.signals_parsed],
+    ['Opportunities',     d.opportunities_found],
+    ['Investigations',    d.investigations_generated],
+    ['Outcomes',          d.outcomes_verified],
+    ['Records Stored',    d.records_stored],
+    ['Errors',            d.errors],
+  ];
+  const boxes = fields.map(([label, val]) => `
+    <div class="stat-box">
+      <div class="stat-label">${label}</div>
+      <div class="stat-value">${val ?? '—'}</div>
+    </div>`).join('');
+
+  return `<div class="cycle-status-box">
+    <div class="stats-grid">${boxes}</div>
+    <div style="font-size:11px;color:var(--text-muted);display:flex;gap:20px;flex-wrap:wrap;">
+      ${d.run_id       ? `<span>Run: <code style="color:var(--text-secondary)">${esc(d.run_id)}</code></span>` : ''}
+      ${d.started_at   ? `<span>Started: ${ts(d.started_at)}</span>` : ''}
+      ${d.finished_at  ? `<span>Finished: ${ts(d.finished_at)}</span>` : ''}
+    </div>
+  </div>`;
+}
+
+async function runCycle() {
+  const btn = document.getElementById('cycle-run-btn');
+  const msg = document.getElementById('cycle-run-msg');
+  btn.disabled = true;
+  msg.textContent = 'Running cycle — this may take 30–90 seconds…';
+  msg.className = 'run-msg running';
+
+  const res = await apiPost('/cycle/run', { environment: 'production', max_signals: 500 });
+  btn.disabled = false;
+  if (!res.ok || !res.data) {
+    msg.textContent = 'Cycle failed — check API logs.';
+    msg.className = 'run-msg err';
+    return;
+  }
+  msg.textContent = `Cycle complete — ${res.data.records_stored ?? 0} records stored.`;
+  msg.className = 'run-msg done';
+  document.getElementById('cycle-status-content').innerHTML = renderCycleStats(res.data);
+}
+
+// ── Verdicts panel ────────────────────────────────────────────────────────────
+
+let _verdictsOff = 0;
+
+async function submitVerdict() {
+  const btn = document.getElementById('v-submit-btn');
+  const msg = document.getElementById('v-msg');
+  const recordId = document.getElementById('v-record-id').value.trim();
+  const verdict  = document.getElementById('v-verdict').value;
+  const reviewer = document.getElementById('v-reviewer').value.trim() || 'anonymous';
+  const notes    = document.getElementById('v-notes').value.trim();
+
+  if (!recordId) { msg.textContent = 'Record ID is required.'; msg.className='form-msg err'; return; }
+  btn.disabled = true;
+  msg.textContent = 'Submitting…'; msg.className = 'form-msg';
+
+  const res = await apiPost('/verdicts', { record_id: recordId, verdict, reviewer, notes });
+  btn.disabled = false;
+  if (!res.ok) {
+    const detail = res.data?.detail || 'Submission failed.';
+    msg.textContent = typeof detail === 'string' ? detail : JSON.stringify(detail);
+    msg.className = 'form-msg err';
+    return;
+  }
+  msg.textContent = `Verdict filed: ${verdict} on ${trunc(recordId,24)}`;
+  msg.className = 'form-msg ok';
+  document.getElementById('v-record-id').value = '';
+  document.getElementById('v-notes').value = '';
+  loadVerdicts(0);
+}
+
+async function loadVerdicts(offset) {
+  if (offset < 0) offset = 0;
+  _verdictsOff = offset;
+  const el = document.getElementById('verdicts-content');
+  el.innerHTML = '<div class="loading">Loading verdicts…</div>';
+
+  const recId   = document.getElementById('vf-record').value.trim();
+  const verdict = document.getElementById('vf-verdict').value;
+  let url = `/verdicts?limit=${PAGE}&offset=${offset}`;
+  if (recId)   url += `&record_id=${encodeURIComponent(recId)}`;
+  if (verdict) url += `&verdict=${encodeURIComponent(verdict)}`;
+
+  const data = await apiFetch(url);
+  if (!data) { el.innerHTML = emptyState('API offline — cannot load verdicts.'); return; }
+
+  const items = data.items || [];
+  if (!items.length) { el.innerHTML = emptyState('No verdicts filed yet.'); return; }
+
+  const rows = items.map(r => {
+    const vcls = 'v-' + (r.verdict||'unclear');
+    return `<tr>
+      <td><span class="mono-id">${esc(trunc(r.record_id||'',28))}</span></td>
+      <td><strong class="${vcls}">${esc(r.verdict||'—')}</strong></td>
+      <td>${esc(r.reviewer||'anonymous')}</td>
+      <td>${ts(r.reviewed_at||'')}</td>
+      <td><span class="cell-trunc" title="${esc(r.notes||'')}">${esc(trunc(r.notes||'',60))}</span></td>
+    </tr>`;
+  }).join('');
+
+  el.innerHTML = `<div class="table-wrap">
+    <table class="data-table">
+      <thead><tr><th>Record ID</th><th>Verdict</th><th>Reviewer</th><th>Reviewed At</th><th>Notes</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>` + pager(data.total||items.length, offset, PAGE, 'loadVerdicts');
+}
+
+// ── Calibration panel ─────────────────────────────────────────────────────────
+
+async function loadCalibration() {
+  const el = document.getElementById('calibration-content');
+  el.innerHTML = '<div class="loading">Computing calibration report…</div>';
+  const data = await apiFetch('/calibration/report');
+  if (!data) { el.innerHTML = emptyState('API offline — cannot compute calibration report.'); return; }
+
+  function bucketTable(buckets) {
+    if (!buckets || !Object.keys(buckets).length) return '<p style="font-size:12px;color:var(--text-muted);">No data.</p>';
+    const rows = Object.values(buckets).map(b => {
+      const acc = b.accuracy != null ? (b.accuracy*100).toFixed(1)+'%' : '—';
+      const pct = b.accuracy != null ? b.accuracy * 100 : 0;
+      return `<div class="cal-bucket-row">
+        <span class="cal-bucket-label">${esc(b.label)}</span>
+        <span class="cal-bucket-count">${b.count}</span>
+        <div class="cal-bucket-bar"><div class="cal-bucket-fill" style="width:${pct}%"></div></div>
+        <span class="cal-bucket-acc">${acc}</span>
+      </div>`;
+    }).join('');
+    return rows;
+  }
+
+  const overall = data.overall || {};
+  const overallAcc = overall.accuracy != null ? (overall.accuracy*100).toFixed(1)+'%' : '—';
+
+  el.innerHTML = `
+    <div class="cal-section">
+      <div class="cal-section-title">Overview</div>
+      <div class="cal-overview">
+        <div class="cal-kv"><div class="cal-kv-label">Records</div><div class="cal-kv-value">${data.total_records||0}</div></div>
+        <div class="cal-kv"><div class="cal-kv-label">Verdicts</div><div class="cal-kv-value">${data.total_verdicts||0}</div></div>
+        <div class="cal-kv"><div class="cal-kv-label">Matched</div><div class="cal-kv-value">${data.matched_verdicts||0}</div></div>
+        <div class="cal-kv"><div class="cal-kv-label">Accuracy</div><div class="cal-kv-value">${overallAcc}</div></div>
+        <div class="cal-kv">
+          <div class="cal-kv-label">Correct</div>
+          <div class="cal-kv-value" style="font-size:14px">${overall.correct||0} / ${overall.incorrect||0} / ${overall.partial||0}</div>
+          <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">✓ / ✗ / ~</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cal-section">
+      <div class="cal-section-title">By Classification</div>
+      ${bucketTable(data.by_classification)}
+    </div>
+
+    <div class="cal-section">
+      <div class="cal-section-title">By Confidence Bucket</div>
+      ${bucketTable(data.by_confidence_bucket)}
+    </div>
+
+    <div class="cal-section">
+      <div class="cal-section-title">By Source Weight Bucket</div>
+      ${bucketTable(data.by_source_weight_bucket)}
+    </div>
+
+    <div class="cal-section">
+      <div class="cal-section-title">By Analyst Weight Bucket</div>
+      ${bucketTable(data.by_analyst_weight_bucket)}
+    </div>
+
+    <p style="font-size:11px;color:var(--text-muted);margin-top:16px;">
+      Generated: ${ts(data.generated_at||'')} &nbsp;·&nbsp;
+      Calibration is descriptive — adjustments require explicit human code changes.
+    </p>`;
+}
+
+// ── Copy helper ───────────────────────────────────────────────────────────────
+
+function copyText(btn, text) {
+  const decoded = text.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"');
+  const orig = btn.textContent;
+  (navigator.clipboard
+    ? navigator.clipboard.writeText(decoded)
+    : Promise.resolve(fallbackCopy(decoded))
+  ).then(() => {
+    btn.textContent = 'Copied ✓'; btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 1800);
+  });
+}
+
+function fallbackCopy(text) {
+  const ta = Object.assign(document.createElement('textarea'), { value: text, style: 'position:fixed;opacity:0' });
+  document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+}
+
+// ── Workbench ─────────────────────────────────────────────────────────────────
+
+async function initWorkbench() {
+  const pill = document.getElementById('wb-api-state');
+  if (!pill) return;
+  try {
+    const r = await fetch(API + '/health', { signal: AbortSignal.timeout(3000) });
+    pill.textContent = r.ok ? 'online' : 'unreachable';
+    pill.style.color = r.ok ? '#9ae6b4' : 'rgba(255,100,100,.9)';
+  } catch (_) {
+    pill.textContent = 'offline';
+    pill.style.color = 'rgba(255,100,100,.9)';
+  }
+}
+
+async function wbApi(btn, method, path, body) {
+  const card = btn.closest('.wb-card');
+  const msg = card ? card.querySelector('[data-msg]') : null;
+  const setMsg = (cls, text) => { if (!msg) return; msg.className = 'wb-msg ' + cls; msg.textContent = text; };
+  const orig = btn.textContent;
+  btn.disabled = true; btn.textContent = '…'; setMsg('running', method + ' ' + path + ' …');
+  try {
+    const opts = { method, headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(60000) };
+    if (body !== undefined) opts.body = JSON.stringify(body);
+    const r = await fetch(API + path, opts);
+    const ct = r.headers.get('content-type') || '';
+    const data = ct.includes('application/json') ? await r.json() : await r.text();
+    if (!r.ok) {
+      setMsg('err', r.status + ' — ' + (typeof data === 'string' ? data.slice(0, 120) : (data.detail || JSON.stringify(data)).slice(0, 120)));
+    } else {
+      const preview = typeof data === 'string' ? data.slice(0, 200) : JSON.stringify(data).slice(0, 200);
+      setMsg('done', '✓ ' + r.status + ' — ' + preview + (preview.length >= 200 ? '…' : ''));
+    }
+  } catch (e) {
+    setMsg('err', 'error: ' + (e.message || e));
+  } finally {
+    btn.disabled = false; btn.textContent = orig;
+  }
+}
+
+function wbCopyMcp(btn, tool, args) {
+  const payload = { jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: tool, arguments: args } };
+  const cmd = "echo '" + JSON.stringify(payload).replace(/'/g, "'\\''") + "' | python mcp_server.py";
+  copyText(btn, cmd);
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+
+(async function init() {
+  await checkStatus();
+  loadLatestBrief();
+  setInterval(checkStatus, 30000);
+})();
+</script>
+</body>
+</html>

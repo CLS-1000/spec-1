@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPEC-1 Political Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;600;700&family=Courier+Prime&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --background:     #000000;
+    --surface:        #0A0A0A;
+    --border:         #FFFFFF;
+    --text-primary:   #FFFFFF;
+    --text-secondary: #CCCCCC;
+    --text-muted:     #666666;
+    --mono: 'IBM Plex Mono', 'Courier Prime', monospace;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--background);
+    color: var(--text-primary);
+    font-family: var(--mono);
+    font-size: 14px;
+  }
+
+  #fol-bg {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .layout { display: flex; flex-direction: column; height: 100vh; overflow: hidden; position: relative; z-index: 1; }
+
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 20px; height: 52px;
+    background: rgba(0,0,0,.94);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .logo {
+    display: flex; align-items: center; gap: 12px;
+    font-weight: 700; font-size: 15px; letter-spacing: .08em;
+    color: var(--text-primary);
+  }
+
+  .logo-badge {
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    font-size: 10px; font-weight: 700;
+    padding: 2px 7px; letter-spacing: .14em;
+  }
+
+  .header-right { display: flex; align-items: center; gap: 16px; font-size: 12px; color: var(--text-muted); font-family: var(--mono); }
+
+  .record-count { border: 1px solid rgba(255,255,255,.2); padding: 2px 10px; font-size: 11px; letter-spacing: .06em; }
+
+  .body { display: flex; flex: 1; overflow: hidden; }
+
+  nav {
+    width: 220px; flex-shrink: 0;
+    background: rgba(10,10,10,.96);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; overflow-y: auto; padding: 12px 0;
+  }
+
+  .nav-section { padding: 8px 16px 4px; font-size: 10px; font-weight: 600; letter-spacing: .14em; color: var(--text-muted); text-transform: uppercase; }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 16px; cursor: pointer; font-size: 12px;
+    color: var(--text-muted); border-left: 2px solid transparent;
+    transition: all .12s; user-select: none; letter-spacing: .04em;
+  }
+  .nav-item:hover { color: var(--text-secondary); }
+  .nav-item.active { color: var(--text-primary); border-left-color: var(--border); }
+  .nav-glyph { font-size: 11px; width: 18px; text-align: center; }
+  .nav-divider { height: 1px; background: rgba(255,255,255,.15); margin: 8px 16px; }
+
+  .nav-badge {
+    margin-left: auto; font-size: 10px;
+    border: 1px solid rgba(255,255,255,.25);
+    color: var(--text-muted); padding: 1px 6px; letter-spacing: .04em;
+  }
+  .nav-item.active .nav-badge { border-color: rgba(255,255,255,.5); color: var(--text-secondary); }
+
+  main { flex: 1; overflow-y: auto; padding: 24px 28px; }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .panel-title { font-size: 20px; font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 10px; letter-spacing: .06em; }
+  .panel-sub { color: var(--text-muted); font-size: 12px; margin-bottom: 20px; }
+
+  .loading { color: var(--text-muted); font-size: 12px; padding: 40px 0; display: flex; align-items: center; gap: 8px; letter-spacing: .06em; }
+  .loading::before { content: ''; display: inline-block; width: 14px; height: 14px; border: 1px solid rgba(255,255,255,.25); border-top-color: var(--text-primary); animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Filter bar ─────────────────────────────────── */
+  .filter-bar {
+    display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+    margin-bottom: 18px;
+    padding: 14px 16px;
+    background: rgba(10,10,10,.92);
+    border: 1px solid rgba(255,255,255,.2);
+  }
+
+  .filter-bar input, .filter-bar select {
+    background: var(--background);
+    border: 1px solid rgba(255,255,255,.3);
+    color: var(--text-primary);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 5px 10px;
+    outline: none;
+    letter-spacing: .04em;
+  }
+  .filter-bar input { width: 220px; }
+  .filter-bar input::placeholder { color: var(--text-muted); }
+  .filter-bar input:focus, .filter-bar select:focus { border-color: var(--border); }
+  .filter-bar select option { background: #111; }
+
+  .filter-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .1em; }
+
+  .filter-reset {
+    margin-left: auto; padding: 5px 12px; background: transparent;
+    border: 1px solid rgba(255,255,255,.2); color: var(--text-muted);
+    cursor: pointer; font-size: 11px; font-family: var(--mono); transition: all .12s; letter-spacing: .04em;
+  }
+  .filter-reset:hover { border-color: var(--border); color: var(--text-primary); }
+
+  .results-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px; font-size: 11px; color: var(--text-muted); font-family: var(--mono);
+  }
+  .results-count { border: 1px solid rgba(255,255,255,.15); padding: 2px 10px; letter-spacing: .06em; }
+
+  /* ── Intelligence cards ──────────────────────────── */
+  .intel-cards { display: flex; flex-direction: column; gap: 8px; }
+
+  .intel-card {
+    background: rgba(10,10,10,.92);
+    border: 1px solid rgba(255,255,255,.18);
+    padding: 16px 20px;
+    cursor: pointer;
+    transition: border-color .12s, background .12s;
+  }
+  .intel-card:hover { border-color: rgba(255,255,255,.55); background: rgba(255,255,255,.03); }
+  .intel-card.expanded { border-color: var(--border); }
+
+  .card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .card-source { font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 5px; }
+
+  .card-pattern {
+    font-size: 12px; color: var(--text-secondary); line-height: 1.5;
+    flex: 1; min-width: 0;
+  }
+  .card-pattern strong { color: var(--text-primary); }
+
+  .card-badges { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; flex-shrink: 0; }
+
+  .badge {
+    font-size: 10px; font-weight: 700; padding: 2px 8px; letter-spacing: .1em;
+    border: 1px solid;
+  }
+  .badge-INVESTIGATE  { border-color: rgba(255,255,255,.6);  color: var(--text-primary); }
+  .badge-ARCHIVE      { border-color: rgba(255,255,255,.25); color: var(--text-muted); }
+  .badge-MONITOR      { border-color: rgba(255,255,255,.5);  color: var(--text-secondary); }
+  .badge-ESCALATE     { border-color: var(--border);         color: var(--text-primary); background: rgba(255,255,255,.08); }
+  .badge-ELEVATED     { border-color: rgba(255,255,255,.6);  color: var(--text-primary); }
+  .badge-STANDARD     { border-color: rgba(255,255,255,.2);  color: var(--text-muted); }
+
+  .card-meta {
+    display: flex; gap: 14px; align-items: center;
+    margin-top: 10px; font-size: 11px; color: var(--text-muted); flex-wrap: wrap;
+  }
+
+  .confidence-wrap { display: flex; align-items: center; gap: 6px; }
+  .confidence-bar-outer { width: 60px; height: 4px; background: rgba(255,255,255,.1); }
+  .confidence-bar-inner { height: 100%; background: var(--text-primary); }
+  .confidence-val { font-size: 11px; color: var(--text-secondary); min-width: 34px; }
+
+  .card-detail { margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,.12); display: none; }
+  .intel-card.expanded .card-detail { display: block; }
+
+  .detail-row { margin-bottom: 10px; }
+  .detail-label { font-size: 10px; text-transform: uppercase; letter-spacing: .1em; color: var(--text-muted); margin-bottom: 3px; }
+  .detail-val { font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
+  .detail-val a { color: var(--text-secondary); text-decoration: underline; text-underline-offset: 2px; }
+  .detail-val a:hover { color: var(--text-primary); }
+
+  .gate-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+  .gate-chip { font-size: 10px; padding: 2px 8px; letter-spacing: .06em; border: 1px solid rgba(255,255,255,.25); color: var(--text-muted); }
+  .gate-chip.pass { border-color: rgba(255,255,255,.5); color: var(--text-secondary); }
+
+  /* ── Pagination ──────────────────────────────────── */
+  .pagination {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    margin-top: 22px; padding-top: 18px; border-top: 1px solid rgba(255,255,255,.1);
+  }
+  .page-btn {
+    padding: 5px 12px; background: transparent;
+    border: 1px solid rgba(255,255,255,.2); color: var(--text-muted);
+    cursor: pointer; font-size: 11px; font-family: var(--mono); transition: all .12s; letter-spacing: .04em;
+  }
+  .page-btn:hover:not(:disabled) { border-color: var(--border); color: var(--text-primary); }
+  .page-btn.active { border-color: var(--border); color: var(--text-primary); }
+  .page-btn:disabled { opacity: .3; cursor: default; }
+  .page-info { font-size: 11px; color: var(--text-muted); padding: 0 8px; }
+
+  /* ── Stats panel ─────────────────────────────────── */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-bottom: 28px; }
+
+  .stat-card {
+    background: rgba(10,10,10,.92); border: 1px solid rgba(255,255,255,.18);
+    padding: 18px 20px;
+  }
+  .stat-number { font-size: 28px; font-weight: 700; letter-spacing: -.01em; line-height: 1.1; }
+  .stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .1em; margin-top: 4px; }
+
+  .chart-section { margin-bottom: 28px; }
+  .chart-title { font-size: 12px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,.1); }
+
+  .bar-chart { display: flex; flex-direction: column; gap: 8px; }
+  .bar-row { display: flex; align-items: center; gap: 10px; }
+  .bar-row-label { font-size: 11px; width: 140px; flex-shrink: 0; color: var(--text-secondary); letter-spacing: .04em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bar-track { flex: 1; height: 12px; background: rgba(255,255,255,.06); position: relative; }
+  .bar-fill { height: 100%; background: rgba(255,255,255,.7); transition: width .3s; }
+  .bar-count { font-size: 11px; color: var(--text-muted); width: 50px; text-align: right; flex-shrink: 0; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  @media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+
+  /* ── Sources panel ───────────────────────────────── */
+  .source-cards { display: flex; flex-direction: column; gap: 10px; }
+  .source-card { background: rgba(10,10,10,.92); border: 1px solid rgba(255,255,255,.18); padding: 18px 20px; }
+  .source-name { font-size: 13px; font-weight: 700; letter-spacing: .08em; margin-bottom: 6px; }
+  .source-meta { font-size: 11px; color: var(--text-muted); margin-bottom: 12px; }
+  .source-bars { display: flex; flex-direction: column; gap: 6px; }
+  .source-bar-row { display: flex; align-items: center; gap: 8px; }
+  .source-bar-label { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; width: 80px; flex-shrink: 0; color: var(--text-muted); }
+  .source-bar-track { flex: 1; height: 8px; background: rgba(255,255,255,.06); }
+  .source-bar-fill { height: 100%; background: rgba(255,255,255,.6); }
+  .source-bar-val { font-size: 10px; color: var(--text-muted); width: 40px; text-align: right; flex-shrink: 0; }
+
+  /* ── Timeline ────────────────────────────────────── */
+  .timeline-grid { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 8px; }
+  .tday {
+    width: 14px; height: 14px;
+    border: 1px solid rgba(255,255,255,.1);
+    cursor: default;
+    position: relative;
+  }
+  .tday:hover::after {
+    content: attr(data-tip);
+    position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%);
+    background: #111; border: 1px solid rgba(255,255,255,.3);
+    color: var(--text-secondary); font-size: 10px; padding: 3px 7px;
+    white-space: nowrap; z-index: 10; pointer-events: none;
+  }
+  .tday-0  { background: rgba(255,255,255,.00); }
+  .tday-1  { background: rgba(255,255,255,.12); }
+  .tday-2  { background: rgba(255,255,255,.25); }
+  .tday-3  { background: rgba(255,255,255,.40); }
+  .tday-4  { background: rgba(255,255,255,.60); }
+  .tday-5  { background: rgba(255,255,255,.80); }
+</style>
+</head>
+<body>
+
+<svg id="fol-bg" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <defs>
+    <pattern id="fol-pattern" patternUnits="userSpaceOnUse" width="80" height="69.28">
+      <circle cx="0"   cy="0"     r="40" fill="none" stroke="white" stroke-width="0.6"/>
+      <circle cx="40"  cy="0"     r="40" fill="none" stroke="white" stroke-width="0.6"/>
+      <circle cx="80"  cy="0"     r="40" fill="none" stroke="white" stroke-width="0.6"/>
+      <circle cx="-20" cy="34.64" r="40" fill="none" stroke="white" stroke-width="0.6"/>
+      <circle cx="20"  cy="34.64" r="40" fill="none" stroke="white" stroke-width="0.6"/>
+      <circle cx="60"  cy="34.64" r="40" fill="none" stroke="white" stroke-width="0.6"/>
+      <circle cx="100" cy="34.64" r="40" fill="none" stroke="white" stroke-width="0.6"/>
+      <circle cx="0"   cy="69.28" r="40" fill="none" stroke="white" stroke-width="0.6"/>
+      <circle cx="40"  cy="69.28" r="40" fill="none" stroke="white" stroke-width="0.6"/>
+      <circle cx="80"  cy="69.28" r="40" fill="none" stroke="white" stroke-width="0.6"/>
+    </pattern>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#fol-pattern)" opacity="0.05"/>
+</svg>
+
+<div class="layout">
+
+  <header>
+    <div class="logo">
+      <span class="logo-badge">S1</span>
+      SPEC-1 Political Intelligence
+    </div>
+    <div class="header-right">
+      <span id="header-count" class="record-count">Loading…</span>
+      <span id="header-status" style="font-size:11px;color:var(--text-muted)">Initialising…</span>
+    </div>
+  </header>
+
+  <div class="body">
+
+    <nav>
+      <div class="nav-section">Intelligence</div>
+      <div class="nav-item active" data-panel="panel-feed" onclick="showPanel('panel-feed')">
+        <span class="nav-glyph">◈</span> Signal Feed
+        <span class="nav-badge" id="nav-feed-count">—</span>
+      </div>
+      <div class="nav-item" data-panel="panel-stats" onclick="showPanel('panel-stats')">
+        <span class="nav-glyph">▦</span> Statistics
+      </div>
+      <div class="nav-divider"></div>
+      <div class="nav-section">Sources</div>
+      <div class="nav-item" data-panel="panel-sources" onclick="showPanel('panel-sources')">
+        <span class="nav-glyph">◻</span> Source Analysis
+      </div>
+      <div class="nav-divider"></div>
+      <div class="nav-section">Filters (active)</div>
+      <div id="active-filters" style="padding:8px 16px;font-size:11px;color:var(--text-muted);line-height:1.8;white-space:pre-line">
+        None
+      </div>
+    </nav>
+
+    <main>
+
+      <!-- Feed panel -->
+      <div class="panel active" id="panel-feed">
+        <div class="panel-title">◈ Signal Feed</div>
+        <div class="panel-sub">All intelligence records — search, filter, and expand for full detail</div>
+
+        <div class="filter-bar">
+          <div>
+            <div class="filter-label">Search</div>
+            <input type="text" id="search-input" placeholder="hypothesis, pattern, URL…" oninput="onFilterChange()">
+          </div>
+          <div>
+            <div class="filter-label">Classification</div>
+            <select id="filter-class" onchange="onFilterChange()">
+              <option value="">All</option>
+              <option value="INVESTIGATE">INVESTIGATE</option>
+              <option value="ESCALATE">ESCALATE</option>
+              <option value="MONITOR">MONITOR</option>
+              <option value="ARCHIVE">ARCHIVE</option>
+            </select>
+          </div>
+          <div>
+            <div class="filter-label">Priority</div>
+            <select id="filter-priority" onchange="onFilterChange()">
+              <option value="">All</option>
+              <option value="ELEVATED">ELEVATED</option>
+              <option value="STANDARD">STANDARD</option>
+              <option value="MONITOR">MONITOR</option>
+            </select>
+          </div>
+          <div>
+            <div class="filter-label">Source</div>
+            <select id="filter-source" onchange="onFilterChange()">
+              <option value="">All sources</option>
+            </select>
+          </div>
+          <div>
+            <div class="filter-label">Min Confidence</div>
+            <select id="filter-conf" onchange="onFilterChange()">
+              <option value="">Any</option>
+              <option value="0.3">≥ 0.30</option>
+              <option value="0.4">≥ 0.40</option>
+              <option value="0.5">≥ 0.50</option>
+              <option value="0.6">≥ 0.60</option>
+            </select>
+          </div>
+          <button class="filter-reset" onclick="resetFilters()">Reset filters</button>
+        </div>
+
+        <div class="results-bar">
+          <span class="results-count" id="results-count">—</span>
+          <span id="sort-label" style="font-size:11px;color:var(--text-muted)">Sorted by date desc</span>
+        </div>
+
+        <div id="feed-content"><div class="loading">Loading intelligence records…</div></div>
+      </div>
+
+      <!-- Stats panel -->
+      <div class="panel" id="panel-stats">
+        <div class="panel-title">▦ Statistics</div>
+        <div class="panel-sub">Aggregate metrics across all <span id="stats-total">—</span> intelligence records</div>
+        <div id="stats-content"><div class="loading">Loading…</div></div>
+      </div>
+
+      <!-- Sources panel -->
+      <div class="panel" id="panel-sources">
+        <div class="panel-title">◻ Source Analysis</div>
+        <div class="panel-sub">Signal volume, confidence, and classification breakdown by source</div>
+        <div id="sources-content"><div class="loading">Loading…</div></div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// ── State ─────────────────────────────────────────────────────────────────────
+
+let ALL_RECORDS = [];
+let filtered    = [];
+let page        = 1;
+const PAGE_SIZE = 30;
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function fmtSource(s) {
+  return String(s||'').replace(/_/g,' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function fmtDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (isNaN(d)) return iso.slice(0,10);
+  return d.toISOString().slice(0,10);
+}
+
+function fmtConf(c) {
+  return typeof c === 'number' ? (c * 100).toFixed(0) + '%' : '—';
+}
+
+function safeHref(url) {
+  try {
+    const u = new URL(url);
+    return (u.protocol === 'http:' || u.protocol === 'https:') ? url : null;
+  } catch { return null; }
+}
+
+// ── Load data ─────────────────────────────────────────────────────────────────
+
+async function loadData() {
+  try {
+    const res = await fetch('./spec1_intelligence_export.json');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    ALL_RECORDS = Array.isArray(data) ? data : [];
+    onDataLoaded();
+  } catch(e) {
+    document.getElementById('feed-content').innerHTML =
+      `<div style="padding:24px;border:1px solid rgba(255,255,255,.2);font-size:13px;color:var(--text-muted)">
+        Failed to load intelligence data: ${esc(e.message)}<br><br>
+        Make sure <code style="font-family:var(--mono);color:var(--text-secondary)">spec1_intelligence_export.json</code>
+        is in the same directory and serve via a local HTTP server — browsers block
+        <code style="font-family:var(--mono);color:var(--text-secondary)">fetch()</code>
+        over <code style="font-family:var(--mono);color:var(--text-secondary)">file://</code>:<br><br>
+        <code style="font-family:var(--mono);color:var(--text-secondary)">python3 -m http.server 8080</code>
+      </div>`;
+    document.getElementById('header-status').textContent = 'Data load failed';
+  }
+}
+
+function onDataLoaded() {
+  const n = ALL_RECORDS.length;
+  document.getElementById('header-count').textContent = n.toLocaleString() + ' records';
+  document.getElementById('header-status').textContent = 'Data loaded';
+  document.getElementById('stats-total').textContent = n.toLocaleString();
+
+  // Populate source dropdown
+  const sources = [...new Set(ALL_RECORDS.map(r => r.signal_source).filter(Boolean))].sort();
+  const sel = document.getElementById('filter-source');
+  sources.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s; opt.textContent = fmtSource(s);
+    sel.appendChild(opt);
+  });
+
+  applyFilters();
+  renderStats();
+  renderSources();
+}
+
+// ── Filtering ─────────────────────────────────────────────────────────────────
+
+function getFilterValues() {
+  return {
+    q:        document.getElementById('search-input').value.trim().toLowerCase(),
+    cls:      document.getElementById('filter-class').value,
+    priority: document.getElementById('filter-priority').value,
+    source:   document.getElementById('filter-source').value,
+    conf:     parseFloat(document.getElementById('filter-conf').value) || 0,
+  };
+}
+
+function applyFilters() {
+  const { q, cls, priority, source, conf } = getFilterValues();
+
+  filtered = ALL_RECORDS.filter(r => {
+    if (cls && r.classification !== cls) return false;
+    if (priority && r.opportunity_priority !== priority) return false;
+    if (source && r.signal_source !== source) return false;
+    if (conf && (r.confidence || 0) < conf) return false;
+    if (q) {
+      const hay = [r.hypothesis, r.pattern, r.signal_url, r.signal_source].join(' ').toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+
+  // sort by written_at desc
+  filtered.sort((a, b) => {
+    const da = a.written_at || ''; const db = b.written_at || '';
+    return db.localeCompare(da);
+  });
+
+  page = 1;
+  document.getElementById('nav-feed-count').textContent = filtered.length.toLocaleString();
+  document.getElementById('results-count').textContent =
+    filtered.length.toLocaleString() + ' of ' + ALL_RECORDS.length.toLocaleString() + ' records';
+  updateActiveFiltersSidebar({ q, cls, priority, source, conf });
+  renderFeed();
+}
+
+function updateActiveFiltersSidebar({ q, cls, priority, source, conf }) {
+  const parts = [];
+  if (q) parts.push('Search: "' + q + '"');
+  if (cls) parts.push('Class: ' + cls);
+  if (priority) parts.push('Priority: ' + priority);
+  if (source) parts.push('Source: ' + fmtSource(source));
+  if (conf) parts.push('Conf ≥ ' + (conf * 100).toFixed(0) + '%');
+  document.getElementById('active-filters').textContent = parts.length ? parts.join('\n') : 'None';
+}
+
+function onFilterChange() { applyFilters(); }
+
+function resetFilters() {
+  document.getElementById('search-input').value = '';
+  document.getElementById('filter-class').value = '';
+  document.getElementById('filter-priority').value = '';
+  document.getElementById('filter-source').value = '';
+  document.getElementById('filter-conf').value = '';
+  applyFilters();
+}
+
+// ── Render feed ───────────────────────────────────────────────────────────────
+
+function renderFeed() {
+  const container = document.getElementById('feed-content');
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div style="padding:24px 0;font-size:13px;color:var(--text-muted)">
+        No records match the current filters.
+      </div>`;
+    return;
+  }
+
+  const total_pages = Math.ceil(filtered.length / PAGE_SIZE);
+  const start = (page - 1) * PAGE_SIZE;
+  const slice = filtered.slice(start, start + PAGE_SIZE);
+
+  const cards = slice.map(r => renderCard(r)).join('');
+  const pager = renderPaginator(page, total_pages);
+
+  container.innerHTML = `<div class="intel-cards">${cards}</div>${pager}`;
+}
+
+function renderCard(r) {
+  const conf   = typeof r.confidence === 'number' ? r.confidence : 0;
+  const confW  = Math.round(conf * 100);
+  const cls    = r.classification || 'UNKNOWN';
+  const pri    = r.opportunity_priority || '';
+  const src    = fmtSource(r.signal_source);
+  const date   = fmtDate(r.written_at);
+  const rid    = r.record_id || '';
+
+  // Pattern display: strip the gate suffix for readability
+  const patternShort = (r.pattern || '').replace(/ \| gates=\S+$/, '').slice(0, 120);
+
+  // Gate chips
+  const gates = r.gate_results || {};
+  const gateHtml = Object.entries(gates).map(([g, v]) =>
+    `<span class="gate-chip ${v ? 'pass' : ''}">${esc(g)}</span>`
+  ).join('');
+
+  const hypo = r.hypothesis ? r.hypothesis.slice(0, 280) + (r.hypothesis.length > 280 ? '…' : '') : '—';
+  const urlSafe = r.signal_url ? safeHref(r.signal_url) : null;
+
+  return `
+    <div class="intel-card" id="card-${esc(rid)}" data-rid="${esc(rid)}">
+      <div class="card-header">
+        <div style="flex:1;min-width:0">
+          <div class="card-source">${esc(src)} · ${esc(date)}</div>
+          <div class="card-pattern">${esc(patternShort)}</div>
+        </div>
+        <div class="card-badges">
+          <span class="badge badge-${esc(cls)}">${esc(cls)}</span>
+          ${pri ? `<span class="badge badge-${esc(pri)}">${esc(pri)}</span>` : ''}
+        </div>
+      </div>
+      <div class="card-meta">
+        <div class="confidence-wrap">
+          <span style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em">Conf</span>
+          <div class="confidence-bar-outer">
+            <div class="confidence-bar-inner" style="width:${confW}%"></div>
+          </div>
+          <span class="confidence-val">${fmtConf(conf)}</span>
+        </div>
+        <span>src·wt ${(r.source_weight||0).toFixed(2)}</span>
+        <span>opp·score ${(r.opportunity_score||0).toFixed(2)}</span>
+        <span style="margin-left:auto;opacity:.5;font-size:10px">${esc(rid.slice(0,20))}</span>
+      </div>
+      <div class="card-detail">
+        <div class="detail-row">
+          <div class="detail-label">Hypothesis</div>
+          <div class="detail-val">${esc(hypo)}</div>
+        </div>
+        ${r.signal_url ? `
+        <div class="detail-row">
+          <div class="detail-label">Signal URL</div>
+          <div class="detail-val">${urlSafe
+            ? `<a href="${esc(urlSafe)}" target="_blank" rel="noopener noreferrer">${esc(r.signal_url)}</a>`
+            : esc(r.signal_url)
+          }</div>
+        </div>` : ''}
+        <div class="detail-row">
+          <div class="detail-label">4-Gate Results</div>
+          <div class="gate-chips">${gateHtml}</div>
+        </div>
+        <div class="detail-row" style="display:flex;gap:24px;flex-wrap:wrap">
+          <div>
+            <div class="detail-label">Run ID</div>
+            <div class="detail-val" style="font-size:11px">${esc(r.run_id||'—')}</div>
+          </div>
+          <div>
+            <div class="detail-label">Investigation ID</div>
+            <div class="detail-val" style="font-size:11px">${esc(r.investigation_id||'—')}</div>
+          </div>
+          <div>
+            <div class="detail-label">Analyst Weight</div>
+            <div class="detail-val" style="font-size:11px">${(r.analyst_weight||0).toFixed(3)}</div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function toggleCard(rid) {
+  const el = document.getElementById('card-' + rid);
+  if (el) el.classList.toggle('expanded');
+}
+
+// Delegated click handler — avoids inline onclick with unescaped record IDs
+document.getElementById('feed-content').addEventListener('click', function(e) {
+  const card = e.target.closest('.intel-card');
+  if (card && card.dataset.rid) toggleCard(card.dataset.rid);
+});
+
+function renderPaginator(cur, total) {
+  if (total <= 1) return '';
+
+  const btns = [];
+  btns.push(`<button class="page-btn" onclick="goPage(${cur-1})" ${cur===1?'disabled':''}>← Prev</button>`);
+
+  // window of pages
+  const lo = Math.max(1, cur - 2);
+  const hi = Math.min(total, cur + 2);
+  if (lo > 1) { btns.push(`<button class="page-btn" onclick="goPage(1)">1</button>`); if (lo > 2) btns.push('<span class="page-info">…</span>'); }
+  for (let i = lo; i <= hi; i++) {
+    btns.push(`<button class="page-btn ${i===cur?'active':''}" onclick="goPage(${i})">${i}</button>`);
+  }
+  if (hi < total) { if (hi < total - 1) btns.push('<span class="page-info">…</span>'); btns.push(`<button class="page-btn" onclick="goPage(${total})">${total}</button>`); }
+
+  btns.push(`<button class="page-btn" onclick="goPage(${cur+1})" ${cur===total?'disabled':''}>Next →</button>`);
+  btns.push(`<span class="page-info">${cur} / ${total} &nbsp;(${PAGE_SIZE}/page)</span>`);
+
+  return `<div class="pagination">${btns.join('')}</div>`;
+}
+
+function goPage(p) {
+  const total = Math.ceil(filtered.length / PAGE_SIZE);
+  page = Math.max(1, Math.min(total, p));
+  renderFeed();
+  document.getElementById('panel-feed').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.querySelector('main').scrollTop = 0;
+}
+
+// ── Navigation ────────────────────────────────────────────────────────────────
+
+function showPanel(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const nav = document.querySelector('[data-panel="' + id + '"]');
+  if (nav) nav.classList.add('active');
+}
+
+// ── Stats ─────────────────────────────────────────────────────────────────────
+
+function barChart(items, maxVal) {
+  return items.map(([label, count]) => {
+    const pct = maxVal > 0 ? Math.round((count / maxVal) * 100) : 0;
+    return `
+      <div class="bar-row">
+        <div class="bar-row-label" title="${esc(label)}">${esc(label)}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+        <div class="bar-count">${count.toLocaleString()}</div>
+      </div>`;
+  }).join('');
+}
+
+function renderStats() {
+  const data = ALL_RECORDS;
+  if (!data.length) return;
+
+  // Classification counts
+  const cls = {};
+  const pri = {};
+  const src = {};
+  const confBuckets = { '0.0–0.2': 0, '0.2–0.4': 0, '0.4–0.6': 0, '0.6–0.8': 0, '0.8–1.0': 0 };
+  const dateMap = {};
+
+  let totalConf = 0;
+
+  for (const r of data) {
+    cls[r.classification] = (cls[r.classification] || 0) + 1;
+    pri[r.opportunity_priority] = (pri[r.opportunity_priority] || 0) + 1;
+    src[r.signal_source] = (src[r.signal_source] || 0) + 1;
+
+    const c = r.confidence || 0;
+    totalConf += c;
+    if (c < 0.2) confBuckets['0.0–0.2']++;
+    else if (c < 0.4) confBuckets['0.2–0.4']++;
+    else if (c < 0.6) confBuckets['0.4–0.6']++;
+    else if (c < 0.8) confBuckets['0.6–0.8']++;
+    else confBuckets['0.8–1.0']++;
+
+    const dt = fmtDate(r.written_at);
+    if (dt !== '—') dateMap[dt] = (dateMap[dt] || 0) + 1;
+  }
+
+  const avgConf = (totalConf / data.length * 100).toFixed(1) + '%';
+  const elevCount = pri['ELEVATED'] || 0;
+  const escalCount = cls['ESCALATE'] || 0;
+
+  const clsEntries = Object.entries(cls).sort((a,b) => b[1]-a[1]);
+  const priEntries = Object.entries(pri).sort((a,b) => b[1]-a[1]);
+  const srcEntries = Object.entries(src).sort((a,b) => b[1]-a[1]);
+  const confEntries = Object.entries(confBuckets);
+
+  const maxCls = Math.max(...clsEntries.map(e=>e[1]));
+  const maxPri = Math.max(...priEntries.map(e=>e[1]));
+  const maxSrc = Math.max(...srcEntries.map(e=>e[1]));
+  const maxConf = Math.max(...confEntries.map(e=>e[1]));
+
+  // Timeline
+  const timelineHtml = buildTimeline(dateMap);
+
+  document.getElementById('stats-content').innerHTML = `
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-number">${data.length.toLocaleString()}</div>
+        <div class="stat-label">Total Records</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">${elevCount.toLocaleString()}</div>
+        <div class="stat-label">Elevated Priority</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">${escalCount.toLocaleString()}</div>
+        <div class="stat-label">Escalated</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">${avgConf}</div>
+        <div class="stat-label">Avg Confidence</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">${Object.keys(src).length}</div>
+        <div class="stat-label">Signal Sources</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">${Object.keys(dateMap).length}</div>
+        <div class="stat-label">Active Days</div>
+      </div>
+    </div>
+
+    <div class="chart-section">
+      <div class="chart-title">Activity Timeline</div>
+      ${timelineHtml}
+    </div>
+
+    <div class="two-col">
+      <div>
+        <div class="chart-section">
+          <div class="chart-title">By Classification</div>
+          <div class="bar-chart">${barChart(clsEntries, maxCls)}</div>
+        </div>
+        <div class="chart-section">
+          <div class="chart-title">By Priority</div>
+          <div class="bar-chart">${barChart(priEntries, maxPri)}</div>
+        </div>
+      </div>
+      <div>
+        <div class="chart-section">
+          <div class="chart-title">Confidence Distribution</div>
+          <div class="bar-chart">${barChart(confEntries, maxConf)}</div>
+        </div>
+        <div class="chart-section">
+          <div class="chart-title">By Source</div>
+          <div class="bar-chart">${barChart(srcEntries.slice(0,10), maxSrc)}</div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function buildTimeline(dateMap) {
+  const dates = Object.keys(dateMap).sort();
+  if (!dates.length) return '<div style="color:var(--text-muted);font-size:12px">No timeline data</div>';
+
+  const min = dates[0];
+  const max = dates[dates.length - 1];
+  const maxCount = Math.max(...Object.values(dateMap));
+
+  // build every day in range
+  const start = new Date(min + 'T00:00:00Z');
+  const end   = new Date(max + 'T00:00:00Z');
+  const days  = [];
+  for (let d = new Date(start); d <= end; d.setUTCDate(d.getUTCDate() + 1)) {
+    days.push(d.toISOString().slice(0,10));
+  }
+
+  const cells = days.map(day => {
+    const count = dateMap[day] || 0;
+    const level = count === 0 ? 0 : Math.min(5, Math.ceil((count / maxCount) * 5));
+    return `<div class="tday tday-${level}" data-tip="${esc(day + ': ' + count + ' records')}"></div>`;
+  }).join('');
+
+  return `
+    <div style="font-size:10px;color:var(--text-muted);margin-bottom:6px;letter-spacing:.06em">${esc(min)} → ${esc(max)} (${days.length} days)</div>
+    <div class="timeline-grid">${cells}</div>
+    <div style="display:flex;gap:6px;align-items:center;margin-top:8px;font-size:10px;color:var(--text-muted)">
+      <span>Less</span>
+      ${[0,1,2,3,4,5].map(l=>`<div style="width:12px;height:12px;border:1px solid rgba(255,255,255,.1)" class="tday-${l}"></div>`).join('')}
+      <span>More</span>
+    </div>`;
+}
+
+// ── Sources ───────────────────────────────────────────────────────────────────
+
+function renderSources() {
+  const data = ALL_RECORDS;
+  if (!data.length) return;
+
+  const bySource = {};
+  for (const r of data) {
+    const s = r.signal_source || 'unknown';
+    if (!bySource[s]) bySource[s] = { total: 0, cls: {}, conf: 0, pri: {} };
+    const b = bySource[s];
+    b.total++;
+    b.cls[r.classification] = (b.cls[r.classification] || 0) + 1;
+    b.pri[r.opportunity_priority] = (b.pri[r.opportunity_priority] || 0) + 1;
+    b.conf += r.confidence || 0;
+  }
+
+  const entries = Object.entries(bySource).sort((a,b) => b[1].total - a[1].total);
+  const maxTotal = entries[0][1].total;
+
+  const cards = entries.map(([src, b]) => {
+    const avgConf = (b.conf / b.total * 100).toFixed(1);
+    const elevated = b.pri['ELEVATED'] || 0;
+    const investigate = b.cls['INVESTIGATE'] || 0;
+    const escalate = b.cls['ESCALATE'] || 0;
+
+    const clsRows = Object.entries(b.cls).sort((a,z)=>z[1]-a[1]).map(([c,n]) => {
+      const pct = Math.round((n / b.total) * 100);
+      return `
+        <div class="source-bar-row">
+          <div class="source-bar-label">${esc(c)}</div>
+          <div class="source-bar-track"><div class="source-bar-fill" style="width:${pct}%"></div></div>
+          <div class="source-bar-val">${n}</div>
+        </div>`;
+    }).join('');
+
+    const totalBarPct = Math.round((b.total / maxTotal) * 100);
+
+    return `
+      <div class="source-card">
+        <div class="source-name">${esc(fmtSource(src))}</div>
+        <div class="source-meta">${b.total.toLocaleString()} records · avg conf ${avgConf}% · ${elevated} elevated · ${escalate} escalated</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+          <div style="flex:1;height:6px;background:rgba(255,255,255,.06)">
+            <div style="height:100%;background:rgba(255,255,255,.5);width:${totalBarPct}%"></div>
+          </div>
+          <span style="font-size:10px;color:var(--text-muted)">${totalBarPct}% share</span>
+        </div>
+        <div class="source-bars">${clsRows}</div>
+      </div>`;
+  }).join('');
+
+  document.getElementById('sources-content').innerHTML =
+    `<div class="source-cards">${cards}</div>`;
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+
+loadData();
+</script>
+</body>
+</html>

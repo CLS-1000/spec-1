@@ -263,7 +263,6 @@ class TestGetStats:
             "SPEC1_OSINT_PATH": str(tmp_path / "osint.jsonl"),
             "SPEC1_LEADS_PATH": str(tmp_path / "leads.jsonl"),
             "SPEC1_PSYOP_PATH": str(tmp_path / "psyop.jsonl"),
-            "SPEC1_QUANT_PATH": str(tmp_path / "quant.jsonl"),
             "SPEC1_BRIEFS_PATH": str(tmp_path / "briefs.jsonl"),
             "SPEC1_VERDICTS_PATH": str(tmp_path / "verdicts.jsonl"),
         }

@@ -132,21 +132,6 @@ CREATE TABLE IF NOT EXISTS psyop_scores (
 )
 """
 
-QUANT_SIGNALS_DDL = """
-CREATE TABLE IF NOT EXISTS quant_signals (
-    signal_id TEXT PRIMARY KEY,
-    ticker TEXT NOT NULL,
-    pattern TEXT,
-    score REAL DEFAULT 0.0,
-    gate_results TEXT DEFAULT '{}',
-    triggered_at TEXT,
-    bar TEXT,
-    indicators TEXT DEFAULT '{}',
-    metadata TEXT DEFAULT '{}',
-    written_at TEXT
-)
-"""
-
 VERDICTS_DDL = """
 CREATE TABLE IF NOT EXISTS verdicts (
     verdict_id TEXT PRIMARY KEY,
@@ -198,7 +183,6 @@ ALL_DDL: list[tuple[str, str]] = [
     ("leads", LEADS_DDL),
     ("briefs", BRIEFS_DDL),
     ("psyop_scores", PSYOP_SCORES_DDL),
-    ("quant_signals", QUANT_SIGNALS_DDL),
     ("verdicts", VERDICTS_DDL),
     ("political_signals", POLITICAL_SIGNALS_DDL),
 ]

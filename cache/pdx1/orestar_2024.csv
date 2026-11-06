@@ -1,0 +1,4 @@
+filer_id,filer_name,transaction_type,amount,contributor_name,contributor_address,transaction_date,election_year
+1001,Jane Smith,contribution,$5000.00,Acme Corp,123 Main St,01/15/2024,2024
+1002,Bob Jones,contribution,$1200.50,XYZ LLC,456 Oak Ave,03/22/2024,2024
+1003,,contribution,$500.00,Unknown,,,

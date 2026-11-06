@@ -175,7 +175,6 @@ def tool_get_stats(args: dict) -> dict:
         "osint": _store_path("SPEC1_OSINT_PATH", "osint_records.jsonl"),
         "leads": _store_path("SPEC1_LEADS_PATH", "leads.jsonl"),
         "psyop": _store_path("SPEC1_PSYOP_PATH", "psyop_scores.jsonl"),
-        "quant": _store_path("SPEC1_QUANT_PATH", "quant_signals.jsonl"),
         "briefs": _store_path("SPEC1_BRIEFS_PATH", "world_briefs.jsonl"),
         "verdicts": _store_path("SPEC1_VERDICTS_PATH", "verdicts.jsonl"),
     }

@@ -94,17 +94,18 @@ def create_app() -> FastAPI:
             raise HTTPException(status_code=404, detail="UI not found")
         return FileResponse(path, media_type="text/html")
 
-    app.include_router(health.router)
-    app.include_router(signals.router)
-    app.include_router(intel.router)
-    app.include_router(leads.router)
-    app.include_router(brief.router)
-    app.include_router(psyop.router)
-    app.include_router(fara.router)
-    app.include_router(cycle.router)
-    app.include_router(verdicts.router)
-    app.include_router(calibration.router)
-    app.include_router(publication.router)
+    _API_V1 = "/api/v1"
+    app.include_router(health.router, prefix=_API_V1)
+    app.include_router(signals.router, prefix=_API_V1)
+    app.include_router(intel.router, prefix=_API_V1)
+    app.include_router(leads.router, prefix=_API_V1)
+    app.include_router(brief.router, prefix=_API_V1)
+    app.include_router(psyop.router, prefix=_API_V1)
+    app.include_router(fara.router, prefix=_API_V1)
+    app.include_router(cycle.router, prefix=_API_V1)
+    app.include_router(verdicts.router, prefix=_API_V1)
+    app.include_router(calibration.router, prefix=_API_V1)
+    app.include_router(publication.router, prefix=_API_V1)
 
     if _political_web_enabled():
         from spec1_api.routers import ingest, nodes

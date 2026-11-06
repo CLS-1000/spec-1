@@ -421,7 +421,6 @@
             <option value="geopolitical">GEOPOLITICAL</option>
             <option value="fara">FARA</option>
             <option value="psyop">PSYOP</option>
-            <option value="quant">QUANT</option>
           </select>
           <button class="filter-btn" onclick="loadLeads(0)">Filter</button>
           <button class="filter-btn" onclick="document.getElementById('leads-pri').value='';document.getElementById('leads-cat').value='';loadLeads(0)">Clear</button>
@@ -643,7 +642,7 @@ python -m spec1_engine.app.cycle</pre>
 
 <script>
 // API base — relative so this works when served by the API itself at /
-const API = '';
+const API = '/api/v1';
 const PAGE = 20;
 let _online = false;
 

@@ -1,0 +1,372 @@
+<html><body><pre># Merge Safety Plan — Data Integrity Protocol
+
+**Status:** 🟢 ACTIVE  
+**Version:** 1.0  
+**Last Updated:** 2026-05-22
+
+---
+
+## Core Principle
+
+**Every merge must preserve:**
+- ✅ All historical commits (never force-push)
+- ✅ All data files (JSONL append-only)
+- ✅ All test coverage
+- ✅ All features from both branches
+
+---
+
+## Pre-Merge Checklist
+
+### 1. Backup Critical Data (Always First)
+```bash
+# Before ANY merge, backup:
+cp spec1_intelligence.jsonl spec1_intelligence.jsonl.backup-$(date +%Y%m%d-%H%M%S)
+cp spec1.db spec1.db.backup-$(date +%Y%m%d-%H%M%S)
+```
+
+**What to backup:**
+- `spec1_intelligence.jsonl` (append-only record store)
+- `spec1.db` (SQLite index)
+- `.env` (credentials, if tracked)
+
+**Where:** Store in `backups/` directory (git-ignored)
+
+---
+
+### 2. Verify Both Branches Are Clean
+```bash
+# Current branch
+git status --porcelain
+# Should be: clean (no untracked files in src/)
+
+# Target branch
+git diff main origin/main
+# Should be: fast-forward or mergeable
+
+# Check for merge conflicts in advance
+git merge --no-commit --no-ff <branch>
+git merge --abort  # Don't actually merge yet
+```
+
+**Must pass:** Zero untracked code changes
+
+---
+
+### 3. Run Tests Before Merge
+```bash
+# On current branch
+PYTHONPATH=src pytest tests/ -q --tb=short
+
+# On target branch (origin/main)
+git fetch origin
+git log origin/main -1 --oneline
+# Verify latest commit
+```
+
+**Must pass:** All tests green
+
+---
+
+## Merge Strategy
+
+### Safe Merge Pattern (Recommended)
+```bash
+# 1. Create explicit merge commit (never fast-forward)
+git merge origin/main --no-ff \
+  -m "Merge branch 'origin/main' into <your-branch>
+
+Data integrity preserved:
+- Backup: spec1_intelligence.jsonl.backup-TIMESTAMP
+- Tests: All passing before merge
+- Commits: All historical commits preserved
+- Features: Zero loss from either branch"
+
+# 2. If conflicts occur, STOP and resolve carefully
+git status
+# Review each conflict
+git diff --check  # No whitespace issues
+```
+
+**Why `--no-ff`?**
+- Creates explicit merge commit (preserves history)
+- Easy to revert if needed
+- Clear record of what was merged
+
+---
+
+## Conflict Resolution
+
+### If Merge Conflicts Appear
+
+**Step 1: Pause**
+```bash
+git merge --abort  # Go back to before merge
+# Do NOT proceed until conflicts understood
+```
+
+**Step 2: Analyze the conflict**
+```bash
+# Find what's conflicting
+git diff main <your-branch> -- <file>
+
+# Check git blame for both versions
+git blame -L<start>,<end> <file>
+```
+
+**Step 3: Resolve strategically**
+
+**By file type:**
+
+| File Type | Strategy | Rule |
+|-----------|----------|------|
+| `.py` code | Manual merge | Keep both features, test |
+| `JSONL` data | Append both | Never delete records |
+| `.json` config | Manual merge | Prefer newer version |
+| Tests | Keep all | Combine test coverage |
+| Docs | Keep all | Merge content, not overwrite |
+
+**For JSONL conflicts:**
+```bash
+# NEVER truncate. Append new records:
+# File A: {a: 1}\n{a: 2}\n
+# File B: {b: 1}\n{b: 2}\n
+# Result: {a: 1}\n{a: 2}\n{b: 1}\n{b: 2}\n
+```
+
+**Step 4: Verify merged result**
+```bash
+# After manual resolution:
+git add <resolved-files>
+git commit -m "Resolve merge conflicts
+
+Conflicts resolved in: <files>
+Data integrity: Verified (no records lost)
+Tests: Re-run before push"
+
+# Re-run tests
+PYTHONPATH=src pytest tests/ -q
+```
+
+---
+
+## Post-Merge Verification
+
+### Verify Nothing Was Lost
+
+```bash
+# 1. Check line count (JSONL should grow or stay same, never shrink)
+wc -l spec1_intelligence.jsonl
+# Compare to backup:
+wc -l spec1_intelligence.jsonl.backup-*
+
+# 2. Validate JSONL format (each line is valid JSON)
+jq -s 'length' spec1_intelligence.jsonl
+# Should show: total record count
+
+# 3. Run full test suite
+PYTHONPATH=src pytest tests/ -q --cov=src
+
+# 4. Check git history
+git log --oneline -5
+# Verify merge commit is there
+```
+
+**All checks must PASS before pushing**
+
+---
+
+## Push to Remote
+
+### Safe Push Pattern
+```bash
+# 1. Verify local is ahead of remote
+git log origin/main..HEAD --oneline
+# Should show: your commits
+
+# 2. Push with verification
+git push origin <branch>
+
+# 3. Do NOT force-push
+# ❌ NEVER: git push --force
+# ✅ ALWAYS: git push (standard push only)
+```
+
+**If push rejected:**
+```bash
+# Remote has work you don't have locally
+git pull origin <branch>  # Merge remote into local
+# Repeat merge safety checks
+git push origin <branch>
+```
+
+---
+
+## Branch Protection Rules
+
+**Set on GitHub:**
+```
+Repository Settings → Branches → Add rule
+
+Branch name pattern: main
+
+Require status checks to pass:
+  ✅ python-package.yml (all 4 Python versions)
+  ✅ pages.yml (GitHub Pages)
+
+Require code review:
+  ✅ Dismiss stale reviews on new commits
+
+Require branches to be up to date before merging:
+  ✅ Yes
+
+Require linear history:
+  ✅ Yes (no merge commits — use rebase)
+```
+
+**Effect:** Cannot merge without passing CI + 0 conflicts
+
+---
+
+## Backup Retention
+
+### Keep backups for safety net
+
+**Location:** `.gitignore`d `backups/` directory
+```
+backups/
+├── spec1_intelligence.jsonl.backup-20260522-143000
+├── spec1_intelligence.jsonl.backup-20260522-160000
+└── spec1.db.backup-20260522-143000
+```
+
+**Retention:** Keep last 7 backups (auto-cleanup older)
+
+**Recovery procedure** (if needed):
+```bash
+# If merge corrupted data:
+cp backups/spec1_intelligence.jsonl.backup-<timestamp> \
+   spec1_intelligence.jsonl
+
+git reset --hard <commit-before-merge>
+git push origin main --force
+```
+
+---
+
+## Workflow for Future Branches
+
+### When starting new work:
+
+```bash
+# 1. Start from latest main
+git fetch origin
+git checkout -b <your-feature> origin/main
+
+# 2. Make changes, commit often
+git commit -m "feat: description"
+
+# 3. Before pushing, sync with main
+git fetch origin
+git merge origin/main --no-ff \
+  -m "Sync with main before PR"
+
+# 4. Run all checks
+PYTHONPATH=src pytest tests/ -q
+git diff main --stat  # Verify changes
+
+# 5. Push to create PR
+git push origin <your-feature>
+
+# 6. On GitHub: Create PR, request review
+# CI runs automatically
+# Merge via GitHub UI (requires passing checks)
+
+# 7. After merge, cleanup local
+git checkout main
+git pull origin main
+git branch -d <your-feature>  # Delete local
+```
+
+---
+
+## Emergency Recovery
+
+### If data IS lost despite precautions:
+
+**Step 1: STOP pushing**
+```bash
+git push origin --force-with-lease  # ❌ DO NOT DO THIS
+```
+
+**Step 2: Restore from backup**
+```bash
+cp backups/spec1_intelligence.jsonl.backup-<latest> \
+   spec1_intelligence.jsonl
+
+git add spec1_intelligence.jsonl
+git commit -m "Restore data from backup (incident #X)"
+```
+
+**Step 3: Notify team**
+```
+Incident: Data loss in merge
+Time: YYYY-MM-DD HH:MM UTC
+Affected: spec1_intelligence.jsonl
+Recovery: Restored from backup-TIMESTAMP
+Impact: Zero records lost
+Status: Resolved
+```
+
+**Step 4: Root cause analysis**
+- What caused the loss?
+- How to prevent next time?
+- Update this plan if needed
+
+---
+
+## Checklist for Every Merge
+
+**Before merge:**
+- [ ] Backup created (spec1_intelligence.jsonl.backup-*)
+- [ ] Both branches tested (all green)
+- [ ] Merge strategy decided (--no-ff)
+- [ ] Data source identified (JSONL, DB, etc.)
+
+**During merge:**
+- [ ] No conflicts forced through
+- [ ] Each conflict resolved manually
+- [ ] Tests re-run after resolution
+- [ ] Merge commit created with clear message
+
+**After merge:**
+- [ ] Line counts verified (no shrinkage)
+- [ ] JSONL validated (each line is JSON)
+- [ ] Full test suite passes
+- [ ] All commits preserved in history
+- [ ] Push successful (no force-push)
+
+---
+
+## Summary
+
+| Rule | Rationale |
+|------|-----------|
+| **Backup before merge** | Recovery if things go wrong |
+| **Test before merge** | Catch breakage early |
+| **Use --no-ff** | Preserve merge history |
+| **Never force-push** | Prevent losing others' work |
+| **Manual conflict resolution** | Avoid accidental data loss |
+| **Verify after merge** | Confirm nothing was lost |
+| **Keep backups 7 days** | Recovery window |
+
+---
+
+## Status: ACTIVE
+
+This plan is in effect for all merges to main as of 2026-05-22.
+
+**Violations:** If anyone force-pushes or loses data, conduct root-cause review and update this plan.
+
+**Next review:** 2026-07-22 (quarterly)
+</pre></body></html>

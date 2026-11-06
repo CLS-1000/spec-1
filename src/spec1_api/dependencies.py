@@ -13,7 +13,6 @@ from spec1_engine.intelligence.store import JsonlStore
 from cls_osint.store import OsintStore
 from cls_leads.store import LeadStore
 from cls_psyop.store import PsyopStore
-from cls_quant.store import QuantStore
 from cls_world_brief.store import BriefStore
 from cls_verdicts.store import VerdictStore
 from cls_db.database import Database
@@ -49,12 +48,6 @@ def get_psyop_store() -> PsyopStore:
 
 
 @lru_cache(maxsize=1)
-def get_quant_store() -> QuantStore:
-    path = _env_path("SPEC1_QUANT_PATH", "quant_signals.jsonl")
-    return QuantStore(path)
-
-
-@lru_cache(maxsize=1)
 def get_brief_store() -> BriefStore:
     jsonl = _env_path("SPEC1_BRIEFS_PATH", "world_briefs.jsonl")
     briefs_dir = _env_path("SPEC1_BRIEFS_DIR", "briefs")
@@ -80,7 +73,6 @@ IntelStoreDep = Annotated[JsonlStore, Depends(get_intel_store)]
 OsintStoreDep = Annotated[OsintStore, Depends(get_osint_store)]
 LeadStoreDep = Annotated[LeadStore, Depends(get_lead_store)]
 PsyopStoreDep = Annotated[PsyopStore, Depends(get_psyop_store)]
-QuantStoreDep = Annotated[QuantStore, Depends(get_quant_store)]
 BriefStoreDep = Annotated[BriefStore, Depends(get_brief_store)]
 VerdictStoreDep = Annotated[VerdictStore, Depends(get_verdict_store)]
 DatabaseDep = Annotated[Database, Depends(get_database)]

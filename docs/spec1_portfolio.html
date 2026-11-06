@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPEC-1 · Portfolio</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;600;700&family=Courier+Prime&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #000000;
+    --surface:  #0A0A0A;
+    --border:   #FFFFFF;
+    --primary:  #FFFFFF;
+    --secondary:#CCCCCC;
+    --muted:    #666666;
+    --dim:      rgba(255,255,255,.12);
+    --mono: 'IBM Plex Mono', 'Courier Prime', monospace;
+  }
+
+  html, body {
+    background: var(--bg);
+    color: var(--primary);
+    font-family: var(--mono);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* ── Flower of Life background ─────────────────────────── */
+  #fol-bg {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* ── Layout ────────────────────────────────────────────── */
+  .page { position: relative; z-index: 1; }
+
+  /* ── Header ────────────────────────────────────────────── */
+  header {
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(0,0,0,.96);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 52px;
+  }
+
+  .logo {
+    display: flex; align-items: center; gap: 12px;
+    font-weight: 700; font-size: 14px; letter-spacing: .08em;
+  }
+
+  .logo-badge {
+    border: 1px solid var(--border);
+    font-size: 10px; font-weight: 700;
+    padding: 2px 7px; letter-spacing: .14em;
+  }
+
+  .header-meta {
+    font-size: 11px; color: var(--muted); letter-spacing: .06em;
+    display: flex; gap: 20px; align-items: center;
+  }
+
+  .header-meta a {
+    color: var(--muted); text-decoration: none;
+    transition: color .12s;
+  }
+  .header-meta a:hover { color: var(--primary); }
+
+  /* ── Hero ───────────────────────────────────────────────── */
+  .hero {
+    padding: 64px 32px 52px;
+    max-width: 900px; margin: 0 auto;
+    border-bottom: 1px solid var(--dim);
+  }
+
+  .hero-eyebrow {
+    font-size: 11px; font-weight: 600; letter-spacing: .18em;
+    color: var(--muted); text-transform: uppercase; margin-bottom: 18px;
+  }
+
+  .hero-title {
+    font-size: 28px; font-weight: 700; letter-spacing: .05em;
+    margin-bottom: 8px; line-height: 1.2;
+  }
+
+  .hero-sub {
+    font-size: 13px; color: var(--secondary); margin-bottom: 32px;
+    letter-spacing: .04em;
+  }
+
+  .badges {
+    display: flex; gap: 10px; flex-wrap: wrap;
+  }
+
+  .badge {
+    border: 1px solid rgba(255,255,255,.35);
+    font-size: 11px; padding: 4px 12px; letter-spacing: .08em;
+    color: var(--secondary);
+  }
+
+  .badge strong { color: var(--primary); font-weight: 700; }
+
+  /* ── Content ────────────────────────────────────────────── */
+  .content {
+    max-width: 900px; margin: 0 auto;
+    padding: 0 32px 80px;
+  }
+
+  /* ── Section ────────────────────────────────────────────── */
+  .section {
+    padding: 52px 0 0;
+    border-top: 1px solid var(--dim);
+    margin-top: 52px;
+  }
+  .section:first-child { border-top: none; margin-top: 0; }
+
+  .section-num {
+    font-size: 10px; font-weight: 700; letter-spacing: .18em;
+    color: var(--muted); text-transform: uppercase; margin-bottom: 10px;
+  }
+
+  .section-title {
+    font-size: 18px; font-weight: 700; letter-spacing: .05em;
+    margin-bottom: 20px; line-height: 1.3;
+  }
+
+  p {
+    color: var(--secondary); font-size: 13px; line-height: 1.8;
+    margin-bottom: 14px;
+  }
+
+  p strong { color: var(--primary); font-weight: 700; }
+
+  ul, ol {
+    margin: 8px 0 14px 22px;
+  }
+
+  li {
+    color: var(--secondary); font-size: 13px; line-height: 1.75;
+    margin-bottom: 5px;
+  }
+
+  li strong { color: var(--primary); font-weight: 700; }
+
+  h3 {
+    font-size: 12px; font-weight: 600; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--primary);
+    margin: 28px 0 10px;
+  }
+
+  /* ── Pipeline diagram ───────────────────────────────────── */
+  .pipeline {
+    margin: 28px 0;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+
+  .pipeline-label {
+    font-size: 10px; font-weight: 600; letter-spacing: .14em;
+    color: var(--muted); text-transform: uppercase; margin-bottom: 8px;
+  }
+
+  .pipeline-row {
+    display: flex; align-items: stretch; flex-wrap: wrap; gap: 0;
+    border: 1px solid rgba(255,255,255,.25);
+  }
+
+  .p-stage {
+    flex: 1; min-width: 80px;
+    padding: 12px 14px;
+    border-right: 1px solid rgba(255,255,255,.2);
+    font-size: 12px; font-weight: 600; letter-spacing: .04em;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center;
+  }
+
+  .p-stage:last-child { border-right: none; }
+
+  .p-stage-num {
+    font-size: 9px; font-weight: 700; letter-spacing: .14em;
+    color: var(--muted); margin-bottom: 5px;
+  }
+
+  .p-stage-name { color: var(--primary); font-size: 12px; }
+
+  /* ── Gate grid ──────────────────────────────────────────── */
+  .gate-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: rgba(255,255,255,.2);
+    border: 1px solid rgba(255,255,255,.2);
+    margin: 20px 0;
+  }
+
+  .gate-cell {
+    background: var(--bg);
+    padding: 16px 14px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+
+  .gate-num {
+    font-size: 9px; font-weight: 700; letter-spacing: .16em;
+    color: var(--muted); text-transform: uppercase;
+  }
+
+  .gate-name {
+    font-size: 13px; font-weight: 700; color: var(--primary); letter-spacing: .04em;
+  }
+
+  .gate-detail {
+    font-size: 11px; color: var(--muted); line-height: 1.55;
+  }
+
+  /* ── Outcome list ────────────────────────────────────────── */
+  .outcome-list {
+    display: flex; flex-direction: column; gap: 1px;
+    border: 1px solid rgba(255,255,255,.2);
+    background: rgba(255,255,255,.12);
+    margin: 20px 0;
+  }
+
+  .outcome-row {
+    background: var(--bg);
+    display: flex; align-items: baseline; gap: 14px;
+    padding: 10px 16px;
+  }
+
+  .outcome-name {
+    font-size: 12px; font-weight: 700; color: var(--primary);
+    letter-spacing: .06em; min-width: 130px;
+  }
+
+  .outcome-desc {
+    font-size: 12px; color: var(--muted); line-height: 1.5;
+  }
+
+  /* ── Adapter stack ───────────────────────────────────────── */
+  .adapter-stack {
+    border: 1px solid rgba(255,255,255,.2);
+    margin: 20px 0;
+  }
+
+  .adapter-row {
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(255,255,255,.1);
+    display: flex; gap: 16px; align-items: baseline;
+  }
+
+  .adapter-row:last-child { border-bottom: none; }
+
+  .adapter-name {
+    font-size: 12px; font-weight: 700; color: var(--primary);
+    letter-spacing: .05em; min-width: 170px;
+  }
+
+  .adapter-desc {
+    font-size: 12px; color: var(--secondary); line-height: 1.6; flex: 1;
+  }
+
+  .adapter-tests {
+    font-size: 11px; color: var(--muted); white-space: nowrap;
+  }
+
+  /* ── Tech table ──────────────────────────────────────────── */
+  .tech-table {
+    width: 100%; border-collapse: collapse;
+    border: 1px solid rgba(255,255,255,.2);
+    margin: 20px 0;
+  }
+
+  .tech-table tr { border-bottom: 1px solid rgba(255,255,255,.1); }
+  .tech-table tr:last-child { border-bottom: none; }
+
+  .tech-table td {
+    padding: 10px 16px; font-size: 12px; vertical-align: top;
+    line-height: 1.6;
+  }
+
+  .tech-table td:first-child {
+    color: var(--muted); font-size: 11px; letter-spacing: .06em;
+    white-space: nowrap; width: 200px;
+    border-right: 1px solid rgba(255,255,255,.1);
+  }
+
+  .tech-table td:last-child { color: var(--primary); }
+
+  /* ── Redacted box ────────────────────────────────────────── */
+  .redacted-box {
+    border: 1px solid rgba(255,255,255,.15);
+    padding: 20px 24px;
+    margin: 20px 0;
+    background: rgba(255,255,255,.02);
+  }
+
+  .redacted-box ul { margin-left: 18px; }
+  .redacted-box li { color: var(--muted); }
+
+  /* ── Info block ──────────────────────────────────────────── */
+  .info-block {
+    border-left: 2px solid rgba(255,255,255,.3);
+    padding: 10px 16px;
+    margin: 18px 0;
+    background: rgba(255,255,255,.02);
+  }
+
+  .info-block p { margin-bottom: 0; }
+
+  /* ── Footer ──────────────────────────────────────────────── */
+  footer {
+    border-top: 1px solid var(--dim);
+    padding: 24px 32px;
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 11px; color: var(--muted); letter-spacing: .06em;
+    max-width: 900px; margin: 0 auto;
+  }
+
+  @media (max-width: 680px) {
+    .hero { padding: 40px 20px 36px; }
+    .content { padding: 0 20px 60px; }
+    header { padding: 0 20px; }
+    .header-meta { display: none; }
+    .gate-grid { grid-template-columns: repeat(2, 1fr); }
+    .pipeline-row { flex-direction: column; }
+    .p-stage { border-right: none; border-bottom: 1px solid rgba(255,255,255,.15); }
+    .p-stage:last-child { border-bottom: none; }
+    .adapter-row { flex-direction: column; gap: 6px; }
+    footer { flex-direction: column; gap: 6px; }
+  }
+</style>
+</head>
+<body>
+
+<svg id="fol-bg" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <defs>
+    <pattern id="fol-pattern" patternUnits="userSpaceOnUse" width="80" height="69.28">
+      <circle cx="0"   cy="0"     r="40" fill="none" stroke="white" stroke-width="0.6"/>
+      <circle cx="40"  cy="0"     r="40" fill="none" stroke="white" stroke-width="0.6"/>
+      <circle cx="80"  cy="0"     r="40" fill="none" stroke="white" stroke-width="0.6"/>
+      <circle cx="-20" cy="34.64" r="40" fill="none" stroke="white" stroke-width="0.6"/>
+      <circle cx="20"  cy="34.64" r="40" fill="none" stroke="white" stroke-width="0.6"/>
+      <circle cx="60"  cy="34.64" r="40" fill="none" stroke="white" stroke-width="0.6"/>
+      <circle cx="100" cy="34.64" r="40" fill="none" stroke="white" stroke-width="0.6"/>
+      <circle cx="0"   cy="69.28" r="40" fill="none" stroke="white" stroke-width="0.6"/>
+      <circle cx="40"  cy="69.28" r="40" fill="none" stroke="white" stroke-width="0.6"/>
+      <circle cx="80"  cy="69.28" r="40" fill="none" stroke="white" stroke-width="0.6"/>
+    </pattern>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#fol-pattern)" opacity="0.05"/>
+</svg>
+
+<div class="page">
+<header>
+  <div class="logo">
+    <span class="logo-badge">S1</span>
+    SPEC-1 Intelligence Engine
+  </div>
+  <div class="header-meta">
+    <span>v0.4.0</span>
+    <span>Portland OR</span>
+    <span>EVASTARARCANA</span>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="hero-eyebrow">Portfolio Summary</div>
+  <div class="hero-title">Open Source Intelligence Engine</div>
+  <div class="hero-sub">Signal → Opportunity → Investigation → Intelligence</div>
+  <div class="badges">
+    <div class="badge"><strong>607</strong> Tests</div>
+    <div class="badge"><strong>7</strong>-Stage Pipeline</div>
+    <div class="badge">Python <strong>3.11+</strong></div>
+    <div class="badge">Claude <strong>API</strong></div>
+    <div class="badge">v<strong>0.4.0</strong></div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- 01 -->
+  <div class="section">
+    <div class="section-num">01 — What This Is</div>
+    <div class="section-title">Automated OSINT for national security signal monitoring</div>
+    <p>SPEC-1 is an automated open-source intelligence (OSINT) system built for real-time national security signal monitoring. It harvests, filters, investigates, and analyzes signals from authoritative sources — producing structured intelligence records and daily written briefs without manual intervention.</p>
+    <p>The system is designed to do one thing well: separate signal from noise in a high-volume information environment, and surface what actually matters to a human analyst.</p>
+  </div>
+
+  <!-- 02 -->
+  <div class="section">
+    <div class="section-num">02 — The Problem It Solves</div>
+    <div class="section-title">The bottleneck is attention, not access</div>
+    <p>Anyone working in national security, geopolitical risk, or threat intelligence faces the same daily reality: there is far more credible reporting than any human can process. Feeds from think tanks, investigative journalists, and defense research organizations produce dozens of new pieces every day. Most are not actionable. A small fraction are. The challenge is not access to information — it is triage.</p>
+    <p>SPEC-1 automates that triage. It monitors a curated set of high-credibility sources continuously, evaluates each new signal through a structured scoring framework, and surfaces only those that clear every threshold. Signals that pass are handed off to an investigation and verification workflow powered by Claude. The result is a compressed, high-confidence set of intelligence records and a daily written brief — ready for human review without the noise.</p>
+  </div>
+
+  <!-- 03 -->
+  <div class="section">
+    <div class="section-num">03 — System Architecture</div>
+    <div class="section-title">A seven-stage sequential pipeline</div>
+    <p>The system is built as a sequential pipeline with seven stages. Each stage transforms the data and gates what moves forward. A FastAPI service wraps the pipeline for scheduled and on-demand operation.</p>
+
+    <div class="pipeline">
+      <div class="pipeline-label">Pipeline — seven stages · Harvest → Store</div>
+      <div class="pipeline-row">
+        <div class="p-stage"><div class="p-stage-num">01</div><div class="p-stage-name">Harvest</div></div>
+        <div class="p-stage"><div class="p-stage-num">02</div><div class="p-stage-name">Parse</div></div>
+        <div class="p-stage"><div class="p-stage-num">03</div><div class="p-stage-name">Score</div></div>
+        <div class="p-stage"><div class="p-stage-num">04</div><div class="p-stage-name">Investigate</div></div>
+        <div class="p-stage"><div class="p-stage-num">05</div><div class="p-stage-name">Verify</div></div>
+        <div class="p-stage"><div class="p-stage-num">06</div><div class="p-stage-name">Analyze</div></div>
+        <div class="p-stage"><div class="p-stage-num">07</div><div class="p-stage-name">Store</div></div>
+      </div>
+    </div>
+
+    <div class="pipeline">
+      <div class="pipeline-label">Stage 03 exploded — Four-gate scoring framework · Any single failure → signal dropped</div>
+      <div class="gate-grid">
+        <div class="gate-cell">
+          <div class="gate-num">Gate 1</div>
+          <div class="gate-name">Credibility</div>
+          <div class="gate-detail">Source rating · Editorial standard · Domain track record</div>
+        </div>
+        <div class="gate-cell">
+          <div class="gate-num">Gate 2</div>
+          <div class="gate-name">Volume</div>
+          <div class="gate-detail">Content depth · Word threshold · Substance filter</div>
+        </div>
+        <div class="gate-cell">
+          <div class="gate-num">Gate 3</div>
+          <div class="gate-name">Velocity</div>
+          <div class="gate-detail">Recency score · Time-window decay · Sliding scale</div>
+        </div>
+        <div class="gate-cell">
+          <div class="gate-num">Gate 4</div>
+          <div class="gate-name">Novelty</div>
+          <div class="gate-detail">Keyword taxonomy · Domain relevance · Subject filter</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pipeline">
+      <div class="pipeline-label">Stage 05 exploded — Verification outcomes · Claude Haiku · + confidence score</div>
+      <div class="outcome-list">
+        <div class="outcome-row"><div class="outcome-name">Corroborated</div><div class="outcome-desc">Evidence supports the hypothesis</div></div>
+        <div class="outcome-row"><div class="outcome-name">Escalate</div><div class="outcome-desc">High-confidence, high-urgency finding</div></div>
+        <div class="outcome-row"><div class="outcome-name">Investigate</div><div class="outcome-desc">Hypothesis plausible, more research needed</div></div>
+        <div class="outcome-row"><div class="outcome-name">Monitor</div><div class="outcome-desc">Signal is real but not yet actionable</div></div>
+        <div class="outcome-row"><div class="outcome-name">Conflicted</div><div class="outcome-desc">Evidence is contradictory</div></div>
+        <div class="outcome-row"><div class="outcome-name">Archive</div><div class="outcome-desc">Signal does not warrant further attention</div></div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px;">API failure → graceful fallback · cycle never crashes on verification error</div>
+    </div>
+
+    <div class="pipeline">
+      <div class="pipeline-label">Stage 07 exploded — Persistence · JSONL ground truth · SQLite query layer</div>
+      <div class="adapter-stack" style="margin:0;">
+        <div class="adapter-row">
+          <div class="adapter-name">IntelligenceRecord</div>
+          <div class="adapter-desc">Append-only JSONL · thread-safe single-writer lock · immutable log · ground truth · never overwritten</div>
+        </div>
+        <div class="adapter-row">
+          <div class="adapter-name">cls_db dual-write</div>
+          <div class="adapter-desc">SQLite · filtered querying · historical patterns · downstream analysis · mirrors IntelligenceRecord schema · query layer only</div>
+        </div>
+      </div>
+    </div>
+
+    <h3>Stage Descriptions</h3>
+
+    <p><strong>01 — Harvest.</strong> A harvester module fetches RSS/Atom feeds from a curated list of national security sources — think tanks, investigative outlets, and defense policy organizations with consistent editorial standards. The harvester handles SSL edge cases, malformed XML, and timeout conditions gracefully. A failed feed does not stop the cycle — it is logged and skipped. Output: raw Signal objects carrying source, URL, raw text, author, timestamp, and engagement metadata.</p>
+
+    <p><strong>02 — Parse.</strong> Each raw signal passes through a parser that strips HTML markup, extracts clean prose, identifies keywords and named entities, and measures content volume. BeautifulSoup handles HTML cleaning; lightweight NLP heuristics handle extraction — no external model dependencies. Output: ParsedSignal with normalized text, keyword set, entity set, word count, and detected language.</p>
+
+    <p><strong>03 — Score (Four-Gate Framework).</strong> The core filtering layer. Every parsed signal must clear four independent gates. Any single failure removes the signal from further processing. Gates evaluate credibility, volume, velocity, and novelty. Signals clearing all four gates become Opportunity objects with a composite score blending the four gate dimensions. Specific thresholds, weights, keyword taxonomy, and time-window parameters are not published here — they represent the accumulated operational judgment of the system.</p>
+
+    <p><strong>04 — Investigate.</strong> Each opportunity is handed to an investigation generator that constructs a structured Investigation object. This includes: a stated hypothesis, research queries targeting authoritative external sources, and a list of analyst leads. Analyst selection is domain-aware — signals about Russian military operations surface different leads than signals about cyber operations or energy infrastructure.</p>
+
+    <p><strong>05 — Verify.</strong> Each investigation is submitted to Claude (Haiku model) for hypothesis verification. Claude evaluates the hypothesis and returns a structured classification with confidence score. If the API call fails for any reason, the system falls back gracefully — the cycle continues and the failure is logged. The pipeline never crashes on a verification error.</p>
+
+    <p><strong>06 — Analyze.</strong> The analyzer synthesizes signal, investigation, and verification outcome into a final IntelligenceRecord. This stage blends confidence signals from multiple sources — verification confidence, source credibility, analyst credibility, outcome classification — into a single composite confidence value. The weighting of blended inputs reflects the relative epistemic weight each source carries. These weights are calibrated, not arbitrary.</p>
+
+    <p><strong>07 — Store.</strong> Completed IntelligenceRecord objects are written via two paths. Append-only JSONL with thread-safe single-writer access — records are never overwritten, the store is the immutable operational log. SQLite receives a parallel write via <code>cls_db.dual_write</code> for structured querying, downstream analysis, and historical pattern access. JSONL is ground truth; SQLite is the query layer.</p>
+  </div>
+
+  <!-- 04 -->
+  <div class="section">
+    <div class="section-num">04 — Domain Adapters</div>
+    <div class="section-title">Specialized adapters inside cls_osint</div>
+    <p>The core pipeline is domain-agnostic. Domain-specific intelligence is handled by adapter modules under <code>cls_osint/adapters/</code> that feed into the same scoring and persistence infrastructure.</p>
+
+    <div class="adapter-stack">
+      <div class="adapter-row">
+        <div class="adapter-name">cls_osint/adapters/fara</div>
+        <div class="adapter-desc">FARA bulk filing ingestion. Ingests DOJ public database filings, cross-references foreign agent registrations against congressional activity and known influence networks. Surfaces registrant-principal relationships as scored intelligence signals.</div>
+        <div class="adapter-tests">22 tests</div>
+      </div>
+      <div class="adapter-row">
+        <div class="adapter-name">cls_osint/adapters/congressional</div>
+        <div class="adapter-desc">Congressional trade intelligence. Ingests member financial disclosures via a fallback chain: Quiver Quantitative → Capitol Trades → House eFD. Flags trades in defense, cybersecurity, and energy sectors for conflict-of-interest analysis.</div>
+        <div class="adapter-tests">35 tests</div>
+      </div>
+      <div class="adapter-row">
+        <div class="adapter-name">cls_osint/adapters/narrative</div>
+        <div class="adapter-desc">Psychological operations detection. Monitors tracked sources for coordinated language (TF-IDF cosine similarity clustering), entity mention anomalies, publication silence patterns, and campaign-level aggregation. Surfaces narrative seeding, astroturfing, source discrediting, and information suppression as scored signals. Outputs AnomalyRecord, SimilarityCluster, and CampaignRecord objects.</div>
+        <div class="adapter-tests"></div>
+      </div>
+      <div class="adapter-row">
+        <div class="adapter-name">cls_db.dual_write</div>
+        <div class="adapter-desc">Atomic dual-write layer. Every store write is wrapped so JSONL and SQLite stay in sync. JSONL is the immutable ground truth; SQLite is the query layer for historical analysis and downstream access.</div>
+        <div class="adapter-tests"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 05 -->
+  <div class="section">
+    <div class="section-num">05 — Quantitative Signal Domain</div>
+    <div class="section-title">Market signals alongside text OSINT</div>
+    <p>Alongside the text-based OSINT pipeline, SPEC-1 monitors a curated watchlist of publicly traded equities across four sectors: defense primes, cybersecurity vendors, energy majors, and macro instruments. Market signals are processed through their own four-gate framework evaluating watchlist membership, relative volume, daily return magnitude, and deduplication.</p>
+    <p>Signals clearing all four gates enter the same investigation, verification, and analysis pipeline as text signals. The rationale: defense and cybersecurity equities often move on information that has not yet surfaced publicly in text form. Anomalous volume and price action in these names can be an early signal worth investigating.</p>
+  </div>
+
+  <!-- 06 -->
+  <div class="section">
+    <div class="section-num">06 — Daily Intelligence Brief</div>
+    <div class="section-title">Claude Sonnet writes the brief · rule-based fallback on API failure</div>
+    <p>After each pipeline cycle, a briefing generator collects the scored intelligence records and calls Claude Sonnet to produce a structured written brief. Claude is prompted to write as a professional intelligence editor — precise, sourced, and without speculation beyond what the evidence supports. Every claim in the brief traces back to a scored signal. If the API call fails, a structured fallback brief is generated from the raw record data.</p>
+    <ul>
+      <li>Executive summary of cycle findings</li>
+      <li>Elevated signals requiring immediate attention</li>
+      <li>Domain briefings — cyber and geopolitical separately</li>
+      <li>Story leads for further investigation</li>
+      <li>Watch list items for ongoing monitoring</li>
+    </ul>
+  </div>
+
+  <!-- 07 -->
+  <div class="section">
+    <div class="section-num">07 — API and Scheduling</div>
+    <div class="section-title">FastAPI · APScheduler · 06:00 AM PT daily cron</div>
+    <p>A FastAPI application wraps the pipeline for operational use. The scheduler runs on a fixed daily cron cadence at 06:00 AM PT. A kill-file mechanism allows operators to pause scheduled execution without modifying configuration.</p>
+    <ul>
+      <li>Trigger an immediate pipeline cycle</li>
+      <li>Query cycle status and statistics</li>
+      <li>Retrieve recent signals, intelligence records, and briefs</li>
+      <li>Kill-switch control for scheduled execution</li>
+    </ul>
+    <p>An MCP server (<code>mcp_server.py</code>) exposes the full pipeline surface to Claude directly: <code>run_cycle</code>, <code>get_signals</code>, <code>get_intel</code>, <code>get_leads</code>, <code>get_brief</code>, <code>get_psyop</code>, <code>get_fara</code>, <code>analyse_psyop</code>, <code>get_stats</code>, <code>file_verdict</code>, <code>get_verdicts</code>, <code>get_calibration</code>.</p>
+  </div>
+
+  <!-- 08 -->
+  <div class="section">
+    <div class="section-num">08 — How the System Learns and Improves</div>
+    <div class="section-title">Explicit, legible, deterministic learning</div>
+    <p>SPEC-1 does not use a trained machine learning model in the traditional sense. There is no gradient descent, no neural network, no embedding space. The scoring framework is rule-based and deterministic. But the system is designed to improve — through a different kind of learning.</p>
+
+    <h3>Calibration as Learning</h3>
+    <p>The four-gate framework and composite scoring weights were developed through iterative exposure to the signal environment. When a threshold is wrong, the failure is diagnosable. The specific threshold that failed can be identified and adjusted. A neural network learns implicitly. SPEC-1 learns explicitly.</p>
+
+    <h3>Source Credibility as a Dynamic Signal</h3>
+    <p>Source credibility ratings are not static. They reflect a judgment about editorial standards, domain expertise, and historical accuracy. A source that degrades in quality can be downweighted. A new authoritative source can be added with an initial credibility assessment.</p>
+
+    <h3>Analyst Registry as Accumulated Knowledge</h3>
+    <p>The analyst registry encodes domain expertise — which researchers and journalists have demonstrated sustained accuracy in specific subject areas. Connecting signal domains to specific analyst leads is itself a form of learned judgment.</p>
+
+    <h3>Outcome Feedback Loop (Structural)</h3>
+    <p>The verification stage produces outcome classifications with confidence scores. Over time, patterns in this data — sources that consistently produce corroborated signals, domains where the pipeline performs well or poorly — are legible from the JSONL records and the SQLite query layer. The system does not automate this feedback loop, but the data structure supports it.</p>
+    <p>Human verdicts are recorded via <code>cls_verdicts</code>. Calibration drift is surfaced descriptively by <code>cls_calibration</code> — it never auto-applies changes. Tuning is a human decision. This preserves the deterministic, legible design philosophy.</p>
+
+    <h3>Test Suite as Learning Anchor</h3>
+    <p>607 tests across 31 files. When a threshold or weight changes during calibration, the tests verify that the change does not break intended behavior elsewhere. The test suite is, in a real sense, a changelog of accumulated judgment.</p>
+  </div>
+
+  <!-- 09 -->
+  <div class="section">
+    <div class="section-num">09 — What Is Not Here</div>
+    <div class="section-title">Operational parameters are not published</div>
+    <div class="redacted-box">
+      <ul>
+        <li>Specific gate thresholds or cutoff values</li>
+        <li>Composite scoring weights or their derivation</li>
+        <li>The keyword taxonomy used for novelty detection</li>
+        <li>Individual source credibility ratings</li>
+        <li>Individual analyst credibility scores or weighting scheme</li>
+      </ul>
+    </div>
+    <p>These are the calibrated parameters that represent the operational intelligence of the system. They are not appropriate for public documentation.</p>
+  </div>
+
+  <!-- 10 -->
+  <div class="section">
+    <div class="section-num">10 — Technical Summary</div>
+    <div class="section-title">Stack at a glance</div>
+    <table class="tech-table">
+      <tr><td>Language</td><td>Python 3.11+</td></tr>
+      <tr><td>Pipeline stages</td><td>7 (Harvest → Store)</td></tr>
+      <tr><td>Signal sources</td><td>RSS feeds from curated authoritative publishers</td></tr>
+      <tr><td>Scoring framework</td><td>4-gate deterministic filtering</td></tr>
+      <tr><td>AI integration</td><td>Claude Haiku (verification) · Claude Sonnet (briefing)</td></tr>
+      <tr><td>Market signals</td><td>4-sector equity watchlist via yfinance</td></tr>
+      <tr><td>Persistence</td><td>Append-only JSONL + SQLite (cls_db dual-write)</td></tr>
+      <tr><td>Domain adapters</td><td>cls_osint/adapters: fara · congressional · narrative</td></tr>
+      <tr><td>API</td><td>FastAPI · APScheduler · 06:00 AM PT daily cron</td></tr>
+      <tr><td>MCP server</td><td>mcp_server.py · 12 tools exposed to Claude</td></tr>
+      <tr><td>Tests</td><td>607 across 31 files</td></tr>
+      <tr><td>Architecture version</td><td>v0.4.0</td></tr>
+    </table>
+  </div>
+
+  <!-- 11 -->
+  <div class="section">
+    <div class="section-num">11 — Why This Matters</div>
+    <div class="section-title">The system handles the volume. The analyst handles the judgment.</div>
+    <p>The bottleneck in intelligence work is not information — it is attention. SPEC-1 is designed to protect analyst attention by doing the triage work that does not require human judgment: fetching, cleaning, filtering, and structuring.</p>
+    <p>What reaches the human is already scored, investigated, verified, and written up. The human role is then what it should be: evaluating the findings, directing follow-on research, and making decisions.</p>
+    <div class="info-block">
+      <p>The system handles the volume. The analyst handles the judgment. That division of labor is the point.</p>
+    </div>
+  </div>
+
+</div><!-- /content -->
+
+<footer>
+  <span>SPEC-1 · EVASTARARCANA · Portland OR</span>
+  <span>v0.4.0</span>
+</footer>
+
+</div><!-- /page -->
+</body>
+</html>

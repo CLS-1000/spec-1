@@ -106,6 +106,24 @@
 
   .badge strong { color: var(--primary); font-weight: 700; }
 
+  .cta-row {
+    display: flex; gap: 12px; flex-wrap: wrap; margin-top: 28px;
+  }
+
+  .cta-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    border: 1px solid var(--primary);
+    background: transparent;
+    color: var(--primary);
+    font-family: var(--mono); font-size: 12px; font-weight: 600;
+    letter-spacing: .12em; text-transform: uppercase; text-decoration: none;
+    padding: 10px 18px;
+    transition: background .15s ease, color .15s ease;
+  }
+  .cta-btn:hover { background: var(--primary); color: var(--bg); }
+  .cta-btn.is-secondary { border-color: rgba(255,255,255,.35); color: var(--secondary); }
+  .cta-btn.is-secondary:hover { background: var(--secondary); color: var(--bg); border-color: var(--secondary); }
+
   /* ── Content ────────────────────────────────────────────── */
   .content {
     max-width: 900px; margin: 0 auto;
@@ -377,6 +395,10 @@
     <div class="badge">Python <strong>3.11+</strong></div>
     <div class="badge">Claude <strong>API</strong></div>
     <div class="badge">v<strong>0.4.0</strong></div>
+  </div>
+  <div class="cta-row">
+    <a class="cta-btn" href="ui/">Open Dashboard →</a>
+    <a class="cta-btn is-secondary" href="https://github.com/mjlak1000/spec-1" target="_blank" rel="noopener">GitHub Repository →</a>
   </div>
 </div>
 
