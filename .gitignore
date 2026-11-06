@@ -37,3 +37,12 @@ htmlcov/
 # Write these to generated/ or a dedicated branch, not main
 generated/
 data/psyop_signals.jsonl
+
+# Local databases, backups, and caches
+*.db
+*.db-journal
+*.bak.*
+cache/
+output/
+data/
+.claude/
