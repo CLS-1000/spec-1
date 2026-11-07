@@ -592,5 +592,15 @@
   loadDrafts();
 })();
 </script>
+<script>
+// By-hand Claude path (Copy for Claude / Paste Claude's Brief). Loaded with the page's
+// api_key so it still loads when SPEC1_API_KEY is set.
+(function () {
+  const key = new URLSearchParams(location.search).get("api_key");
+  const s = document.createElement("script");
+  s.src = "/claude_handoff.js" + (key ? "?api_key=" + encodeURIComponent(key) : "");
+  document.body.appendChild(s);
+})();
+</script>
 </body>
 </html>
