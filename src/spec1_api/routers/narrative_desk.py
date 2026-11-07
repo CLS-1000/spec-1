@@ -8,6 +8,8 @@
 
 GET   /narrative/status                  engine, today's canonical brief + receipt, job state
 POST  /narrative/generate                start a draft job {desk, voice, date?} on the local model
+GET   /narrative/handoff                 the run's prompts as one file, to paste into Claude by hand
+POST  /narrative/hand-written            save Claude's hand-written brief as a draft {desk, voice, date, run_id, markdown}
 GET   /narrative/jobs/{job_id}           job state
 GET   /narrative/drafts                  draft index
 GET   /narrative/drafts/{draft_id}       draft markdown, sidecar, Hed/Dek/Lead, edits, readiness
@@ -32,7 +34,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Literal, Optional
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from spec1_api import narrative_store as ns
@@ -61,6 +63,15 @@ class EditsRequest(BaseModel):
     hed: Optional[str] = Field(None, max_length=300)
     dek: Optional[str] = Field(None, max_length=500)
     lead: Optional[str] = Field(None, max_length=4000)
+
+
+class HandWrittenRequest(BaseModel):
+    """A brief written by hand in Claude chat from this desk's handoff."""
+    desk: Desk = "standard"
+    voice: Voice = "standard"
+    date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
+    run_id: str = Field(..., min_length=1, max_length=200)
+    markdown: str = Field(..., min_length=1, max_length=200_000)
 
 
 class PublishRequest(BaseModel):
@@ -185,6 +196,59 @@ def narrative_generate(req: GenerateRequest, background: BackgroundTasks) -> dic
     background.add_task(_generate, job_id)
     return {"job_id": job_id, "status": "pending", "voice": req.voice, "desk": req.desk,
             "date": date, "run_id": run_id, "created_at": job["created_at"]}
+
+
+@router.get("/handoff")
+def narrative_handoff(
+    desk: Desk = Query("standard"),
+    voice: Voice = Query("standard"),
+    date: Optional[str] = Query(None, pattern=r"^\d{4}-\d{2}-\d{2}$"),
+) -> dict:
+    """The run's handoff: the same prompts a model gets, to paste into Claude by hand.
+
+    Built from the latest run on *date* with the voice's prompt mode, exactly as
+    /generate would send it, so a hand-written brief follows the same house rules.
+    """
+    from spec1_core.briefing import generator
+
+    date = date or _today()
+    run_id, records = ns.latest_run_on(desk, date)
+    if not run_id:
+        raise HTTPException(status_code=404, detail=f"no {desk} records written on {date}")
+    stats = _cycle_stats(run_id, records)
+    s = ns.record_stats(records)
+    return {
+        "desk": desk, "voice": voice, "date": date, "run_id": run_id,
+        "records": s["records"], "records_tier": s["records_tier"],
+        "record_tiers": s["tier_counts"],
+        "filename": f"spec1_handoff_{date}_{voice}_{run_id}.md",
+        "markdown": generator.handoff_doc(records, stats, mode=ns.VOICE_MODES[voice]),
+    }
+
+
+@router.post("/hand-written", status_code=201)
+def narrative_hand_written(req: HandWrittenRequest) -> dict:
+    """Save Claude's hand-written brief as a draft, with the run's provenance.
+
+    It goes through the same readiness gate as a model draft: hand-written text
+    over rule_based records stays rule_based and cannot be released.
+    """
+    from cls_db.publish_log import append_event
+    from spec1_core.briefing import generator
+    from spec1_labels import BRIEF_SOURCE_HAND_WRITTEN
+
+    records = ns.run_records(req.desk, req.run_id)
+    if not records:
+        raise HTTPException(status_code=404, detail=f"no {req.desk} records for run {req.run_id}")
+    prompts = generator.handoff_doc(records, _cycle_stats(req.run_id, records),
+                                    mode=ns.VOICE_MODES[req.voice])
+    draft_id, path = ns.write_draft(
+        date=req.date, voice=req.voice, desk=req.desk, run_id=req.run_id,
+        markdown=req.markdown.strip() + "\n", prompts=prompts, stats=ns.record_stats(records),
+        brief_source=BRIEF_SOURCE_HAND_WRITTEN, brief_backend=None, model="claude (by hand)")
+    append_event("draft_hand_written", run_id=req.run_id, draft_id=draft_id,
+                 voice=req.voice, desk=req.desk, brief_source=BRIEF_SOURCE_HAND_WRITTEN)
+    return {"draft_id": draft_id, "draft_path": str(path), "readiness": ns.readiness(path)}
 
 
 @router.get("/jobs/{job_id}")

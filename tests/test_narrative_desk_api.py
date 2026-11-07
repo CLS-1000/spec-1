@@ -23,6 +23,11 @@ from fastapi.testclient import TestClient
 
 from spec1_api import narrative_store as ns
 from spec1_api.routers import narrative_desk
+from spec1_labels import (
+    ANALYSIS_TIER_LLM_VERIFIED,
+    ANALYSIS_TIER_RULE_BASED,
+    BRIEF_SOURCE_HAND_WRITTEN,
+)
 
 UI = Path(__file__).resolve().parents[1] / "ui"
 DATE = "2026-10-25"
@@ -394,3 +399,125 @@ def test_export_preview_failure_hides_internals(client):
         x = client.get(f"/api/v1/narrative/drafts/{job['draft_id']}/export").json()
     assert x["preview_available"] is False
     assert "secret" not in x["preview_error"] and "RuntimeError" not in x["preview_error"]
+
+
+# ── by-hand Claude path: /handoff and /hand-written ──────────────────────────
+
+def _handoff(client, **params):
+    q = {"desk": "legislative", "voice": "notitia_civica", "date": DATE, **params}
+    return client.get("/api/v1/narrative/handoff", params=q)
+
+
+def _hand_written(client, run_id="run-leg", desk="legislative", voice="notitia_civica",
+                  markdown=DRAFT_MD):
+    return client.post("/api/v1/narrative/hand-written", json={
+        "desk": desk, "voice": voice, "date": DATE, "run_id": run_id, "markdown": markdown})
+
+
+# ── handoff (by-hand Claude path) ───────────────────────────────────────────────────────────────────
+
+def test_handoff_is_the_generator_handoff_for_the_latest_run(client):
+    r = _handoff(client)
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["run_id"] == "run-leg" and body["records"] == 2
+    assert body["records_tier"] == ANALYSIS_TIER_LLM_VERIFIED
+    assert body["filename"] == f"spec1_handoff_{DATE}_notitia_civica_run-leg.md"
+    md = body["markdown"]
+    assert md.startswith("# SPEC-1 brief handoff — run-leg")
+    assert "## 1. Instructions" in md and "## 2. This run" in md
+
+
+def test_handoff_uses_the_voice_prompt_mode(client):
+    seen = []
+
+    def fake(records, stats, mode="standard"):
+        seen.append(mode)
+        return "handoff"
+
+    for voice, mode in ns.VOICE_MODES.items():
+        with patch("spec1_core.briefing.generator.handoff_doc", side_effect=fake):
+            assert _handoff(client, voice=voice).status_code == 200
+        assert seen[-1] == mode
+
+
+def test_handoff_picks_the_latest_run_of_the_day(client):
+    assert _handoff(client, desk="standard", voice="standard").json()["run_id"] == "run-std"
+
+
+def test_handoff_404_without_records(client):
+    r = _handoff(client, date="2020-01-01")
+    assert r.status_code == 404
+
+
+def test_handoff_validates_inputs(client):
+    assert _handoff(client, date="11/06/2026").status_code == 422
+    assert _handoff(client, voice="tabloid").status_code == 422
+
+
+def test_handoff_flags_rule_based_runs(client, env):
+    store = env / "spec1_legislative.jsonl"
+    store.write_text(json.dumps(_rec("run-rb", "r1", tier="rule_based",
+                                     written=f"{DATE}T23:59:00+00:00")) + "\n", encoding="utf-8")
+    body = _handoff(client).json()
+    assert body["run_id"] == "run-rb"
+    assert body["records_tier"] == ANALYSIS_TIER_RULE_BASED
+    assert "do not write a publishable brief" in body["markdown"]
+
+
+def test_handoff_writes_nothing(client, env):
+    before = sorted(p.name for p in env.rglob("*"))
+    _handoff(client)
+    assert sorted(p.name for p in env.rglob("*")) == before
+
+
+# ── hand-written ──────────────────────────────────────────────────────────────
+
+def test_hand_written_becomes_a_releasable_draft(client, env):
+    r = _hand_written(client)
+    assert r.status_code == 201, r.text
+    draft_id = r.json()["draft_id"]
+    assert draft_id == f"{DATE}_notitia_civica_run-leg"
+
+    d = client.get(f"/api/v1/narrative/drafts/{draft_id}").json()
+    assert d["markdown"] == DRAFT_MD.strip() + "\n"
+    meta = d["meta"]
+    assert meta["brief_source"] == BRIEF_SOURCE_HAND_WRITTEN
+    assert meta["analysis_tier"] == ANALYSIS_TIER_LLM_VERIFIED
+    assert meta["model"] == "claude (by hand)" and meta["brief_backend"] is None
+
+    path = ns.resolve_draft(draft_id)
+    prompts = path.with_name(path.stem + ".prompts.md").read_text(encoding="utf-8")
+    assert prompts.startswith("# SPEC-1 brief handoff — run-leg")
+
+    assert any(e.get("event") == "draft_hand_written" for e in _log(env))
+    listed = client.get("/api/v1/narrative/drafts").json()["drafts"]
+    assert any(x["draft_id"] == draft_id for x in listed)
+
+
+def test_hand_written_over_rule_based_records_stays_unpublishable(client, env):
+    store = env / "spec1_legislative.jsonl"
+    store.write_text(json.dumps(_rec("run-rb", "r1", tier="rule_based")) + "\n", encoding="utf-8")
+    r = _hand_written(client, run_id="run-rb")
+    assert r.status_code == 201
+    readiness = r.json()["readiness"]
+    assert readiness["publishable"] is False
+    meta = client.get(f"/api/v1/narrative/drafts/{r.json()['draft_id']}").json()["meta"]
+    assert meta["analysis_tier"] == ANALYSIS_TIER_RULE_BASED
+
+
+def test_hand_written_never_touches_canonical_briefs(client, env):
+    _hand_written(client)
+    assert not list((env / "briefs").glob("spec1_brief_*.md"))
+
+
+def test_hand_written_unknown_run_404(client):
+    assert _hand_written(client, run_id="run-missing").status_code == 404
+
+
+def test_hand_written_validates_inputs(client):
+    assert _hand_written(client, markdown="").status_code == 422
+    r = client.post("/api/v1/narrative/hand-written", json={
+        "desk": "legislative", "voice": "notitia_civica", "date": "bad",
+        "run_id": "run-leg", "markdown": DRAFT_MD})
+    assert r.status_code == 422
