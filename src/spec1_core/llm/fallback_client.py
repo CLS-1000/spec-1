@@ -97,6 +97,7 @@ class FallbackLLMClient:
         ollama_url: str | None = None,
         log_path: Path | None = None,
         task: str = "default",
+        route: list[str] | None = None,
     ) -> None:
         env = os.environ.get
         self._task = task
@@ -114,7 +115,10 @@ class FallbackLLMClient:
         self._local_backend = env("SPEC1_LOCAL_BACKEND", "ollama").lower()
         self._local_url = env("SPEC1_LOCAL_URL", _DEFAULT_OPENAI_COMPAT_URL)
         self._local_model = env("SPEC1_LOCAL_MODEL", "")
-        self._route = resolve_route(task, self._dev_mode)
+        if route:
+            self._route = [b for b in route if b in _VALID_BACKENDS and b != "mock"] + ["mock"]
+        else:
+            self._route = resolve_route(task, self._dev_mode)
 
         if self._dev_mode:
             print(
@@ -194,6 +198,16 @@ class FallbackLLMClient:
     def get_active_tier(self) -> str:
         """Return the tier used for the most recent call."""
         return self._active_tier
+
+    def get_active_model(self) -> str:
+        """Return the model name behind the most recent call's tier."""
+        if self._active_tier == "claude":
+            return os.environ.get("SPEC1_LLM_CLAUDE_MODEL", _DEFAULT_CLAUDE_MODEL)
+        if self._active_tier == "ollama":
+            return self._ollama_model
+        if self._active_tier == "local":
+            return self._local_model
+        return "tier3_rules"
 
     def get_cost_estimate(self) -> float:
         """Return cumulative USD spent this session (Claude only)."""

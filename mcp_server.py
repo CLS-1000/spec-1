@@ -23,6 +23,7 @@ Tools exposed:
   - generate_brief     Build a daily brief for one run_id (operator tool, Claude + fallback)
   - generate_leads     Derive Lead objects from intelligence records (operator tool)
   - run_research       Run analyst-defined topic research dossier expansion
+  - ask_model          Ask spec-1's local model (e.g. Qwen via Ollama) a free-text question
 
 This server uses a simple JSON-RPC 2.0 over stdio protocol compatible
 with the Claude MCP specification.
@@ -431,6 +432,38 @@ def tool_score_signal(args: dict) -> dict:
     return output.to_dict()
 
 
+def tool_ask_model(args: dict) -> dict:
+    """Ask spec-1's local model (Ollama or OpenAI-compatible, e.g. Qwen) a question.
+
+    Local only unless SPEC1_LLM_ROUTE_ASK_MODEL says otherwise: it never reaches
+    Claude by default, and never answers with Tier 3 rules — when the local model
+    is down the result carries an error instead.
+    """
+    from spec1_core.llm.fallback_client import FallbackLLMClient, resolve_route
+
+    prompt = str(args.get("prompt", "")).strip()
+    if not prompt:
+        return {"error": "prompt is required"}
+    system = str(args.get("system", "")).strip()
+
+    route = (
+        resolve_route("ask_model")
+        if os.environ.get("SPEC1_LLM_ROUTE_ASK_MODEL")
+        else ["local", "mock"]
+    )
+    client = FallbackLLMClient(task="ask_model", route=route)
+    text = client.complete(prompt, system)
+    tier = client.get_active_tier()
+    if tier == "mock":
+        return {"error": "local model unavailable", "tier": tier, "route": client.get_route()}
+    return {
+        "text": text,
+        "tier": tier,
+        "model": client.get_active_model(),
+        "route": client.get_route(),
+    }
+
+
 def tool_run_research(args: dict) -> dict:
     """Run analyst-defined topic research dossier expansion."""
     from spec1_core.tools.run_research import run_research
@@ -659,6 +692,23 @@ TOOLS: dict[str, dict] = {
             },
         },
         "fn": tool_run_research,
+    },
+    "ask_model": {
+        "description": (
+            "Ask spec-1's local model (Ollama or an OpenAI-compatible server, e.g. Qwen) "
+            "a free-text question and return its reply with the tier and model that "
+            "answered. Local only by default; returns an error instead of a rule-based "
+            "answer when the local model is unavailable."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "prompt": {"type": "string", "description": "The question, with any context or chat history"},
+                "system": {"type": "string", "description": "Optional system instruction"},
+            },
+            "required": ["prompt"],
+        },
+        "fn": tool_ask_model,
     },
     "score_signal": {
         "description": (

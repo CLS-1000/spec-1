@@ -414,3 +414,66 @@ class TestHandleRequest:
         out = capsys.readouterr().out
         assert out == ""
 
+
+
+class TestAskModel:
+    @staticmethod
+    def _openai_response(content: str):
+        from unittest.mock import MagicMock
+
+        resp = MagicMock()
+        resp.json.return_value = {"choices": [{"message": {"content": content}}]}
+        resp.raise_for_status.return_value = None
+        return resp
+
+    def _local_env(self, monkeypatch, tmp_path):
+        monkeypatch.delenv("SPEC1_LLM_ROUTE_ASK_MODEL", raising=False)
+        monkeypatch.setenv("SPEC1_LOCAL_BACKEND", "openai")
+        monkeypatch.setenv("SPEC1_LOCAL_MODEL", "qwen3:8b")
+        monkeypatch.setenv("SPEC1_LLM_LOG_PATH", str(tmp_path / "llm.jsonl"))
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "should-not-be-used")
+
+    def test_requires_prompt(self):
+        assert mcp_server.tool_ask_model({"prompt": "  "}) == {"error": "prompt is required"}
+
+    def test_local_reply_never_touches_claude(self, monkeypatch, tmp_path):
+        self._local_env(monkeypatch, tmp_path)
+        with patch("requests.post", return_value=self._openai_response("<think>x</think>gatepost rejects bad rows")) as post, \
+             patch("anthropic.Anthropic") as claude:
+            out = mcp_server.tool_ask_model({"prompt": "What is gatepost?", "system": "Be brief."})
+
+        claude.assert_not_called()
+        payload = post.call_args.kwargs["json"]
+        assert payload["model"] == "qwen3:8b"
+        assert payload["messages"][0] == {"role": "system", "content": "Be brief."}
+        assert out == {
+            "text": "gatepost rejects bad rows",
+            "tier": "local",
+            "model": "qwen3:8b",
+            "route": ["local", "mock"],
+        }
+
+    def test_local_down_returns_error_not_rules(self, monkeypatch, tmp_path):
+        self._local_env(monkeypatch, tmp_path)
+        with patch("requests.post", side_effect=ConnectionError("down")), \
+             patch("anthropic.Anthropic") as claude:
+            out = mcp_server.tool_ask_model({"prompt": "What is gatepost?"})
+
+        claude.assert_not_called()
+        assert out["error"] == "local model unavailable"
+        assert "text" not in out
+
+    def test_route_env_override_is_honoured(self, monkeypatch, tmp_path):
+        self._local_env(monkeypatch, tmp_path)
+        monkeypatch.setenv("SPEC1_LLM_ROUTE_ASK_MODEL", "claude,local")
+        with patch("requests.post", return_value=self._openai_response("ok")), \
+             patch("spec1_core.llm.fallback_client.FallbackLLMClient._claude_complete",
+                   side_effect=RuntimeError("no claude")):
+            out = mcp_server.tool_ask_model({"prompt": "hi"})
+        assert out["route"] == ["claude", "local", "mock"]
+        assert out["tier"] == "local"
+
+    def test_listed_in_tools(self):
+        resp = handle_tools_list("id", {})
+        names = [t["name"] for t in resp["result"]["tools"]]
+        assert "ask_model" in names
