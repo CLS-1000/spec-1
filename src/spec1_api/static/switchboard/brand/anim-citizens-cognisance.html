@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1280">
+<title>Citizens Cognisance animated intro</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oxanium:wght@600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap">
+<link rel="stylesheet" href="brand.css">
+<script src="accent.js"></script>
+<style>
+.dA,.dB,.dC{stroke-dasharray:1;stroke-dashoffset:1;animation-duration:8s;animation-iteration-count:infinite;animation-timing-function:ease-in-out}
+.dA{animation-name:dA}.dB{animation-name:dB}.dC{animation-name:dC}
+@keyframes dA{0%,2%{stroke-dashoffset:1;opacity:1}16%,88%{stroke-dashoffset:0;opacity:1}96%,100%{stroke-dashoffset:0;opacity:0}}
+@keyframes dB{0%,22%{stroke-dashoffset:1;opacity:1}34%,88%{stroke-dashoffset:0;opacity:1}96%,100%{stroke-dashoffset:0;opacity:0}}
+@keyframes dC{0%,34%{stroke-dashoffset:1;opacity:1}44%,88%{stroke-dashoffset:0;opacity:1}96%,100%{stroke-dashoffset:0;opacity:0}}
+.popP,.popC,.s1,.s2,.s3,.s4,.s5,.s6{transform-box:fill-box;transform-origin:center;animation-duration:8s;animation-iteration-count:infinite;animation-timing-function:cubic-bezier(.3,1.6,.5,1)}
+.popP{animation-name:popP}.popC{animation-name:popC}
+.s1{animation-name:s1}.s2{animation-name:s2}.s3{animation-name:s3}.s4{animation-name:s4}.s5{animation-name:s5}.s6{animation-name:s6}
+@keyframes popP{0%,12%{transform:scale(0);opacity:1}20%,88%{transform:scale(1);opacity:1}96%,100%{transform:scale(1);opacity:0}}
+@keyframes popC{0%,44%{transform:scale(0);opacity:1}50%,88%{transform:scale(1);opacity:1}96%,100%{transform:scale(1);opacity:0}}
+@keyframes s1{0%,50%{transform:scale(0);opacity:1}53%,88%{transform:scale(1);opacity:1}96%,100%{transform:scale(1);opacity:0}}
+@keyframes s2{0%,52%{transform:scale(0);opacity:1}55%,88%{transform:scale(1);opacity:1}96%,100%{transform:scale(1);opacity:0}}
+@keyframes s3{0%,54%{transform:scale(0);opacity:1}57%,88%{transform:scale(1);opacity:1}96%,100%{transform:scale(1);opacity:0}}
+@keyframes s4{0%,56%{transform:scale(0);opacity:1}59%,88%{transform:scale(1);opacity:1}96%,100%{transform:scale(1);opacity:0}}
+@keyframes s5{0%,58%{transform:scale(0);opacity:1}61%,88%{transform:scale(1);opacity:1}96%,100%{transform:scale(1);opacity:0}}
+@keyframes s6{0%,60%{transform:scale(0);opacity:1}63%,88%{transform:scale(1);opacity:1}96%,100%{transform:scale(1);opacity:0}}
+.glow{transform-box:fill-box;transform-origin:center;animation:glow 2s ease-in-out infinite}
+@keyframes glow{0%,100%{opacity:.15;transform:scale(.8)}50%{opacity:.5;transform:scale(1.4)}}
+.rH,.rT,.rP{animation-duration:8s;animation-iteration-count:infinite;animation-timing-function:ease-out}
+.rH{animation-name:rH}.rT{animation-name:rT}.rP{animation-name:rP}
+@keyframes rH{0%,4%{opacity:0;transform:translateY(14px)}12%,88%{opacity:1;transform:translateY(0)}96%,100%{opacity:0;transform:translateY(0)}}
+@keyframes rT{0%,62%{opacity:0;transform:translateY(14px)}70%,88%{opacity:1;transform:translateY(0)}96%,100%{opacity:0;transform:translateY(0)}}
+@keyframes rP{0%,68%{opacity:0;transform:translateY(14px)}76%,88%{opacity:1;transform:translateY(0)}96%,100%{opacity:0;transform:translateY(0)}}
+.wipe{animation:wipe 8s cubic-bezier(.2,.8,.2,1) infinite}
+@keyframes wipe{0%,52%{clip-path:inset(0 100% 0 0);opacity:1}64%,88%{clip-path:inset(0 0 0 0);opacity:1}96%,100%{clip-path:inset(0 0 0 0);opacity:0}}
+@media (prefers-reduced-motion: reduce){.dA,.dB,.dC{animation:none;stroke-dashoffset:0}.popP,.popC,.s1,.s2,.s3,.s4,.s5,.s6,.glow,.rH,.rT,.rP,.wipe{animation:none}}
+</style>
+</head>
+<body>
+<div style="width: 1280px; height: 640px; box-sizing: border-box; background: #0E1A2B; color: #F3EEE3; font-family: 'IBM Plex Mono', monospace; display: grid; grid-template-columns: 560px minmax(0, 1fr); grid-template-rows: auto 1fr auto auto auto; column-gap: 64px; row-gap: 20px; padding: 56px 64px 56px 56px">
+<div class="rH" style="grid-column: 2; grid-row: 1; display: flex; justify-content: space-between; font-size: 13px; letter-spacing: 0.12em; color: #8FA3B8"><span>SWITCHBOARD SYSTEM</span><span>PUBLIC AWARENESS</span></div>
+<div style="grid-column: 1; grid-row: 1 / 6; display: flex; align-items: center; justify-content: center">
+<svg width="500" height="500" viewBox="0 0 240 240" role="img" aria-label="Animated Citizens Cognisance mark: six citizen figures appear in a ring, join hands around a hexagon, connect to a shared centre that lights up, and then each figure lights up in turn" style="filter: drop-shadow(3px 4px 0 #050B14)">
+<circle class="dA" pathLength="1" cx="120" cy="120" r="96" fill="none" stroke="#8FA3B8" stroke-width="1.2"></circle>
+<circle class="dA" pathLength="1" cx="120" cy="120" r="30" fill="none" stroke="#5E7591" stroke-width="1"></circle>
+<polygon class="dB" pathLength="1" points="120,56 175.4,88 175.4,152 120,184 64.6,152 64.6,88" fill="none" stroke="#D7DEE6" stroke-width="1.6" stroke-linejoin="round"></polygon>
+<path class="dC" pathLength="1" d="M120 66 L120 112 M166.7 93 L127 116 M166.7 147 L127 124 M120 174 L120 128 M73.3 147 L113 124 M73.3 93 L113 116" stroke-width="1.4" opacity="0.85" style="stroke: var(--accent)"></path>
+<g class="popP"><circle cx="120" cy="48" r="6" fill="#D7DEE6"></circle><path d="M110 64 A10 9 0 0 1 130 64 Z" fill="#D7DEE6"></path></g>
+<g class="popP"><circle cx="175.4" cy="80" r="6" fill="#D7DEE6"></circle><path d="M165.4 96 A10 9 0 0 1 185.4 96 Z" fill="#D7DEE6"></path></g>
+<g class="popP"><circle cx="175.4" cy="144" r="6" fill="#D7DEE6"></circle><path d="M165.4 160 A10 9 0 0 1 185.4 160 Z" fill="#D7DEE6"></path></g>
+<g class="popP"><circle cx="120" cy="176" r="6" fill="#D7DEE6"></circle><path d="M110 192 A10 9 0 0 1 130 192 Z" fill="#D7DEE6"></path></g>
+<g class="popP"><circle cx="64.6" cy="144" r="6" fill="#D7DEE6"></circle><path d="M54.6 160 A10 9 0 0 1 74.6 160 Z" fill="#D7DEE6"></path></g>
+<g class="popP"><circle cx="64.6" cy="80" r="6" fill="#D7DEE6"></circle><path d="M54.6 96 A10 9 0 0 1 74.6 96 Z" fill="#D7DEE6"></path></g>
+<g class="s1"><circle cx="120" cy="48" r="6" style="fill: var(--accent)"></circle></g>
+<g class="s2"><circle cx="175.4" cy="80" r="6" style="fill: var(--accent)"></circle></g>
+<g class="s3"><circle cx="175.4" cy="144" r="6" style="fill: var(--accent)"></circle></g>
+<g class="s4"><circle cx="120" cy="176" r="6" style="fill: var(--accent)"></circle></g>
+<g class="s5"><circle cx="64.6" cy="144" r="6" style="fill: var(--accent)"></circle></g>
+<g class="s6"><circle cx="64.6" cy="80" r="6" style="fill: var(--accent)"></circle></g>
+<g class="popC"><circle class="glow" cx="120" cy="120" r="16" style="fill: var(--accent)"></circle><circle cx="120" cy="120" r="9" style="fill: var(--accent)"></circle><circle cx="117" cy="117" r="3" fill="#FFFFFF" opacity="0.7"></circle></g>
+</svg>
+</div>
+<div class="wipe" style="grid-column: 2; grid-row: 3; font-family: 'Oxanium', sans-serif; font-weight: 700; font-size: 60px; letter-spacing: 0.03em; line-height: 1">Citizens Cognisance</div>
+<div class="rT" style="grid-column: 2; grid-row: 4; font-size: 16px; color: #8FA3B8">An informed public, connected</div>
+<div class="rP" style="grid-column: 2; grid-row: 5; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; border-top: 1px solid #24344A; padding-top: 20px; font-size: 15px; letter-spacing: 0.04em">
+<span>Part of Notitia Civica</span><span style="color: var(--accent)">·</span><span>a published section</span>
+</div>
+</div>
+</body>
+</html>

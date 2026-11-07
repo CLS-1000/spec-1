@@ -35,7 +35,7 @@ where = ["src"]
 [tool.setuptools.package-data]
 "spec1_core" = ["core/prompts/*.md"]
 "spec1_analytics" = ["**/*.py"]
-"spec1_api" = ["static/*.html"]
+"spec1_api" = ["static/*.html", "static/switchboard/*.html", "static/switchboard/brand/*"]
 "cls_civica" = ["templates/*.html"]
 
 [tool.pytest.ini_options]

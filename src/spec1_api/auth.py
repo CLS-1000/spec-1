@@ -20,6 +20,8 @@ Excluded paths (no key required):
 - ``/metrics``
 - ``/`` (UI root)
 - ``/docs``, ``/redoc``, ``/openapi.json``
+- ``/lab`` (the page only — ``/api/v1/lab/ask`` still needs the key)
+- ``/switchboard/…`` (SWITCHBOARD demo pages, sample data only)
 """
 
 from __future__ import annotations
@@ -40,10 +42,12 @@ _PUBLIC_PATHS = frozenset({
     "/docs",
     "/redoc",
     "/openapi.json",
+    "/lab",            # page only; /api/v1/lab/ask still needs the key
+    "/switchboard",
 })
 
 # Prefix exemptions (e.g. static assets)
-_PUBLIC_PREFIXES = ("/static/",)
+_PUBLIC_PREFIXES = ("/static/", "/switchboard/")  # SWITCHBOARD pages are sample data
 
 
 def _get_configured_key() -> Optional[str]:

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1280">
+<title>CLS animated intro</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oxanium:wght@600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap">
+<link rel="stylesheet" href="brand.css">
+<script src="accent.js"></script>
+<style>
+.dA,.dB,.dC,.dE{stroke-dasharray:1;stroke-dashoffset:1;animation-duration:8s;animation-iteration-count:infinite;animation-timing-function:ease-in-out}
+.dA{animation-name:dA}.dB{animation-name:dB}.dC{animation-name:dC}.dE{animation-name:dE}
+@keyframes dA{0%,2%{stroke-dashoffset:1;opacity:1}16%,88%{stroke-dashoffset:0;opacity:1}96%,100%{stroke-dashoffset:0;opacity:0}}
+@keyframes dB{0%,8%{stroke-dashoffset:1;opacity:1}22%,88%{stroke-dashoffset:0;opacity:1}96%,100%{stroke-dashoffset:0;opacity:0}}
+@keyframes dC{0%,18%{stroke-dashoffset:1;opacity:1}32%,88%{stroke-dashoffset:0;opacity:1}96%,100%{stroke-dashoffset:0;opacity:0}}
+@keyframes dE{0%,32%{stroke-dashoffset:1;opacity:1}48%,88%{stroke-dashoffset:0;opacity:1}96%,100%{stroke-dashoffset:0;opacity:0}}
+.rise{transform-box:fill-box;transform-origin:50% 100%;animation:rise 8s cubic-bezier(.2,.8,.2,1) infinite}
+@keyframes rise{0%,4%{transform:translateY(16px);opacity:0}14%,88%{transform:translateY(0);opacity:1}96%,100%{transform:translateY(0);opacity:0}}
+.rise2{transform-box:fill-box;transform-origin:50% 100%;animation:rise2 8s cubic-bezier(.2,.8,.2,1) infinite}
+@keyframes rise2{0%,10%{transform:translateY(16px);opacity:0}20%,88%{transform:translateY(0);opacity:1}96%,100%{transform:translateY(0);opacity:0}}
+.fadeK{animation:fadeK 8s ease-out infinite}
+@keyframes fadeK{0%,16%{opacity:0}26%,88%{opacity:1}96%,100%{opacity:0}}
+.popL{animation:popL 8s ease-out infinite}
+@keyframes popL{0%,46%{opacity:0}50%,88%{opacity:1}96%,100%{opacity:0}}
+.loop{offset-path:path("M120 112 C 140 88, 170 88, 170 112 C 170 136, 140 136, 120 112 C 100 88, 70 88, 70 112 C 70 136, 100 136, 120 112 Z");offset-rotate:0deg;animation:loop 3.2s linear infinite}
+@keyframes loop{0%{offset-distance:0%}100%{offset-distance:100%}}
+.glow{transform-box:fill-box;transform-origin:center;animation:glow 1.6s ease-in-out infinite}
+@keyframes glow{0%,100%{opacity:.2;transform:scale(.8)}50%{opacity:.55;transform:scale(1.35)}}
+.rH,.rT,.rP{animation-duration:8s;animation-iteration-count:infinite;animation-timing-function:ease-out}
+.rH{animation-name:rH}.rT{animation-name:rT}.rP{animation-name:rP}
+@keyframes rH{0%,4%{opacity:0;transform:translateY(14px)}12%,88%{opacity:1;transform:translateY(0)}96%,100%{opacity:0;transform:translateY(0)}}
+@keyframes rT{0%,62%{opacity:0;transform:translateY(14px)}70%,88%{opacity:1;transform:translateY(0)}96%,100%{opacity:0;transform:translateY(0)}}
+@keyframes rP{0%,68%{opacity:0;transform:translateY(14px)}76%,88%{opacity:1;transform:translateY(0)}96%,100%{opacity:0;transform:translateY(0)}}
+.wipe{animation:wipe 8s cubic-bezier(.2,.8,.2,1) infinite}
+@keyframes wipe{0%,52%{clip-path:inset(0 100% 0 0);opacity:1}64%,88%{clip-path:inset(0 0 0 0);opacity:1}96%,100%{clip-path:inset(0 0 0 0);opacity:0}}
+@media (prefers-reduced-motion: reduce){.dA,.dB,.dC,.dE{animation:none;stroke-dashoffset:0}.rise,.rise2,.fadeK,.popL,.glow,.rH,.rT,.rP,.wipe{animation:none}.loop{animation:none;offset-distance:12%}}
+</style>
+</head>
+<body>
+<div style="width: 1280px; height: 640px; box-sizing: border-box; background: #0E1A2B; color: #F3EEE3; font-family: 'IBM Plex Mono', monospace; display: grid; grid-template-columns: 560px minmax(0, 1fr); grid-template-rows: auto 1fr auto auto auto; column-gap: 64px; row-gap: 20px; padding: 56px 64px 56px 56px">
+<div class="rH" style="grid-column: 2; grid-row: 1; display: flex; justify-content: space-between; font-size: 13px; letter-spacing: 0.12em; color: #8FA3B8"><span>THE FOUNDATION</span><span>13 cls_ PACKAGES IN SPEC-1</span></div>
+<div style="grid-column: 1; grid-row: 1 / 6; display: flex; align-items: center; justify-content: center">
+<svg width="500" height="500" viewBox="0 0 240 240" role="img" aria-label="Animated CLS mark: foundation stones rise into place, a keystone settles on them, and an endless infinity loop is drawn inside it with a glowing learning token travelling around it continuously" style="filter: drop-shadow(3px 4px 0 #050B14)">
+<circle class="dA" pathLength="1" cx="120" cy="124" r="100" fill="none" stroke="#5E7591" stroke-width="1"></circle>
+<path class="dA" pathLength="1" d="M220 124 L226 124 M120 224 L120 230 M20 124 L14 124 M120 24 L120 18" stroke="#8FA3B8" stroke-width="1.5"></path>
+<g class="rise2"><rect x="36" y="198" width="168" height="16" fill="#22344B" stroke="#8FA3B8" stroke-width="1.2"></rect><path d="M78 198 L78 214 M120 198 L120 214 M162 198 L162 214" stroke="#8FA3B8" stroke-width="1"></path></g>
+<g class="rise"><rect x="50" y="178" width="140" height="16" fill="#34465E" stroke="#D7DEE6" stroke-width="1.2"></rect><path d="M96 178 L96 194 M144 178 L144 194" stroke="#8FA3B8" stroke-width="1"></path></g>
+<g class="fadeK"><polygon points="60,60 180,60 164,172 76,172" fill="#5E7591"></polygon><polygon points="60,60 180,60 176,72 64,72" fill="#D7DEE6" opacity="0.5"></polygon></g>
+<polygon class="dB" pathLength="1" points="60,60 180,60 164,172 76,172" fill="none" stroke="#D7DEE6" stroke-width="1.8" stroke-linejoin="round"></polygon>
+<path class="dC" pathLength="1" d="M90 60 L96 172 M150 60 L144 172" stroke="#34465E" stroke-width="1"></path>
+<path class="dE" pathLength="1" d="M120 112 C 140 88, 170 88, 170 112 C 170 136, 140 136, 120 112 C 100 88, 70 88, 70 112 C 70 136, 100 136, 120 112 Z" fill="none" stroke="#0E1A2B" stroke-width="10" stroke-linecap="round"></path>
+<path class="dE" pathLength="1" d="M120 112 C 140 88, 170 88, 170 112 C 170 136, 140 136, 120 112 C 100 88, 70 88, 70 112 C 70 136, 100 136, 120 112 Z" fill="none" stroke-width="5" stroke-linecap="round" style="stroke: var(--accent)"></path>
+<g class="popL"><g class="loop">
+<circle class="glow" cx="0" cy="0" r="12" fill="#F3EEE3"></circle>
+<circle cx="0" cy="0" r="5.5" fill="#F3EEE3"></circle>
+</g></g>
+</svg>
+</div>
+<div class="wipe" style="grid-column: 2; grid-row: 3; font-family: 'Oxanium', sans-serif; font-weight: 700; font-size: 64px; letter-spacing: 0.04em; line-height: 1">CLS</div>
+<div class="rT" style="grid-column: 2; grid-row: 4; font-size: 16px; color: #8FA3B8">Continuous Learning System · the foundation and integrity of it all</div>
+<div class="rP" style="grid-column: 2; grid-row: 5; display: flex; flex-wrap: wrap; column-gap: 12px; row-gap: 6px; align-items: center; border-top: 1px solid #24344A; padding-top: 20px; font-size: 15px; letter-spacing: 0.04em">
+<span style="color: #8FA3B8">Built on it:</span><span>SWITCHBOARD</span><span style="color: var(--accent)">·</span><span>SPEC-1</span><span style="color: var(--accent)">·</span><span>pdx1</span><span style="color: var(--accent)">·</span><span>proc_track</span><span style="color: var(--accent)">·</span><span>gatepost</span><span style="color: var(--accent)">·</span><span>Notitia Civica</span>
+</div>
+</div>
+</body>
+</html>

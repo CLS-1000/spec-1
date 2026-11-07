@@ -19,7 +19,8 @@ from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 
 from spec1_api import __version__
 from spec1_api import metrics as _metrics
@@ -33,6 +34,7 @@ from spec1_api.routers import (
     fara,
     health,
     intel,
+    lab,
     leads,
     leg_jud,
     metrics,
@@ -169,6 +171,28 @@ def create_app() -> FastAPI:
     app.include_router(leg_jud.router, prefix=_V1)
     app.include_router(adapters.router, prefix=_V1)
     app.include_router(congress_brief.router, prefix=_V1)
+    app.include_router(lab.router, prefix=_V1)
+
+    @app.get("/lab", include_in_schema=False)
+    async def lab_ui() -> FileResponse:
+        """Serve the chatbot lab (rule-based bot vs. spec-1's local model)."""
+        path = _STATIC_DIR / "lab.html"
+        if not path.is_file():
+            raise HTTPException(status_code=404, detail="Lab UI not found")
+        return FileResponse(path, media_type="text/html")
+
+    # SWITCHBOARD demo pages + logo family (sample data; relative links need the slash)
+    @app.get("/switchboard", include_in_schema=False)
+    async def switchboard_redirect() -> RedirectResponse:
+        return RedirectResponse(url="/switchboard/")
+
+    switchboard_dir = _STATIC_DIR / "switchboard"
+    if switchboard_dir.is_dir():
+        app.mount(
+            "/switchboard",
+            StaticFiles(directory=switchboard_dir, html=True),
+            name="switchboard",
+        )
 
     @app.get("/verdicts/", include_in_schema=False)
     async def verdicts_ui() -> FileResponse:

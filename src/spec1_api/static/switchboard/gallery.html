@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SWITCHBOARD Logo Family</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oxanium:wght@600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap">
+<link rel="stylesheet" href="brand/brand.css">
+<style>
+body { color: var(--paper); font-family: 'IBM Plex Mono', monospace; }
+.wrap { max-width: 1440px; margin: 0 auto; padding: 48px 16px 96px; box-sizing: border-box; }
+@media (min-width: 720px) { .wrap { padding-left: 56px; padding-right: 56px; } }
+header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 24px; border-bottom: 1px solid var(--rule); padding-bottom: 28px; }
+.eyebrow { margin: 0 0 12px; font-size: 13px; letter-spacing: 0.12em; color: var(--mist); }
+h1 { margin: 0; font-family: 'Oxanium', sans-serif; font-weight: 700; font-size: clamp(36px, 6vw, 64px); letter-spacing: 0.04em; line-height: 1; }
+.accent { display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--mist); }
+.swatch { width: 44px; height: 44px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; background-clip: padding-box; box-shadow: inset 0 0 0 3px var(--navy); }
+.swatch[aria-pressed="true"] { border-color: var(--paper); }
+.swatch:focus-visible { outline: 2px solid var(--paper); outline-offset: 3px; }
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 28px; }
+.motion { min-height: 44px; padding: 0 18px; border-radius: 22px; border: 1px solid var(--steel); background: transparent; color: var(--paper); font: 500 13px 'IBM Plex Mono', monospace; letter-spacing: 0.06em; cursor: pointer; }
+.motion:hover { border-color: var(--paper); }
+.motion:focus-visible { outline: 2px solid var(--paper); outline-offset: 3px; }
+section { margin-top: 56px; }
+h2 { margin: 0 0 20px; font-family: 'Oxanium', sans-serif; font-weight: 600; font-size: 24px; letter-spacing: 0.03em; }
+.boards { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 520px), 1fr)); gap: 32px 24px; }
+.frame { position: relative; aspect-ratio: 2 / 1; overflow: hidden; border: 1px solid var(--rule); border-radius: 8px; background: var(--navy); }
+.frame iframe { position: absolute; top: 0; left: 0; border: 0; transform-origin: 0 0; transform: scale(var(--scale, 0.4)); }
+.caption { display: inline-block; margin-top: 10px; font-size: 13px; letter-spacing: 0.04em; color: var(--mist); text-decoration: none; }
+.caption:hover { color: var(--paper); text-decoration: underline; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header>
+    <div>
+      <p class="eyebrow">SWITCHBOARD SYSTEM · BRAND</p>
+      <h1>SWITCHBOARD Logo Family</h1>
+    </div>
+    <div class="controls">
+    <button type="button" class="motion" id="motion" aria-pressed="false">Pause animations</button>
+    <div class="accent" role="group" aria-label="Accent color">
+      <span>Accent</span>
+      <button type="button" class="swatch" data-accent="#F26A1B" aria-label="Signal orange" aria-pressed="true" style="background: #F26A1B"></button>
+      <button type="button" class="swatch" data-accent="#E8B23A" aria-label="Brass" aria-pressed="false" style="background: #E8B23A"></button>
+      <button type="button" class="swatch" data-accent="#3FB6A8" aria-label="Teal" aria-pressed="false" style="background: #3FB6A8"></button>
+      <button type="button" class="swatch" data-accent="#D94B5C" aria-label="Alarm red" aria-pressed="false" style="background: #D94B5C"></button>
+    </div>
+    </div>
+  </header>
+  <section aria-labelledby="s1">
+    <h2 id="s1">Foundation · CLS, the Continuous Learning System</h2>
+    <ul class="boards">
+      <li class="board">
+        <div class="frame"><iframe src="brand/anim-cls.html" title="CLS · the foundation" width="1280" height="640" loading="lazy"></iframe></div>
+        <a class="caption" href="brand/anim-cls.html">CLS · the foundation</a>
+      </li>
+    </ul>
+  </section>
+  <section aria-labelledby="s2">
+    <h2 id="s2">SWITCHBOARD — logo family</h2>
+    <ul class="boards">
+      <li class="board">
+        <div class="frame"><iframe src="brand/switchboard.html" title="SWITCHBOARD" width="1280" height="640" loading="lazy"></iframe></div>
+        <a class="caption" href="brand/switchboard.html">SWITCHBOARD</a>
+      </li>
+      <li class="board">
+        <div class="frame"><iframe src="brand/spec1.html" title="SPEC-1" width="1280" height="640" loading="lazy"></iframe></div>
+        <a class="caption" href="brand/spec1.html">SPEC-1</a>
+      </li>
+      <li class="board">
+        <div class="frame"><iframe src="brand/pdx1.html" title="pdx1" width="1280" height="640" loading="lazy"></iframe></div>
+        <a class="caption" href="brand/pdx1.html">pdx1</a>
+      </li>
+      <li class="board">
+        <div class="frame"><iframe src="brand/proc-track.html" title="proc_track" width="1280" height="640" loading="lazy"></iframe></div>
+        <a class="caption" href="brand/proc-track.html">proc_track</a>
+      </li>
+      <li class="board">
+        <div class="frame"><iframe src="brand/gatepost.html" title="gatepost" width="1280" height="640" loading="lazy"></iframe></div>
+        <a class="caption" href="brand/gatepost.html">gatepost</a>
+      </li>
+    </ul>
+  </section>
+  <section aria-labelledby="s3">
+    <h2 id="s3">Sacred geometry variations</h2>
+    <ul class="boards">
+      <li class="board">
+        <div class="frame"><iframe src="brand/sacred-switchboard.html" title="SWITCHBOARD · sacred geometry" width="1280" height="640" loading="lazy"></iframe></div>
+        <a class="caption" href="brand/sacred-switchboard.html">SWITCHBOARD · sacred geometry</a>
+      </li>
+      <li class="board">
+        <div class="frame"><iframe src="brand/sacred-spec1.html" title="SPEC-1 · sacred geometry" width="1280" height="640" loading="lazy"></iframe></div>
+        <a class="caption" href="brand/sacred-spec1.html">SPEC-1 · sacred geometry</a>
+      </li>
+      <li class="board">
+        <div class="frame"><iframe src="brand/sacred-pdx1.html" title="pdx1 · sacred geometry" width="1280" height="640" loading="lazy"></iframe></div>
+        <a class="caption" href="brand/sacred-pdx1.html">pdx1 · sacred geometry</a>
+      </li>
+      <li class="board">
+        <div class="frame"><iframe src="brand/sacred-proc-track.html" title="proc_track · sacred geometry" width="1280" height="640" loading="lazy"></iframe></div>
+        <a class="caption" href="brand/sacred-proc-track.html">proc_track · sacred geometry</a>
+      </li>
+      <li class="board">
+        <div class="frame"><iframe src="brand/sacred-gatepost.html" title="gatepost · sacred geometry" width="1280" height="640" loading="lazy"></iframe></div>
+        <a class="caption" href="brand/sacred-gatepost.html">gatepost · sacred geometry</a>
+      </li>
+    </ul>
+  </section>
+  <section aria-labelledby="s4">
+    <h2 id="s4">Animation</h2>
+    <ul class="boards">
+      <li class="board">
+        <div class="frame"><iframe src="brand/anim-switchboard.html" title="SWITCHBOARD · animated intro" width="1280" height="640" loading="lazy"></iframe></div>
+        <a class="caption" href="brand/anim-switchboard.html">SWITCHBOARD · animated intro</a>
+      </li>
+      <li class="board">
+        <div class="frame"><iframe src="brand/anim-spec1.html" title="SPEC-1 · animated intro" width="1280" height="640" loading="lazy"></iframe></div>
+        <a class="caption" href="brand/anim-spec1.html">SPEC-1 · animated intro</a>
+      </li>
+      <li class="board">
+        <div class="frame"><iframe src="brand/anim-pdx1.html" title="pdx1 · animated intro" width="1280" height="640" loading="lazy"></iframe></div>
+        <a class="caption" href="brand/anim-pdx1.html">pdx1 · animated intro</a>
+      </li>
+      <li class="board">
+        <div class="frame"><iframe src="brand/anim-proc-track.html" title="proc_track · animated intro" width="1280" height="640" loading="lazy"></iframe></div>
+        <a class="caption" href="brand/anim-proc-track.html">proc_track · animated intro</a>
+      </li>
+      <li class="board">
+        <div class="frame"><iframe src="brand/anim-gatepost.html" title="gatepost · animated intro" width="1280" height="640" loading="lazy"></iframe></div>
+        <a class="caption" href="brand/anim-gatepost.html">gatepost · animated intro</a>
+      </li>
+    </ul>
+  </section>
+  <section aria-labelledby="s5">
+    <h2 id="s5">New projects · animated</h2>
+    <ul class="boards">
+      <li class="board">
+        <div class="frame"><iframe src="brand/anim-notitia-civica.html" title="Notitia Civica · animated intro" width="1280" height="640" loading="lazy"></iframe></div>
+        <a class="caption" href="brand/anim-notitia-civica.html">Notitia Civica · animated intro</a>
+      </li>
+      <li class="board">
+        <div class="frame"><iframe src="brand/anim-world-state-brief.html" title="World State Brief · animated intro" width="1280" height="640" loading="lazy"></iframe></div>
+        <a class="caption" href="brand/anim-world-state-brief.html">World State Brief · animated intro</a>
+      </li>
+      <li class="board">
+        <div class="frame"><iframe src="brand/anim-osint.html" title="OSINT · animated intro" width="1280" height="640" loading="lazy"></iframe></div>
+        <a class="caption" href="brand/anim-osint.html">OSINT · animated intro</a>
+      </li>
+      <li class="board">
+        <div class="frame"><iframe src="brand/anim-citizens-cognisance.html" title="Citizens Cognisance · animated intro" width="1280" height="640" loading="lazy"></iframe></div>
+        <a class="caption" href="brand/anim-citizens-cognisance.html">Citizens Cognisance · animated intro</a>
+      </li>
+    </ul>
+  </section>
+  <section aria-labelledby="s6">
+    <h2 id="s6">Finale · all nine assemble</h2>
+    <ul class="boards">
+      <li class="board">
+        <div class="frame"><iframe src="brand/sentinel.html" title="The Sentinel · assembly" width="1280" height="640" loading="lazy"></iframe></div>
+        <a class="caption" href="brand/sentinel.html">The Sentinel · assembly</a>
+      </li>
+      <li class="board">
+        <div class="frame"><iframe src="brand/sentinel-night.html" title="The Sentinel · night watch" width="1280" height="640" loading="lazy"></iframe></div>
+        <a class="caption" href="brand/sentinel-night.html">The Sentinel · night watch</a>
+      </li>
+    </ul>
+  </section>
+  <section aria-labelledby="s7">
+    <h2 id="s7">Repo data</h2>
+    <ul class="boards">
+      <li class="board">
+        <div class="frame"><iframe src="brand/repo-pulls.html" title="CLS-1000 · pull requests" width="1280" height="640" loading="lazy"></iframe></div>
+        <a class="caption" href="brand/repo-pulls.html">CLS-1000 · pull requests</a>
+      </li>
+    </ul>
+  </section>
+</main>
+<script>
+// Scale each 1280×640 board to fit its card.
+var ro = new ResizeObserver(function (entries) {
+  entries.forEach(function (e) { e.target.style.setProperty("--scale", e.contentRect.width / 1280); });
+});
+document.querySelectorAll(".frame").forEach(function (f) { ro.observe(f); });
+
+// Accent picker and Pause control: re-render every board with the chosen accent and motion setting.
+// Board links carry the accent only; the frames also carry ?paused=1 while paused.
+var swatches = document.querySelectorAll(".swatch");
+var motion = document.getElementById("motion");
+var accent = "#F26A1B";
+var paused = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+function render() {
+  var params = new URLSearchParams();
+  if (accent !== "#F26A1B") params.set("accent", accent.slice(1));
+  var linkQ = params.toString() ? "?" + params : "";
+  if (paused) params.set("paused", "1");
+  var frameQ = params.toString() ? "?" + params : "";
+  swatches.forEach(function (s) { s.setAttribute("aria-pressed", String(s.dataset.accent === accent)); });
+  motion.setAttribute("aria-pressed", String(paused));
+  motion.textContent = paused ? "Play animations" : "Pause animations";
+  document.querySelectorAll(".board").forEach(function (b) {
+    var link = b.querySelector("a"), frame = b.querySelector("iframe");
+    var base = link.getAttribute("href").split("?")[0];
+    link.setAttribute("href", base + linkQ);
+    if (frame.getAttribute("src") !== base + frameQ) frame.setAttribute("src", base + frameQ);
+  });
+  document.documentElement.style.setProperty("--accent", accent);
+  history.replaceState(null, "", location.pathname + linkQ);
+}
+function setAccent(hex) { accent = hex; render(); }
+swatches.forEach(function (s) { s.addEventListener("click", function () { setAccent(s.dataset.accent); }); });
+motion.addEventListener("click", function () { paused = !paused; render(); });
+var start = new URLSearchParams(location.search).get("accent");
+if (start && /^[0-9a-f]{6}$/i.test(start)) accent = "#" + start.toUpperCase();
+render();
+</script>
+</body>
+</html>

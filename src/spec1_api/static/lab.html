@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SWITCHBOARD Chatbot Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oxanium:wght@600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root {
+  --bg: #0E1A2B; --panel: #08111D; --raised: #13233A; --line: #24344A;
+  --text: #F3EEE3; --muted: #8FA3B8; --accent: #F26A1B; --on-accent: #0E1A2B;
+  --teal: #3FB6A8; --teal-bg: #0F2B2A; --amber: #E8B23A; --red: #D94B5C; --red-bg: #2B1015;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.55 'IBM Plex Sans', system-ui, sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
+button { font: inherit; cursor: pointer; }
+a { color: var(--teal); } a:hover { color: var(--text); }
+code, pre, .mono { font-family: 'IBM Plex Mono', Menlo, monospace; }
+[hidden] { display: none !important; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 24px; border-bottom: 1px solid var(--line); background: var(--panel); }
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand h1 { margin: 0; font: 700 18px 'Oxanium', sans-serif; letter-spacing: 0.04em; }
+.brand p { margin: 2px 0 0; font-size: 12px; color: var(--muted); }
+.tag { padding: 2px 6px; border: 1px solid var(--line); border-radius: 4px; font: 11px 'IBM Plex Mono', monospace; color: var(--amber); }
+.seg { display: flex; gap: 4px; padding: 4px; background: var(--raised); border: 1px solid var(--line); border-radius: 12px; }
+.seg button { min-height: 36px; padding: 6px 12px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); font-size: 13px; font-weight: 500; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+
+main { flex: 1; width: 100%; max-width: 1360px; margin: 0 auto; padding: 20px 16px; display: flex; flex-wrap: wrap; gap: 20px; align-items: stretch; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; min-width: 0; }
+#chat { flex: 7 1 560px; }
+#inspector { flex: 5 1 400px; }
+.bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 16px; background: var(--raised); border-bottom: 1px solid var(--line); }
+.bot { display: flex; align-items: center; gap: 10px; }
+.avatar { flex: none; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font: 700 11px 'IBM Plex Mono', monospace; }
+.avatar.rule { background: var(--teal-bg); color: var(--teal); border: 1px solid #1F6F67; }
+.avatar.llm { background: #2B1A0E; color: var(--accent); border: 1px solid #7A3A12; }
+.bot strong { font-weight: 600; }
+.bot p { margin: 0; font-size: 12px; color: var(--muted); }
+.ghost { min-height: 36px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: var(--text); font-size: 12px; }
+.ghost:hover { border-color: var(--muted); }
+
+#chips { display: flex; gap: 6px; align-items: center; overflow-x: auto; white-space: nowrap; padding: 10px 16px; border-bottom: 1px solid var(--line); }
+#chips span { font-size: 11px; color: var(--muted); margin-right: 4px; }
+#chips button { flex: none; min-height: 32px; padding: 4px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--raised); color: var(--text); font-size: 12px; }
+
+#messages { flex: 1; min-height: 360px; max-height: 540px; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+.msg { display: flex; gap: 10px; align-items: flex-start; }
+.msg.user { justify-content: flex-end; }
+.bubble { max-width: 85%; padding: 10px 14px; border-radius: 4px 14px 14px 14px; background: var(--raised); border: 1px solid var(--line); white-space: pre-line; }
+.msg.user .bubble { border-radius: 14px 4px 14px 14px; background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.meta { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 8px; font: 11px 'IBM Plex Mono', monospace; color: var(--muted); }
+.meta .pill { padding: 1px 6px; border: 1px solid var(--line); border-radius: 4px; color: var(--text); }
+.meta .why { color: var(--teal); }
+.meta .grok { color: #FFFFFF; }
+.meta .err { color: var(--red); }
+#pending { margin: 0; font-size: 12px; color: var(--muted); }
+
+#insight { margin: 0 16px 8px; padding: 8px 10px; border: 1px solid #1F6F67; background: var(--teal-bg); border-radius: 8px; font-size: 12px; display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+#insight button { width: 32px; height: 32px; border: 0; background: transparent; color: var(--teal); font-size: 18px; }
+
+form { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--line); background: var(--raised); }
+form input { flex: 1; min-width: 0; min-height: 44px; padding: 0 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); color: var(--text); font: inherit; }
+form input::placeholder { color: #6F8399; }
+.primary { min-height: 44px; padding: 0 18px; border: 0; border-radius: 12px; background: var(--accent); color: var(--on-accent); font-weight: 600; }
+.primary:disabled { opacity: 0.5; cursor: default; }
+
+[role="tablist"] { display: flex; background: var(--raised); border-bottom: 1px solid var(--line); }
+[role="tab"] { flex: 1; min-height: 44px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--muted); font-size: 12px; font-weight: 500; }
+[role="tab"][aria-selected="true"] { border-bottom-color: var(--accent); color: var(--text); }
+.view { flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; max-height: 760px; }
+.card { background: var(--raised); border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+.card h2 { margin: 0; font-size: 13px; color: var(--accent); }
+.card p { margin: 6px 0 0; font-size: 13px; color: var(--text); }
+.card .note { font-size: 12px; color: var(--muted); }
+.row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; }
+.row label, .row .label { font-size: 12px; font-weight: 600; color: var(--accent); }
+textarea { width: 100%; resize: vertical; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--text); font: 12px/1.6 'IBM Plex Mono', monospace; }
+.spec { margin: 0; padding: 10px 10px 10px 26px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; font-size: 12px; max-height: 180px; overflow-y: auto; }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.big { font: 700 22px 'IBM Plex Mono', monospace; color: var(--teal); }
+input[type=range] { width: 100%; accent-color: var(--amber); }
+pre { margin: 0; padding: 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; font-size: 11px; line-height: 1.5; overflow: auto; max-height: 260px; white-space: pre-wrap; word-break: break-word; color: var(--teal); }
+#codeText { color: var(--text); white-space: pre; max-height: none; }
+#ground[aria-pressed="false"] { border-color: var(--red); background: var(--red-bg); color: #F6C7CE; }
+#ground[aria-pressed="true"] { border-color: #1F6F67; background: var(--teal-bg); color: var(--teal); }
+
+footer { border-top: 1px solid var(--line); background: var(--panel); padding: 12px 24px; display: flex; flex-wrap: wrap; gap: 8px 28px; font: 11px 'IBM Plex Mono', Menlo, monospace; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+footer .vk { color: #FF5500; } footer b { color: #FFFFFF; font-weight: 500; }
+.vk-sweep { transform-origin: 12px 12px; animation: vk 4s linear infinite; }
+@keyframes vk { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .vk-sweep { animation: none; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <svg width="44" height="44" viewBox="0 0 240 240" aria-hidden="true">
+      <rect x="40" y="70" width="160" height="120" fill="#5E7591"></rect>
+      <polygon points="40,70 200,70 220,50 60,50" fill="#D7DEE6"></polygon>
+      <polygon points="200,70 220,50 220,170 200,190" fill="#34465E"></polygon>
+      <rect x="52" y="82" width="136" height="96" rx="4" fill="#22344B"></rect>
+      <circle cx="80" cy="108" r="11" fill="#F26A1B"></circle><circle cx="80" cy="108" r="6" fill="#0B1420"></circle>
+      <circle cx="120" cy="108" r="11" fill="#D7DEE6"></circle><circle cx="120" cy="108" r="6" fill="#0B1420"></circle>
+      <circle cx="160" cy="108" r="11" fill="#D7DEE6"></circle><circle cx="160" cy="108" r="6" fill="#0B1420"></circle>
+      <circle cx="80" cy="152" r="11" fill="#D7DEE6"></circle><circle cx="80" cy="152" r="6" fill="#0B1420"></circle>
+      <circle cx="120" cy="152" r="11" fill="#D7DEE6"></circle><circle cx="120" cy="152" r="6" fill="#0B1420"></circle>
+      <circle cx="160" cy="152" r="11" fill="#F26A1B"></circle><circle cx="160" cy="152" r="6" fill="#0B1420"></circle>
+      <path d="M80 108 C 70 240, 170 240, 160 152" fill="none" stroke="#F26A1B" stroke-width="8" stroke-linecap="round"></path>
+    </svg>
+    <div>
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px">
+        <h1>SWITCHBOARD Chatbot Lab</h1>
+        <span class="tag">SWBD-EUP-2026-10-20</span>
+      </div>
+      <p>Rule-based keywords vs. spec-1's local model, side by side · <a href="/switchboard/">SWITCHBOARD demo</a> · <a href="/switchboard/gallery.html">Logo family</a></p>
+    </div>
+  </div>
+  <div class="seg" role="group" aria-label="Bot mode">
+    <button type="button" id="modeRule" aria-pressed="true">Rule-based bot</button>
+    <button type="button" id="modeLlm" aria-pressed="false">Local model (LLM)</button>
+  </div>
+</header>
+
+<main>
+  <section id="chat" class="panel" aria-label="Chat">
+    <div class="bar">
+      <div class="bot">
+        <div id="botAvatar" class="avatar rule">R</div>
+        <div><strong id="botName">Keyword bot (rule-based)</strong><p id="botSub">Exact dictionary lookup over ecosystem keywords</p></div>
+      </div>
+      <button type="button" class="ghost" id="clear">Clear chat</button>
+    </div>
+    <div id="chips"><span>Try:</span></div>
+    <div id="messages" aria-live="polite"></div>
+    <div id="insight" hidden><span id="insightText"></span><button type="button" id="insightClose" aria-label="Dismiss">×</button></div>
+    <form id="form">
+      <label for="input" class="sr-only">Your question</label>
+      <input id="input" type="text" autocomplete="off" placeholder="Ask with a keyword (e.g. 'What is proc_track?')">
+      <button type="submit" class="primary" id="send">Send</button>
+      <button type="button" class="ghost" id="stop" hidden>Stop</button>
+    </form>
+  </section>
+
+  <section id="inspector" class="panel" aria-label="Inspector">
+    <div role="tablist">
+      <button type="button" role="tab" aria-selected="true" data-tab="payload">Prompt &amp; payload</button>
+      <button type="button" role="tab" aria-selected="false" data-tab="code">Implementation</button>
+      <button type="button" role="tab" aria-selected="false" data-tab="concepts">Core concepts</button>
+    </div>
+
+    <div class="view" data-view="payload">
+      <div class="card">
+        <div class="row"><label for="sys">System instruction</label><span class="mono note" id="sysTokens"></span></div>
+        <textarea id="sys" rows="4"></textarea>
+        <p class="note">Sets the role and scope before the spec or the question is loaded.</p>
+      </div>
+      <div class="card">
+        <div class="row"><span class="label">SWITCHBOARD spec (RAG context)</span><button type="button" class="ghost" id="ground" aria-pressed="true">Grounding: on</button></div>
+        <ul class="spec">
+          <li><strong>SWITCHBOARD</strong>: central orchestrator for automated civic intelligence.</li>
+          <li><strong>SPEC-1</strong>: OSINT and entity research graph linking officials, donors and filings.</li>
+          <li><strong>PDX-1i</strong>: ingests 40+ Pacific Northwest public feeds (OLIS, ORESTAR, SEI, WA PDC).</li>
+          <li><strong>proc_track</strong>: deterministic chamber replay gate (100% replay on 2025R1 and 2021R1).</li>
+          <li><strong>gatepost</strong>: integrity gate that keeps corrupt records out of downstream feeds.</li>
+          <li><strong>Notitia Civica</strong>: daily world-state intelligence brief.</li>
+          <li><strong>Rule of 30</strong>: SHIPPING.md requires 30 consecutive unattended daily runs before release.</li>
+        </ul>
+      </div>
+      <div class="grid2">
+        <div class="card"><span class="note">Total context load</span><div><span class="big" id="total">0</span> <span class="note">tokens</span></div><p class="note">System + spec + history</p></div>
+        <div class="card">
+          <div class="row" style="margin:0"><label for="temp" style="color:var(--muted);font-weight:400">Strictness</label><span class="mono" id="tempLabel" style="color:var(--amber);font-weight:700">0.7</span></div>
+          <input id="temp" type="range" min="0" max="1" step="0.1" value="0.7">
+          <p class="note">Sent as an instruction; the local backend runs at temperature 0</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="row"><span class="label" style="color:var(--text)">Request body · <code>POST /api/v1/lab/ask</code></span><button type="button" class="ghost" id="copyPayload">Copy JSON</button></div>
+        <pre id="payload"></pre>
+        <p class="note">Exactly what LLM mode sends to the local model on the next turn.</p>
+      </div>
+    </div>
+
+    <div class="view" data-view="code" hidden>
+      <div class="row">
+        <div class="seg" role="group" aria-label="Snippet">
+          <button type="button" id="codeRule" aria-pressed="true">Rule-based</button>
+          <button type="button" id="codeLlm" aria-pressed="false">Local model</button>
+        </div>
+        <button type="button" class="ghost" id="copyCode">Copy code</button>
+      </div>
+      <pre id="codeText"></pre>
+    </div>
+
+    <div class="view" data-view="concepts" hidden></div>
+  </section>
+</main>
+
+<footer id="telemetry" aria-label="Telemetry"></footer>
+
+<script>
+(function () {
+  "use strict";
+
+  var SPEC = [
+    "SWITCHBOARD / PDX-1i ECOSYSTEM SPECIFICATION (EvaStar Arcana LLC):",
+    "1. Platform: automated civic intelligence. Ingests raw public records across 40+ state feeds and evaluates them through deterministic gates.",
+    "2. Nodes:",
+    "   - switchboard: central orchestrator; daily unattended pipelines, timers, 30-day runbook tracking.",
+    "   - spec-1: OSINT research engine; entity graph resolution across officials, filings, donors, lobbyists.",
+    "   - pdx-1i: regional ingestion of 40+ Pacific Northwest feeds (Oregon OLIS, ORESTAR, SEI, Washington PDC).",
+    "   - proc_track: deterministic chamber replay gate (100% replay on 2025R1 and 2021R1).",
+    "   - gatepost: schema parity and assertions; rejects corrupted or out-of-order records.",
+    "   - notitia (Notitia Civica): daily world-state intelligence brief.",
+    "3. Scale: 59,500+ lines of Python across 17 packages; 1,597 tests passing; 272 merged PRs across 9 repositories in CLS-1000.",
+    "4. SHIPPING.md, the Rule of 30: 30 consecutive unattended daily runs without failure before release."
+  ].join("\n");
+
+  var DEFAULT_SYS = "You are an expert Systems Architect for the SWITCHBOARD / PDX-1i platform (EvaStar Arcana LLC). Explain the SWITCHBOARD ecosystem, spec-1, pdx-1i, proc_track, gatepost, and the Rule of 30 accurately and concisely.";
+
+  var RULES = [
+    { k: ["switchboard", "pdx-1i", "pdx1", "platform"], r: "SWITCHBOARD / PDX-1i is an automated civic intelligence platform built by EvaStar Arcana LLC. It ingests 40+ public records feeds through deterministic gates rather than subjective curation." },
+    { k: ["proc_track", "proctrack", "legislative", "bill", "chamber", "replay"], r: "proc_track is the legislative replay gate. It runs historical chamber actions through a deterministic state machine: 100% replay on 2025R1 (3,466/3,466) and 2021R1 (2,519/2,519)." },
+    { k: ["spec-1", "spec1", "osint", "research engine"], r: "SPEC-1 is the OSINT research engine: entity resolution and graph cross-referencing across donors, lobbyists and legislative filings." },
+    { k: ["gatepost", "integrity", "dirty data", "filter", "gate"], r: "gatepost is the deterministic integrity gate. It enforces schema parity and assertions, rejecting corrupted feeds before they reach downstream briefs." },
+    { k: ["rule of 30", "30-day", "shipping", "unattended"], r: "The Rule of 30 (SHIPPING.md) requires 30 consecutive unattended daily runs with zero human intervention before the system is armed for release." },
+    { k: ["notitia", "civica", "brief", "world state"], r: "Notitia Civica is the daily world-state brief, synthesising verified civic and legislative movement into an auditable report." },
+    { k: ["cls-1000", "codebase", "lines of code", "tests"], r: "SWITCHBOARD spans 59,500+ lines of Python across 17 packages, with 1,597 passing tests and 272 merged PRs across 9 repositories in CLS-1000." },
+    { k: ["olis", "orestar", "sei", "wa pdc", "feeds"], r: "PDX-1i ingests 40+ public feeds, including Oregon OLIS (legislature), ORESTAR (campaign finance), SEI (economic interest statements) and Washington PDC." },
+    { k: ["hour", "open", "close", "schedule"], r: "SWITCHBOARD runs on systemd timers, every day, to keep its unattended clock going." },
+    { k: ["hello", "hey", "greetings"], r: "Hello. Ask me about spec-1, pdx-1i, proc_track, gatepost, Notitia Civica or the Rule of 30." }
+  ];
+
+  var CHIPS = [
+    "What is SWITCHBOARD / PDX-1i?",
+    "How does proc_track verify legislative bills?",
+    "Explain the Rule of 30 in SHIPPING.md",
+    "What does SPEC-1 do in the pipeline?",
+    "What is gatepost and how does it prevent dirty data?",
+    "How do we mathematically verify bills without hallucinations?",
+    "What is RAG in the AI ecosystem?",
+    "When do you shut down tonight?",
+    "My name is Matthew. Remember it.",
+    "What is my name?",
+    "Do you sell warp drive hyper-engines?"
+  ];
+
+  var CONCEPTS = [
+    ["Teaching a model a private system", "Public models have never seen SWITCHBOARD, proc_track or gatepost. You don't retrain weights for that: you put the spec in the context window at request time."],
+    ["1. What a language model does", "A rule-based bot tests exact string matches (text.includes(\"switchboard\")). An LLM predicts the next token given everything before it, so it can handle phrasing it has never seen."],
+    ["2. System instruction vs. user prompt", "The system instruction sets persona, scope and constraints. The user prompt is the runtime question. The model answers from both."],
+    ["3. Tokens", "Models read chunks of characters (\"switch\", \"board\", \" gate\"), not letters or words. Token counts set cost and the size of the context window."],
+    ["4. Context across turns", "The model is stateless. For a multi-turn chat this page re-sends the conversation on every request: watch the request body grow."],
+    ["5. Hallucination and grounding", "Without the spec in context, a model has to guess what SWITCHBOARD is. Turn grounding off and ask about proc_track to see the difference."]
+  ];
+
+  var CODE_RULE = "const switchboardRules = [\n  { keywords: ['switchboard', 'pdx-1i'],\n    reply: 'SWITCHBOARD is an automated civic intelligence platform.' },\n  { keywords: ['proc_track', 'chamber', 'replay'],\n    reply: 'proc_track verifies chamber actions via deterministic replay.' }\n];\n\n// Breaks on conceptual questions with no exact keyword, e.g.\n// \"How do we keep fake votes out of the system?\"\nfunction getRuleBasedReply(userInput) {\n  const clean = userInput.toLowerCase();\n  for (const rule of switchboardRules) {\n    if (rule.keywords.some(kw => clean.includes(kw))) return rule.reply;\n  }\n  return 'Term not recognized.';\n}";
+
+  var CODE_LLM = "// Browser: this page\nconst res = await fetch('/api/v1/lab/ask', {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify({ system, prompt })   // spec rides in `system`\n});\nconst { text, model, tier } = await res.json();   // 503 = local model down\n\n# Server: src/spec1_api/routers/lab.py -> spec1_core/llm/ask.py\nclient = FallbackLLMClient(task=\"ask_model\", route=[\"local\", \"mock\"])\ntext = client.complete(prompt, system)   # Ollama / OpenAI-compatible, e.g. Qwen\nif client.get_active_tier() == \"mock\":\n    raise HTTPException(503, \"local model unavailable\")   # never a rule answer";
+
+  var API_KEY = new URLSearchParams(location.search).get("api_key");
+
+  var state = {
+    mode: "rule", tab: "payload", code: "rule", temp: 0.7, grounding: true,
+    sys: DEFAULT_SYS, history: [], messages: [], pending: false, ctl: null,
+    lastMs: 0, model: "", llmReplies: 0, grokked: 0
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+  function est(t) { return t ? Math.max(1, Math.ceil(t.trim().length / 3.8)) : 0; }
+
+  function buildRequest() {
+    var style = state.temp <= 0.3
+      ? "Be strict: answer only from the specification. If it does not cover the question, say so plainly."
+      : state.temp >= 0.8 ? "You may be loose and inventive."
+      : "Prefer the specification and flag anything you infer beyond it.";
+    var system = state.sys + "\n\n" +
+      (state.grounding ? "Answer using this specification:\n\n" + SPEC : "You have no documentation about this system.") +
+      "\n\n" + style + "\nReply in plain text, at most 120 words, no markdown.";
+    var lines = state.history.slice(-20).map(function (m) {
+      return (m.role === "user" ? "User: " : "Assistant: ") + m.content;
+    });
+    var prompt = "Conversation so far:\n" + lines.join("\n") + "\n\nReply as the assistant to the last user message.";
+    return { system: system, prompt: prompt };
+  }
+
+  function ruleReply(text) {
+    var lower = text.toLowerCase();
+    for (var i = 0; i < RULES.length; i++) {
+      for (var j = 0; j < RULES[i].k.length; j++) {
+        if (lower.indexOf(RULES[i].k[j]) !== -1) {
+          var kw = RULES[i].k[j];
+          return { text: RULES[i].r, tag: "Match: \"" + kw + "\"", why: "Keyword dictionary hit", insight: "Rule matched keyword \"" + kw + "\"." };
+        }
+      }
+    }
+    return { text: "I didn't recognise any known keywords. I only know exact terms like 'switchboard', 'spec-1', 'proc_track', 'gatepost', 'notitia' or 'rule of 30'. Rephrase, or switch to the local model.", tag: "Fallback", why: "Zero matching keywords", insight: "No keyword matched. A rule-based bot cannot handle synonyms or conceptual questions." };
+  }
+
+  function addMessage(m) {
+    state.messages.push(m);
+    var row = document.createElement("div");
+    row.className = "msg " + (m.role === "user" ? "user" : "bot");
+    if (m.role !== "user") {
+      var av = document.createElement("div");
+      av.className = "avatar " + (m.llm ? "llm" : "rule");
+      av.textContent = m.llm ? "AI" : "R";
+      av.setAttribute("aria-hidden", "true");
+      row.appendChild(av);
+    }
+    var b = document.createElement("div");
+    b.className = "bubble";
+    b.textContent = m.text;
+    if (m.tag) {
+      var meta = document.createElement("div");
+      meta.className = "meta";
+      [["pill", m.tag], ["", "~" + est(m.text) + " tokens"], [m.error ? "err" : "why", m.why]].forEach(function (p) {
+        var s = document.createElement("span"); s.className = p[0]; s.textContent = p[1]; meta.appendChild(s);
+      });
+      if (m.grokked) { var g = document.createElement("span"); g.className = "grok"; g.textContent = "eval_state: GROKKED"; meta.appendChild(g); }
+      b.appendChild(meta);
+    }
+    row.appendChild(b);
+    $("messages").appendChild(row);
+    $("messages").scrollTop = $("messages").scrollHeight;
+  }
+
+  function setPending(on) {
+    state.pending = on;
+    $("send").disabled = on;
+    $("stop").hidden = !(on && state.mode === "llm");
+    var p = $("pending");
+    if (on && !p) {
+      p = document.createElement("p"); p.id = "pending";
+      p.textContent = state.mode === "llm" ? "Thinking… (local model)" : "Matching keywords…";
+      $("messages").appendChild(p);
+      $("messages").scrollTop = $("messages").scrollHeight;
+    } else if (!on && p) { p.remove(); }
+  }
+
+  function showInsight(t) { if (!t) return; $("insightText").textContent = t; $("insight").hidden = false; }
+
+  function send(raw) {
+    var text = (raw || "").trim();
+    if (!text || state.pending) return;
+    $("input").value = "";
+    state.history.push({ role: "user", content: text });
+    addMessage({ role: "user", text: text });
+    var t0 = Date.now();
+    var isLlm = state.mode === "llm";
+    setPending(true);
+    renderInspector();
+
+    if (!isLlm) {
+      setTimeout(function () {
+        var r = ruleReply(text);
+        setPending(false);
+        state.lastMs = Date.now() - t0;
+        state.history.push({ role: "assistant", content: r.text });
+        addMessage({ role: "assistant", text: r.text, tag: r.tag, why: r.why });
+        showInsight(r.insight);
+        renderInspector(); renderTelemetry();
+      }, 120);
+      return;
+    }
+
+    var body = buildRequest();
+    var grounded = state.grounding;
+    var headers = { "Content-Type": "application/json" };
+    if (API_KEY) headers["X-API-Key"] = API_KEY;
+    state.ctl = new AbortController();
+    fetch("/api/v1/lab/ask", { method: "POST", headers: headers, body: JSON.stringify(body), signal: state.ctl.signal })
+      .then(function (res) {
+        return res.json().catch(function () { return {}; }).then(function (data) { return { ok: res.ok, status: res.status, data: data }; });
+      })
+      .then(function (r) {
+        setPending(false);
+        state.lastMs = Date.now() - t0;
+        if (!r.ok) {
+          var copy = r.status === 503 ? "The local model isn't answering. Start Ollama (or your OpenAI-compatible server) on this machine and try again."
+            : r.status === 403 ? "This API needs a key. Open the page as /lab?api_key=<your key>."
+            : "The request failed (" + r.status + ").";
+          addMessage({ role: "assistant", llm: true, text: copy, tag: "Error " + r.status, why: (r.data && r.data.detail) || "No reply", error: true });
+          return;
+        }
+        var d = r.data;
+        state.model = d.model || d.tier || "local";
+        state.llmReplies++; if (grounded) state.grokked++;
+        state.history.push({ role: "assistant", content: d.text });
+        addMessage({ role: "assistant", llm: true, text: d.text, tag: state.model + " · " + d.tier, why: grounded ? "Grounded in the spec" : "No spec in context", grokked: grounded });
+      })
+      .catch(function (e) {
+        setPending(false);
+        var stopped = e && e.name === "AbortError";
+        addMessage({ role: "assistant", llm: true, text: stopped ? "Stopped." : "Couldn't reach the spec-1 API.", tag: stopped ? "Stopped" : "Network error", why: stopped ? "Cancelled by you" : String(e), error: !stopped });
+      })
+      .then(function () { state.ctl = null; renderInspector(); renderTelemetry(); });
+  }
+
+  function welcome(cleared) {
+    addMessage({ role: "assistant", text: cleared
+      ? "Chat cleared. You are in " + (state.mode === "rule" ? "rule-based" : "local model") + " mode."
+      : "Welcome. Rule-based mode matches exact keywords such as \"switchboard\", \"spec-1\", \"proc_track\", \"gatepost\" or \"rule of 30\". Ask one, then switch to the local model and ask something conceptual, like \"How do we mathematically verify bills without hallucinations?\"\n\nLocal model mode sends your question to spec-1's own model (e.g. Qwen via Ollama) through this API. Nothing goes to Claude." });
+  }
+
+  function setMode(m) {
+    state.mode = m;
+    var llm = m === "llm";
+    $("modeRule").setAttribute("aria-pressed", String(!llm));
+    $("modeLlm").setAttribute("aria-pressed", String(llm));
+    $("botAvatar").className = "avatar " + (llm ? "llm" : "rule");
+    $("botAvatar").textContent = llm ? "AI" : "R";
+    $("botName").textContent = llm ? "spec-1 local model (LLM + RAG)" : "Keyword bot (rule-based)";
+    $("botSub").textContent = llm ? "Real replies from the model spec-1 runs on this machine" : "Exact dictionary lookup over ecosystem keywords";
+    $("input").placeholder = llm ? "Ask anything (e.g. 'How do we verify bills?')" : "Ask with a keyword (e.g. 'What is proc_track?')";
+    renderTelemetry();
+  }
+
+  function setTab(t) {
+    state.tab = t;
+    document.querySelectorAll("[role=tab]").forEach(function (b) { b.setAttribute("aria-selected", String(b.dataset.tab === t)); });
+    document.querySelectorAll(".view").forEach(function (v) { v.hidden = v.dataset.view !== t; });
+  }
+
+  function renderCode() {
+    $("codeRule").setAttribute("aria-pressed", String(state.code === "rule"));
+    $("codeLlm").setAttribute("aria-pressed", String(state.code === "llm"));
+    $("codeText").textContent = state.code === "rule" ? CODE_RULE : CODE_LLM;
+  }
+
+  function renderInspector() {
+    var req = buildRequest();
+    $("sysTokens").textContent = "~" + est(req.system) + " tokens";
+    $("total").textContent = est(req.system) + est(req.prompt);
+    $("payload").textContent = JSON.stringify(req, null, 2);
+    $("ground").setAttribute("aria-pressed", String(state.grounding));
+    $("ground").textContent = state.grounding ? "Grounding: on" : "Grounding: off";
+    $("tempLabel").textContent = state.temp.toFixed(1);
+  }
+
+  function renderTelemetry() {
+    var rule = state.mode === "rule";
+    var items = [
+      ["", "MYCROFT-CORE // ORCHESTRATOR : ", rule ? "DICTIONARY" : (state.model || "LOCAL MODEL").toUpperCase()],
+      ["", "DISPATCH CADENCE : ON-THE-BOUNCE // ", state.lastMs ? state.lastMs + "MS" : "—"],
+      ["", "RULE 0 // ZERO-BALANCE VERIFICATION (T-PROTOCOL) : ", state.grounding ? "ENFORCED" : "SUSPENDED"],
+      ["SCAN-VK // ", "VERACITY SWEEP : ", state.grounding ? "ARMED" : "BLIND"],
+      ["", "GROK : ", state.llmReplies ? Math.round(state.grokked / state.llmReplies * 100) + "%" : "—"],
+      ["", "VALIS-SYNC // DREAM_LOOP : ", state.pending ? "SYNTH_ACTIVE" : "SYNTH_IDLE"],
+      ["", "BEACON-C // OFF-SHOULDER ROUTING : ", "ACTIVE"],
+      ["", "ATTN : ", "PERSISTENCE THROUGH RAIN DECAY"]
+    ];
+    var f = $("telemetry");
+    f.textContent = "";
+    items.forEach(function (it) {
+      var s = document.createElement("span");
+      if (it[0]) { var v = document.createElement("span"); v.className = "vk"; v.textContent = it[0]; s.appendChild(v); }
+      s.appendChild(document.createTextNode(it[1]));
+      var b = document.createElement("b"); b.textContent = it[2]; s.appendChild(b);
+      f.appendChild(s);
+    });
+  }
+
+  function copy(text, btn) {
+    var label = btn.textContent;
+    var done = function () { btn.textContent = "Copied"; setTimeout(function () { btn.textContent = label; }, 1500); };
+    if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, function () {});
+  }
+
+  // Wire up
+  CHIPS.forEach(function (c) {
+    var b = document.createElement("button");
+    b.type = "button"; b.textContent = c;
+    b.addEventListener("click", function () { send(c); });
+    $("chips").appendChild(b);
+  });
+  CONCEPTS.forEach(function (c) {
+    var d = document.createElement("div"); d.className = "card";
+    var h = document.createElement("h2"); h.textContent = c[0];
+    var p = document.createElement("p"); p.textContent = c[1];
+    d.appendChild(h); d.appendChild(p);
+    document.querySelector("[data-view=concepts]").appendChild(d);
+  });
+  $("sys").value = state.sys;
+  $("sys").addEventListener("input", function (e) { state.sys = e.target.value; renderInspector(); });
+  $("temp").addEventListener("input", function (e) { state.temp = parseFloat(e.target.value); renderInspector(); });
+  $("ground").addEventListener("click", function () { state.grounding = !state.grounding; renderInspector(); renderTelemetry(); });
+  $("modeRule").addEventListener("click", function () { setMode("rule"); });
+  $("modeLlm").addEventListener("click", function () { setMode("llm"); });
+  document.querySelectorAll("[role=tab]").forEach(function (b) { b.addEventListener("click", function () { setTab(b.dataset.tab); }); });
+  $("codeRule").addEventListener("click", function () { state.code = "rule"; renderCode(); });
+  $("codeLlm").addEventListener("click", function () { state.code = "llm"; renderCode(); });
+  $("copyPayload").addEventListener("click", function (e) { copy($("payload").textContent, e.currentTarget); });
+  $("copyCode").addEventListener("click", function (e) { copy($("codeText").textContent, e.currentTarget); });
+  $("insightClose").addEventListener("click", function () { $("insight").hidden = true; });
+  $("stop").addEventListener("click", function () { if (state.ctl) state.ctl.abort(); });
+  $("clear").addEventListener("click", function () {
+    if (state.ctl) state.ctl.abort();
+    state.history = []; state.messages = []; $("messages").textContent = ""; $("insight").hidden = true;
+    welcome(true); renderInspector();
+  });
+  $("form").addEventListener("submit", function (e) { e.preventDefault(); send($("input").value); });
+
+  welcome(false);
+  setMode("rule");
+  renderCode();
+  renderInspector();
+})();
+</script>
+</body>
+</html>

@@ -433,35 +433,10 @@ def tool_score_signal(args: dict) -> dict:
 
 
 def tool_ask_model(args: dict) -> dict:
-    """Ask spec-1's local model (Ollama or OpenAI-compatible, e.g. Qwen) a question.
+    """Ask spec-1's local model (Ollama or OpenAI-compatible, e.g. Qwen) a question."""
+    from spec1_core.llm.ask import ask_local_model
 
-    Local only unless SPEC1_LLM_ROUTE_ASK_MODEL says otherwise: it never reaches
-    Claude by default, and never answers with Tier 3 rules — when the local model
-    is down the result carries an error instead.
-    """
-    from spec1_core.llm.fallback_client import FallbackLLMClient, resolve_route
-
-    prompt = str(args.get("prompt", "")).strip()
-    if not prompt:
-        return {"error": "prompt is required"}
-    system = str(args.get("system", "")).strip()
-
-    route = (
-        resolve_route("ask_model")
-        if os.environ.get("SPEC1_LLM_ROUTE_ASK_MODEL")
-        else ["local", "mock"]
-    )
-    client = FallbackLLMClient(task="ask_model", route=route)
-    text = client.complete(prompt, system)
-    tier = client.get_active_tier()
-    if tier == "mock":
-        return {"error": "local model unavailable", "tier": tier, "route": client.get_route()}
-    return {
-        "text": text,
-        "tier": tier,
-        "model": client.get_active_model(),
-        "route": client.get_route(),
-    }
+    return ask_local_model(str(args.get("prompt", "")), str(args.get("system", "")))
 
 
 def tool_run_research(args: dict) -> dict:

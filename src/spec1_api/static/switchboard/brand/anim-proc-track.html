@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1280">
+<title>proc_track animated intro</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oxanium:wght@600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap">
+<link rel="stylesheet" href="brand.css">
+<script src="accent.js"></script>
+<style>
+.dA,.dB,.dC{stroke-dasharray:1;stroke-dashoffset:1;animation-duration:8s;animation-iteration-count:infinite;animation-timing-function:ease-in-out}
+.dA{animation-name:dA}.dB{animation-name:dB}.dC{animation-name:dC}
+@keyframes dA{0%,2%{stroke-dashoffset:1;opacity:1}16%,88%{stroke-dashoffset:0;opacity:1}96%,100%{stroke-dashoffset:0;opacity:0}}
+@keyframes dB{0%,8%{stroke-dashoffset:1;opacity:1}22%,88%{stroke-dashoffset:0;opacity:1}96%,100%{stroke-dashoffset:0;opacity:0}}
+@keyframes dC{0%,12%{stroke-dashoffset:1;opacity:1}26%,88%{stroke-dashoffset:0;opacity:1}96%,100%{stroke-dashoffset:0;opacity:0}}
+.trail{stroke-dasharray:1;stroke-dashoffset:1;animation:trail 8s linear infinite}
+@keyframes trail{0%,32%{stroke-dashoffset:1;opacity:1}72%,88%{stroke-dashoffset:0.24;opacity:1}96%,100%{stroke-dashoffset:0.24;opacity:0}}
+.travel{offset-path:path("M42 168 A96 96 0 0 1 138 72 A60 60 0 0 1 198 132 A36 36 0 0 1 162 168 A24 24 0 0 1 138 144 A12 12 0 0 1 150 132");offset-rotate:0deg;animation:travel 8s linear infinite}
+@keyframes travel{0%,31%{offset-distance:0%;opacity:0}33%{offset-distance:1%;opacity:1}72%,88%{offset-distance:76%;opacity:1}96%,100%{offset-distance:76%;opacity:0}}
+.popH,.popS1,.popS2,.popS3{transform-box:fill-box;transform-origin:center;animation-duration:8s;animation-iteration-count:infinite;animation-timing-function:cubic-bezier(.3,1.6,.5,1)}
+.popH{animation-name:popH}.popS1{animation-name:popS1}.popS2{animation-name:popS2}.popS3{animation-name:popS3}
+@keyframes popH{0%,22%{transform:scale(0);opacity:1}28%,88%{transform:scale(1);opacity:1}96%,100%{transform:scale(1);opacity:0}}
+@keyframes popS1{0%,31%{transform:scale(0);opacity:1}36%,88%{transform:scale(1);opacity:1}96%,100%{transform:scale(1);opacity:0}}
+@keyframes popS2{0%,53%{transform:scale(0);opacity:1}58%,88%{transform:scale(1);opacity:1}96%,100%{transform:scale(1);opacity:0}}
+@keyframes popS3{0%,67%{transform:scale(0);opacity:1}72%,88%{transform:scale(1);opacity:1}96%,100%{transform:scale(1);opacity:0}}
+.glow{transform-box:fill-box;transform-origin:center;animation:glow 1.6s ease-in-out infinite}
+@keyframes glow{0%,100%{opacity:.2;transform:scale(.8)}50%{opacity:.5;transform:scale(1.3)}}
+.rH,.rT,.rP{animation-duration:8s;animation-iteration-count:infinite;animation-timing-function:ease-out}
+.rH{animation-name:rH}.rT{animation-name:rT}.rP{animation-name:rP}
+@keyframes rH{0%,4%{opacity:0;transform:translateY(14px)}12%,88%{opacity:1;transform:translateY(0)}96%,100%{opacity:0;transform:translateY(0)}}
+@keyframes rT{0%,62%{opacity:0;transform:translateY(14px)}70%,88%{opacity:1;transform:translateY(0)}96%,100%{opacity:0;transform:translateY(0)}}
+@keyframes rP{0%,68%{opacity:0;transform:translateY(14px)}76%,88%{opacity:1;transform:translateY(0)}96%,100%{opacity:0;transform:translateY(0)}}
+.wipe{animation:wipe 8s cubic-bezier(.2,.8,.2,1) infinite}
+@keyframes wipe{0%,52%{clip-path:inset(0 100% 0 0);opacity:1}64%,88%{clip-path:inset(0 0 0 0);opacity:1}96%,100%{clip-path:inset(0 0 0 0);opacity:0}}
+@media (prefers-reduced-motion: reduce){.dA,.dB,.dC{animation:none;stroke-dashoffset:0}.trail{animation:none;stroke-dashoffset:0.24}.travel{animation:none;offset-distance:76%}.popH,.popS1,.popS2,.popS3,.glow,.rH,.rT,.rP,.wipe{animation:none}}
+</style>
+</head>
+<body>
+<div style="width: 1280px; height: 640px; box-sizing: border-box; background: #0E1A2B; color: #F3EEE3; font-family: 'IBM Plex Mono', monospace; display: grid; grid-template-columns: 560px minmax(0, 1fr); grid-template-rows: auto 1fr auto auto auto; column-gap: 64px; row-gap: 20px; padding: 56px 64px 56px 56px">
+<div class="rH" style="grid-column: 2; grid-row: 1; display: flex; justify-content: space-between; font-size: 13px; letter-spacing: 0.12em; color: #8FA3B8"><span>SWITCHBOARD SYSTEM</span><span>04 / 05</span></div>
+<div style="grid-column: 1; grid-row: 1 / 6; display: flex; align-items: center; justify-content: center">
+<svg width="500" height="500" viewBox="0 0 240 240" role="img" aria-label="Animated proc_track mark: a Fibonacci spiral track draws itself, then a glowing token travels along it, lighting up each station it passes" style="filter: drop-shadow(3px 4px 0 #050B14)">
+<circle class="dA" pathLength="1" cx="120" cy="120" r="92" fill="none" stroke="#5E7591" stroke-width="1"></circle>
+<rect class="dA" pathLength="1" x="42" y="72" width="156" height="96" fill="none" stroke="#D7DEE6" stroke-width="1.4"></rect>
+<path class="dA" pathLength="1" d="M138 72 L138 168 M138 132 L198 132 M162 132 L162 168 M138 144 L162 144 M150 132 L150 144" stroke="#8FA3B8" stroke-width="1.1"></path>
+<path class="dB" pathLength="1" d="M42 168 A96 96 0 0 1 138 72 A60 60 0 0 1 198 132 A36 36 0 0 1 162 168 A24 24 0 0 1 138 144 A12 12 0 0 1 150 132" fill="none" stroke="#34465E" stroke-width="12" stroke-linecap="round"></path>
+<path class="dC" pathLength="1" d="M42 168 A96 96 0 0 1 138 72 A60 60 0 0 1 198 132 A36 36 0 0 1 162 168 A24 24 0 0 1 138 144 A12 12 0 0 1 150 132" fill="none" stroke="#D7DEE6" stroke-width="8" stroke-linecap="round"></path>
+<path class="trail" pathLength="1" d="M42 168 A96 96 0 0 1 138 72 A60 60 0 0 1 198 132 A36 36 0 0 1 162 168 A24 24 0 0 1 138 144 A12 12 0 0 1 150 132" fill="none" stroke-width="4" stroke-linecap="round" style="stroke: var(--accent)"></path>
+<g class="popH"><circle cx="42" cy="168" r="7" fill="#0E1A2B" stroke="#D7DEE6" stroke-width="2"></circle></g>
+<g class="popH"><circle cx="138" cy="72" r="7" fill="#0E1A2B" stroke="#D7DEE6" stroke-width="2"></circle></g>
+<g class="popH"><circle cx="198" cy="132" r="7" fill="#0E1A2B" stroke="#D7DEE6" stroke-width="2"></circle></g>
+<g class="popH"><circle cx="162" cy="168" r="6" fill="#0E1A2B" stroke="#D7DEE6" stroke-width="2"></circle></g>
+<g class="popH"><circle cx="138" cy="144" r="5" fill="#0E1A2B" stroke="#D7DEE6" stroke-width="2"></circle></g>
+<g class="popH"><circle cx="150" cy="132" r="4" fill="#0E1A2B" stroke="#D7DEE6" stroke-width="2"></circle></g>
+<g class="popS1"><circle cx="42" cy="168" r="7" style="fill: var(--accent)"></circle></g>
+<g class="popS2"><circle cx="138" cy="72" r="7" style="fill: var(--accent)"></circle></g>
+<g class="popS3"><circle cx="198" cy="132" r="7" style="fill: var(--accent)"></circle></g>
+<g class="travel">
+<circle class="glow" cx="0" cy="0" r="16" style="fill: var(--accent)"></circle>
+<circle cx="0" cy="0" r="8" style="fill: var(--accent)"></circle>
+<circle cx="-2.5" cy="-2.5" r="2.8" fill="#FFFFFF" opacity="0.7"></circle>
+</g>
+</svg>
+</div>
+<div class="wipe" style="grid-column: 2; grid-row: 3; font-family: 'Oxanium', sans-serif; font-weight: 700; font-size: 64px; letter-spacing: 0.04em; line-height: 1">proc_track</div>
+<div class="rT" style="grid-column: 2; grid-row: 4; font-size: 16px; color: #8FA3B8">Every bill, stage by stage</div>
+<div class="rP" style="grid-column: 2; grid-row: 5; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; border-top: 1px solid #24344A; padding-top: 20px; font-size: 15px; letter-spacing: 0.04em">
+<span>Part of SWITCHBOARD</span><span style="color: var(--accent)">·</span><span>its own function &amp; repo</span>
+</div>
+</div>
+</body>
+</html>

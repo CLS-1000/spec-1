@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1280">
+<title>OSINT animated intro</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oxanium:wght@600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap">
+<link rel="stylesheet" href="brand.css">
+<script src="accent.js"></script>
+<style>
+.dA,.dB,.dC,.dE{stroke-dasharray:1;stroke-dashoffset:1;animation-duration:8s;animation-iteration-count:infinite;animation-timing-function:ease-in-out}
+.dA{animation-name:dA}.dB{animation-name:dB}.dC{animation-name:dC}.dE{animation-name:dE}
+@keyframes dA{0%,2%{stroke-dashoffset:1;opacity:1}16%,88%{stroke-dashoffset:0;opacity:1}96%,100%{stroke-dashoffset:0;opacity:0}}
+@keyframes dB{0%,10%{stroke-dashoffset:1;opacity:1}24%,88%{stroke-dashoffset:0;opacity:1}96%,100%{stroke-dashoffset:0;opacity:0}}
+@keyframes dC{0%,18%{stroke-dashoffset:1;opacity:1}30%,88%{stroke-dashoffset:0;opacity:1}96%,100%{stroke-dashoffset:0;opacity:0}}
+@keyframes dE{0%,40%{stroke-dashoffset:1;opacity:1}52%,88%{stroke-dashoffset:0;opacity:1}96%,100%{stroke-dashoffset:0;opacity:0}}
+.popJ,.popL{transform-box:fill-box;transform-origin:center;animation-duration:8s;animation-iteration-count:infinite;animation-timing-function:cubic-bezier(.3,1.6,.5,1)}
+.popJ{animation-name:popJ}.popL{animation-name:popL}
+@keyframes popJ{0%,30%{transform:scale(0);opacity:1}36%,88%{transform:scale(1);opacity:1}96%,100%{transform:scale(1);opacity:0}}
+@keyframes popL{0%,50%{transform:scale(0);opacity:1}56%,88%{transform:scale(1);opacity:1}96%,100%{transform:scale(1);opacity:0}}
+.sweepIn{animation:sweepIn 8s ease-out infinite}
+@keyframes sweepIn{0%,28%{opacity:0}34%,88%{opacity:1}96%,100%{opacity:0}}
+.sweep{transform-box:view-box;transform-origin:120px 120px;animation:sweep 3s linear infinite}
+@keyframes sweep{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+.glow{transform-box:fill-box;transform-origin:center;animation:glow 2s ease-in-out infinite}
+@keyframes glow{0%,100%{opacity:.15;transform:scale(.8)}50%{opacity:.5;transform:scale(1.35)}}
+.rH,.rT,.rP{animation-duration:8s;animation-iteration-count:infinite;animation-timing-function:ease-out}
+.rH{animation-name:rH}.rT{animation-name:rT}.rP{animation-name:rP}
+@keyframes rH{0%,4%{opacity:0;transform:translateY(14px)}12%,88%{opacity:1;transform:translateY(0)}96%,100%{opacity:0;transform:translateY(0)}}
+@keyframes rT{0%,62%{opacity:0;transform:translateY(14px)}70%,88%{opacity:1;transform:translateY(0)}96%,100%{opacity:0;transform:translateY(0)}}
+@keyframes rP{0%,68%{opacity:0;transform:translateY(14px)}76%,88%{opacity:1;transform:translateY(0)}96%,100%{opacity:0;transform:translateY(0)}}
+.wipe{animation:wipe 8s cubic-bezier(.2,.8,.2,1) infinite}
+@keyframes wipe{0%,52%{clip-path:inset(0 100% 0 0);opacity:1}64%,88%{clip-path:inset(0 0 0 0);opacity:1}96%,100%{clip-path:inset(0 0 0 0);opacity:0}}
+@media (prefers-reduced-motion: reduce){.dA,.dB,.dC,.dE{animation:none;stroke-dashoffset:0}.popJ,.popL,.sweepIn,.sweep,.glow,.rH,.rT,.rP,.wipe{animation:none}}
+</style>
+</head>
+<body>
+<div style="width: 1280px; height: 640px; box-sizing: border-box; background: #0E1A2B; color: #F3EEE3; font-family: 'IBM Plex Mono', monospace; display: grid; grid-template-columns: 560px minmax(0, 1fr); grid-template-rows: auto 1fr auto auto auto; column-gap: 64px; row-gap: 20px; padding: 56px 64px 56px 56px">
+<div class="rH" style="grid-column: 2; grid-row: 1; display: flex; justify-content: space-between; font-size: 13px; letter-spacing: 0.12em; color: #8FA3B8"><span>SWITCHBOARD SYSTEM</span><span>OPEN SOURCE</span></div>
+<div style="grid-column: 1; grid-row: 1 / 6; display: flex; align-items: center; justify-content: center">
+<svg width="500" height="500" viewBox="0 0 240 240" role="img" aria-label="Animated OSINT mark: an eye drawn from two overlapping arcs, a radar sweep turns inside the iris, and open-source signal points connect in toward the centre" style="filter: drop-shadow(3px 4px 0 #050B14)">
+<defs>
+<clipPath id="os-iris"><circle cx="120" cy="120" r="34"></circle></clipPath>
+</defs>
+<circle class="dA" pathLength="1" cx="120" cy="120" r="96" fill="none" stroke="#5E7591" stroke-width="1"></circle>
+<path class="dA" pathLength="1" d="M210 120 L216 120 M120 210 L120 216 M30 120 L24 120 M120 30 L120 24" stroke="#8FA3B8" stroke-width="1.5"></path>
+<path class="dB" pathLength="1" d="M28 120 Q 120 30 212 120 Q 120 210 28 120 Z" fill="none" stroke="#D7DEE6" stroke-width="2" stroke-linejoin="round"></path>
+<circle class="dC" pathLength="1" cx="120" cy="120" r="34" fill="none" stroke="#D7DEE6" stroke-width="1.6"></circle>
+<circle class="dC" pathLength="1" cx="120" cy="120" r="22" fill="none" stroke="#8FA3B8" stroke-width="1"></circle>
+<g class="sweepIn" clip-path="url(#os-iris)">
+<g class="sweep">
+<path d="M120 120 L120 86 A34 34 0 0 1 149.4 103 Z" opacity="0.35" style="fill: var(--accent)"></path>
+<line x1="120" y1="120" x2="120" y2="86" stroke-width="1.6" style="stroke: var(--accent)"></line>
+</g>
+</g>
+<path class="dE" pathLength="1" d="M58 72 L102 106 M186 80 L140 108 M64 172 L101 135 M180 168 L139 134" stroke-width="1.3" stroke-dasharray="1" opacity="0.8" style="stroke: var(--accent)"></path>
+<g class="popJ"><circle cx="58" cy="72" r="4.5" fill="#D7DEE6"></circle></g>
+<g class="popJ"><circle cx="186" cy="80" r="4.5" fill="#D7DEE6"></circle></g>
+<g class="popJ"><circle cx="64" cy="172" r="4.5" fill="#D7DEE6"></circle></g>
+<g class="popJ"><circle cx="180" cy="168" r="4.5" fill="#D7DEE6"></circle></g>
+<g class="popL"><circle class="glow" cx="120" cy="120" r="14" style="fill: var(--accent)"></circle><circle cx="120" cy="120" r="8" style="fill: var(--accent)"></circle><circle cx="117.5" cy="117.5" r="2.8" fill="#FFFFFF" opacity="0.7"></circle></g>
+</svg>
+</div>
+<div class="wipe" style="grid-column: 2; grid-row: 3; font-family: 'Oxanium', sans-serif; font-weight: 700; font-size: 64px; letter-spacing: 0.04em; line-height: 1">OSINT</div>
+<div class="rT" style="grid-column: 2; grid-row: 4; font-size: 16px; color: #8FA3B8">Open sources, brought into focus</div>
+<div class="rP" style="grid-column: 2; grid-row: 5; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; border-top: 1px solid #24344A; padding-top: 20px; font-size: 15px; letter-spacing: 0.04em">
+<span>Part of SPEC-1</span><span style="color: var(--accent)">·</span><span>where &amp; how we get our data</span>
+</div>
+</div>
+</body>
+</html>

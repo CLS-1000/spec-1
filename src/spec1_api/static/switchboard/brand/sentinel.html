@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1280">
+<title>The Sentinel assembly</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oxanium:wght@600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap">
+<link rel="stylesheet" href="brand.css">
+<script src="accent.js"></script>
+<style>
+.part{transform-box:fill-box;transform-origin:center;animation:assemble 8s cubic-bezier(.2,.9,.25,1) infinite backwards;animation-delay:var(--d)}
+@keyframes assemble{0%,4%{transform:translate(var(--dx),var(--dy)) rotate(var(--r)) scale(.55);opacity:0}9%{opacity:1}26%,84%{transform:translate(0px,0px) rotate(0deg) scale(1);opacity:1}93%,100%{transform:translate(var(--dx),var(--dy)) rotate(var(--r)) scale(.55);opacity:0}}
+.on{animation:on 8s ease-out infinite}
+@keyframes on{0%,36%{opacity:0}42%,84%{opacity:1}92%,100%{opacity:0}}
+.pulse{transform-box:fill-box;transform-origin:center;animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.2;transform:scale(.8)}50%{opacity:.6;transform:scale(1.4)}}
+.ping{transform-box:fill-box;transform-origin:center;animation:ping 1.8s ease-out infinite}
+@keyframes ping{0%{transform:scale(.4);opacity:.9}100%{transform:scale(2.4);opacity:0}}
+.rH,.rT,.rP{animation-duration:8s;animation-iteration-count:infinite;animation-timing-function:ease-out}
+.rH{animation-name:rH}.rT{animation-name:rT}.rP{animation-name:rP}
+@keyframes rH{0%,4%{opacity:0;transform:translateY(14px)}12%,86%{opacity:1;transform:translateY(0)}94%,100%{opacity:0;transform:translateY(0)}}
+@keyframes rT{0%,56%{opacity:0;transform:translateY(14px)}64%,86%{opacity:1;transform:translateY(0)}94%,100%{opacity:0;transform:translateY(0)}}
+@keyframes rP{0%,62%{opacity:0;transform:translateY(14px)}70%,86%{opacity:1;transform:translateY(0)}94%,100%{opacity:0;transform:translateY(0)}}
+.wipe{animation:wipe 8s cubic-bezier(.2,.8,.2,1) infinite}
+@keyframes wipe{0%,44%{clip-path:inset(0 100% 0 0);opacity:1}56%,86%{clip-path:inset(0 0 0 0);opacity:1}94%,100%{clip-path:inset(0 0 0 0);opacity:0}}
+@media (prefers-reduced-motion: reduce){.part,.on,.pulse,.ping,.rH,.rT,.rP,.wipe{animation:none}}
+</style>
+</head>
+<body>
+<div style="width: 1280px; height: 640px; box-sizing: border-box; background: #0E1A2B; color: #F3EEE3; font-family: 'IBM Plex Mono', monospace; display: grid; grid-template-columns: 560px minmax(0, 1fr); grid-template-rows: auto 1fr auto auto auto; column-gap: 64px; row-gap: 20px; padding: 56px 64px 56px 56px">
+<div class="rH" style="grid-column: 2; grid-row: 1; display: flex; justify-content: space-between; font-size: 13px; letter-spacing: 0.12em; color: #8FA3B8"><span>SWITCHBOARD SYSTEM</span><span>ALL NINE · ASSEMBLED</span></div>
+<div style="grid-column: 1; grid-row: 1 / 6; display: flex; align-items: center; justify-content: center">
+<svg width="528" height="528" viewBox="160 20 600 600" role="img" aria-label="Animated assembly: the nine project marks fly in from every direction and lock together into an original guardian robot, whose visor, chest core and antenna beacon then light up" style="overflow: visible; filter: drop-shadow(3px 4px 0 #050B14)">
+<ellipse class="on" cx="460" cy="608" rx="112" ry="8" fill="#050B14" opacity="0.8"></ellipse>
+<g class="part" style="--dx:-180px;--dy:260px;--r:-30deg;--d:0s">
+<polygon points="410,372 452,372 446,470 416,470" fill="#34465E" stroke="#D7DEE6" stroke-width="2" stroke-linejoin="round"></polygon>
+<circle cx="431" cy="475" r="7" fill="#5E7591" stroke="#D7DEE6" stroke-width="2"></circle>
+<polygon points="416,482 446,482 442,548 420,548" fill="#5E7591" stroke="#D7DEE6" stroke-width="2" stroke-linejoin="round"></polygon>
+<polygon points="430,524 398,604 462,604" fill="#22344B" stroke="#D7DEE6" stroke-width="2" stroke-linejoin="round"></polygon>
+<polygon points="430,566 415,604 445,604" style="fill: var(--accent)"></polygon>
+</g>
+<g class="part" style="--dx:200px;--dy:280px;--r:30deg;--d:.05s">
+<polygon points="468,372 510,372 504,470 474,470" fill="#34465E" stroke="#D7DEE6" stroke-width="2" stroke-linejoin="round"></polygon>
+<circle cx="489" cy="475" r="7" fill="#5E7591" stroke="#D7DEE6" stroke-width="2"></circle>
+<polygon points="474,482 504,482 500,548 478,548" fill="#5E7591" stroke="#D7DEE6" stroke-width="2" stroke-linejoin="round"></polygon>
+<polygon points="490,524 458,604 522,604" fill="#22344B" stroke="#D7DEE6" stroke-width="2" stroke-linejoin="round"></polygon>
+<polygon points="490,566 475,604 505,604" style="fill: var(--accent)"></polygon>
+</g>
+<g class="part" style="--dx:240px;--dy:240px;--r:40deg;--d:.15s">
+<polygon points="460,292 514,307 406,307" fill="#5E7591" stroke="#D7DEE6" stroke-width="2" stroke-linejoin="round"></polygon>
+<path d="M420 312 L420 352 M444 312 L444 352 M476 312 L476 352 M500 312 L500 352" stroke="#D7DEE6" stroke-width="5" stroke-linecap="round"></path>
+<path d="M404 359 L516 359 M398 367 L522 367" stroke="#8FA3B8" stroke-width="2.5" stroke-linecap="round"></path>
+</g>
+<g class="part" style="--dx:-220px;--dy:300px;--r:-20deg;--d:.3s">
+<rect x="446" y="150" width="28" height="18" fill="#5E7591" stroke="#D7DEE6" stroke-width="1.5"></rect>
+<polygon points="390,166 530,166 514,290 406,290" fill="#34465E" stroke="#D7DEE6" stroke-width="2" stroke-linejoin="round"></polygon>
+<circle cx="460" cy="226" r="27" fill="none" stroke="#D7DEE6" stroke-width="1.4"></circle>
+<circle cx="460" cy="226" r="13" fill="none" stroke="#D7DEE6" stroke-width="1.1"></circle>
+<circle cx="460" cy="213" r="13" fill="none" stroke="#D7DEE6" stroke-width="1.1"></circle>
+<circle cx="471.3" cy="219.5" r="13" fill="none" stroke="#D7DEE6" stroke-width="1.1"></circle>
+<circle cx="471.3" cy="232.5" r="13" fill="none" stroke="#D7DEE6" stroke-width="1.1"></circle>
+<circle cx="460" cy="239" r="13" fill="none" stroke="#D7DEE6" stroke-width="1.1"></circle>
+<circle cx="448.7" cy="232.5" r="13" fill="none" stroke="#D7DEE6" stroke-width="1.1"></circle>
+<circle cx="448.7" cy="219.5" r="13" fill="none" stroke="#D7DEE6" stroke-width="1.1"></circle>
+<circle cx="460" cy="226" r="6" style="fill: var(--accent)"></circle>
+<g class="on"><circle class="pulse" cx="460" cy="226" r="16" style="fill: var(--accent)"></circle></g>
+</g>
+<g class="part" style="--dx:-260px;--dy:40px;--r:-140deg;--d:.45s">
+<circle cx="366" cy="188" r="27" fill="#34465E" stroke="#D7DEE6" stroke-width="2"></circle>
+<ellipse cx="366" cy="188" rx="11" ry="27" fill="none" stroke="#8FA3B8" stroke-width="1.2"></ellipse>
+<path d="M339 188 L393 188 M343 175 L389 175 M343 201 L389 201" stroke="#8FA3B8" stroke-width="1"></path>
+<circle cx="374" cy="180" r="3.5" style="fill: var(--accent)"></circle>
+</g>
+<g class="part" style="--dx:280px;--dy:120px;--r:160deg;--d:.5s">
+<circle cx="554" cy="188" r="27" fill="#34465E" stroke="#D7DEE6" stroke-width="2"></circle>
+<ellipse cx="554" cy="188" rx="11" ry="27" fill="none" stroke="#8FA3B8" stroke-width="1.2"></ellipse>
+<path d="M527 188 L581 188 M531 175 L577 175 M531 201 L577 201" stroke="#8FA3B8" stroke-width="1"></path>
+<circle cx="546" cy="196" r="3.5" style="fill: var(--accent)"></circle>
+</g>
+<g class="part" style="--dx:-320px;--dy:-40px;--r:-60deg;--d:.6s">
+<rect x="346" y="214" width="38" height="60" rx="3" fill="#5E7591" stroke="#D7DEE6" stroke-width="2"></rect>
+<line x1="346" y1="251" x2="384" y2="251" stroke="#22344B" stroke-width="2"></line>
+<rect x="342" y="280" width="44" height="70" rx="3" fill="#34465E" stroke="#D7DEE6" stroke-width="2"></rect>
+<path d="M342 350 A44 44 0 0 1 386 306" fill="none" stroke="#8FA3B8" stroke-width="1.4"></path>
+<rect x="348" y="354" width="32" height="18" rx="6" fill="#5E7591" stroke="#D7DEE6" stroke-width="2"></rect>
+</g>
+<g class="part" style="--dx:330px;--dy:-30px;--r:70deg;--d:.65s">
+<rect x="536" y="214" width="38" height="60" rx="3" fill="#5E7591" stroke="#D7DEE6" stroke-width="2"></rect>
+<line x1="536" y1="251" x2="574" y2="251" stroke="#22344B" stroke-width="2"></line>
+<rect x="534" y="280" width="44" height="70" rx="3" fill="#34465E" stroke="#D7DEE6" stroke-width="2"></rect>
+<path d="M578 350 A44 44 0 0 0 534 306" fill="none" stroke="#8FA3B8" stroke-width="1.4"></path>
+<rect x="540" y="354" width="32" height="18" rx="6" fill="#5E7591" stroke="#D7DEE6" stroke-width="2"></rect>
+</g>
+<g class="part" style="--dx:-300px;--dy:200px;--r:-200deg;--d:.8s">
+<polygon points="318,284 347.4,301 347.4,335 318,352 288.6,335 288.6,301" fill="#22344B" stroke="#D7DEE6" stroke-width="2" stroke-linejoin="round"></polygon>
+<path d="M318 318 L318 294 M318 318 L338.8 306 M318 318 L338.8 330 M318 318 L318 342 M318 318 L297.2 330 M318 318 L297.2 306" stroke-width="1.4" style="stroke: var(--accent)"></path>
+<circle cx="318" cy="294" r="3.5" fill="#D7DEE6"></circle>
+<circle cx="338.8" cy="306" r="3.5" fill="#D7DEE6"></circle>
+<circle cx="338.8" cy="330" r="3.5" fill="#D7DEE6"></circle>
+<circle cx="318" cy="342" r="3.5" fill="#D7DEE6"></circle>
+<circle cx="297.2" cy="330" r="3.5" fill="#D7DEE6"></circle>
+<circle cx="297.2" cy="306" r="3.5" fill="#D7DEE6"></circle>
+<circle cx="318" cy="318" r="5.5" style="fill: var(--accent)"></circle>
+</g>
+<g class="part" style="--dx:320px;--dy:220px;--r:180deg;--d:.85s">
+<line x1="572" y1="362" x2="588" y2="362" stroke="#D7DEE6" stroke-width="3" stroke-linecap="round"></line>
+<path d="M588 362 A32 32 0 0 1 620 330 A20 20 0 0 1 640 350 A12 12 0 0 1 628 362 A8 8 0 0 1 620 354" fill="none" stroke="#D7DEE6" stroke-width="5" stroke-linecap="round"></path>
+<path d="M588 362 A32 32 0 0 1 620 330 A20 20 0 0 1 640 350" fill="none" stroke-width="2" stroke-linecap="round" style="stroke: var(--accent)"></path>
+<circle cx="620" cy="330" r="5" style="fill: var(--accent)"></circle>
+<g class="on"><circle class="pulse" cx="620" cy="330" r="10" style="fill: var(--accent)"></circle></g>
+</g>
+<g class="part" style="--dx:300px;--dy:-60px;--r:40deg;--d:.75s">
+<path d="M420 152 L420 104 A42 42 0 0 1 460 62 A42 42 0 0 1 500 104 L500 152 Z" fill="#5E7591" stroke="#D7DEE6" stroke-width="2" stroke-linejoin="round"></path>
+<path d="M430 150 L430 106 A32 32 0 0 1 460 74 A32 32 0 0 1 490 106 L490 150 Z" fill="#22344B"></path>
+<path d="M438 140 L482 140" stroke="#8FA3B8" stroke-width="2" stroke-linecap="round"></path>
+</g>
+<g class="part" style="--dx:260px;--dy:-120px;--r:-90deg;--d:.9s">
+<line x1="460" y1="62" x2="460" y2="44" stroke="#D7DEE6" stroke-width="3"></line>
+<polygon points="460,32 450,50 470,50" fill="#D7DEE6"></polygon>
+<circle cx="460" cy="30" r="5" style="fill: var(--accent)"></circle>
+<g class="on"><circle class="ping" cx="460" cy="30" r="8" fill="none" stroke-width="1.6" style="stroke: var(--accent)"></circle></g>
+</g>
+<g class="part" style="--dx:-280px;--dy:-110px;--r:120deg;--d:1.05s">
+<path d="M430 112 Q460 94 490 112 Q460 130 430 112 Z" fill="#08111D" stroke="#D7DEE6" stroke-width="1.6" stroke-linejoin="round"></path>
+<circle cx="460" cy="112" r="8" fill="none" stroke="#D7DEE6" stroke-width="1.2"></circle>
+<circle cx="460" cy="112" r="4.5" style="fill: var(--accent)"></circle>
+<g class="on"><circle class="pulse" cx="460" cy="112" r="12" style="fill: var(--accent)"></circle></g>
+</g>
+</svg>
+</div>
+<div class="wipe" style="grid-column: 2; grid-row: 3; font-family: 'Oxanium', sans-serif; font-weight: 700; font-size: 72px; letter-spacing: 0.04em; line-height: 1">The Sentinel</div>
+<div class="rT" style="grid-column: 2; grid-row: 4; font-size: 16px; color: #8FA3B8">Nine projects. One guardian.</div>
+<div class="rP" style="grid-column: 2; grid-row: 5; display: flex; flex-wrap: wrap; column-gap: 12px; row-gap: 8px; align-items: center; border-top: 1px solid #24344A; padding-top: 20px; font-size: 14px; letter-spacing: 0.03em">
+<span>SWITCHBOARD</span><span style="color: var(--accent)">·</span><span>SPEC-1</span><span style="color: var(--accent)">·</span><span>pdx1</span><span style="color: var(--accent)">·</span><span>proc_track</span><span style="color: var(--accent)">·</span><span>gatepost</span><span style="color: var(--accent)">·</span><span>Notitia Civica</span><span style="color: var(--accent)">·</span><span>World State Brief</span><span style="color: var(--accent)">·</span><span>OSINT</span><span style="color: var(--accent)">·</span><span>Citizens Cognisance</span>
+</div>
+</div>
+</body>
+</html>

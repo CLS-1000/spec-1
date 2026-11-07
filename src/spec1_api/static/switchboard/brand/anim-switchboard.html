@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1280">
+<title>SWITCHBOARD animated intro</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oxanium:wght@600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap">
+<link rel="stylesheet" href="brand.css">
+<script src="accent.js"></script>
+<style>
+.dA,.dB,.dC,.dE{stroke-dasharray:1;stroke-dashoffset:1;animation-duration:8s;animation-iteration-count:infinite;animation-timing-function:ease-in-out}
+.dA{animation-name:dA}.dB{animation-name:dB}.dC{animation-name:dC}.dE{animation-name:dE}
+@keyframes dA{0%,2%{stroke-dashoffset:1;opacity:1}16%,88%{stroke-dashoffset:0;opacity:1}96%,100%{stroke-dashoffset:0;opacity:0}}
+@keyframes dB{0%,10%{stroke-dashoffset:1;opacity:1}26%,88%{stroke-dashoffset:0;opacity:1}96%,100%{stroke-dashoffset:0;opacity:0}}
+@keyframes dC{0%,18%{stroke-dashoffset:1;opacity:1}36%,88%{stroke-dashoffset:0;opacity:1}96%,100%{stroke-dashoffset:0;opacity:0}}
+@keyframes dE{0%,44%{stroke-dashoffset:1;opacity:1}56%,88%{stroke-dashoffset:0;opacity:1}96%,100%{stroke-dashoffset:0;opacity:0}}
+.popJ,.popL{transform-box:fill-box;transform-origin:center;animation-duration:8s;animation-iteration-count:infinite;animation-timing-function:cubic-bezier(.3,1.6,.5,1)}
+.popJ{animation-name:popJ}.popL{animation-name:popL}
+@keyframes popJ{0%,36%{transform:scale(0);opacity:1}42%,88%{transform:scale(1);opacity:1}96%,100%{transform:scale(1);opacity:0}}
+@keyframes popL{0%,54%{transform:scale(0);opacity:1}60%,88%{transform:scale(1);opacity:1}96%,100%{transform:scale(1);opacity:0}}
+.glow{transform-box:fill-box;transform-origin:center;animation:glow 2s ease-in-out infinite}
+@keyframes glow{0%,100%{opacity:.15;transform:scale(.8)}50%{opacity:.5;transform:scale(1.35)}}
+.rH,.rT,.rP{animation-duration:8s;animation-iteration-count:infinite;animation-timing-function:ease-out}
+.rH{animation-name:rH}.rT{animation-name:rT}.rP{animation-name:rP}
+@keyframes rH{0%,4%{opacity:0;transform:translateY(14px)}12%,88%{opacity:1;transform:translateY(0)}96%,100%{opacity:0;transform:translateY(0)}}
+@keyframes rT{0%,62%{opacity:0;transform:translateY(14px)}70%,88%{opacity:1;transform:translateY(0)}96%,100%{opacity:0;transform:translateY(0)}}
+@keyframes rP{0%,68%{opacity:0;transform:translateY(14px)}76%,88%{opacity:1;transform:translateY(0)}96%,100%{opacity:0;transform:translateY(0)}}
+.wipe{animation:wipe 8s cubic-bezier(.2,.8,.2,1) infinite}
+@keyframes wipe{0%,52%{clip-path:inset(0 100% 0 0);opacity:1}64%,88%{clip-path:inset(0 0 0 0);opacity:1}96%,100%{clip-path:inset(0 0 0 0);opacity:0}}
+@media (prefers-reduced-motion: reduce){.dA,.dB,.dC,.dE{animation:none;stroke-dashoffset:0}.popJ,.popL,.glow,.rH,.rT,.rP,.wipe{animation:none}}
+</style>
+</head>
+<body>
+<div style="width: 1280px; height: 640px; box-sizing: border-box; background: #0E1A2B; color: #F3EEE3; font-family: 'IBM Plex Mono', monospace; display: grid; grid-template-columns: 560px minmax(0, 1fr); grid-template-rows: auto 1fr auto auto auto; column-gap: 64px; row-gap: 20px; padding: 56px 64px 56px 56px">
+<div class="rH" style="grid-column: 2; grid-row: 1; display: flex; justify-content: space-between; font-size: 13px; letter-spacing: 0.12em; color: #8FA3B8"><span>SWITCHBOARD SYSTEM</span><span>COMMAND CENTER</span></div>
+<div style="grid-column: 1; grid-row: 1 / 6; display: flex; align-items: center; justify-content: center">
+<svg width="500" height="500" viewBox="0 0 240 240" role="img" aria-label="Animated SWITCHBOARD mark: the Seed of Life draws itself, the jacks appear, and a glowing patch cable connects two of them" style="filter: drop-shadow(3px 4px 0 #050B14)">
+<circle class="dA" pathLength="1" cx="120" cy="120" r="96" fill="none" stroke="#8FA3B8" stroke-width="1.2"></circle>
+<path class="dA" pathLength="1" d="M210 120 L216 120 M197.9 165 L203.1 168 M165 197.9 L168 203.1 M120 210 L120 216 M75 197.9 L72 203.1 M42.1 165 L36.9 168 M30 120 L24 120 M42.1 75 L36.9 72 M75 42.1 L72 36.9 M120 30 L120 24 M165 42.1 L168 36.9 M197.9 75 L203.1 72" stroke="#8FA3B8" stroke-width="1.5"></path>
+<circle class="dB" pathLength="1" cx="120" cy="120" r="64" fill="none" stroke="#D7DEE6" stroke-width="1.4"></circle>
+<polygon class="dB" pathLength="1" points="120,56 175.4,152 64.6,152" fill="none" stroke="#5E7591" stroke-width="1.2"></polygon>
+<polygon class="dB" pathLength="1" points="120,184 64.6,88 175.4,88" fill="none" stroke="#5E7591" stroke-width="1.2"></polygon>
+<polygon class="dB" pathLength="1" points="120,56 175.4,88 175.4,152 120,184 64.6,152 64.6,88" fill="none" stroke="#8FA3B8" stroke-width="1.2"></polygon>
+<circle class="dC" pathLength="1" cx="120" cy="120" r="32" fill="none" stroke="#D7DEE6" stroke-width="1.2"></circle>
+<circle class="dC" pathLength="1" cx="120" cy="88" r="32" fill="none" stroke="#D7DEE6" stroke-width="1.2"></circle>
+<circle class="dC" pathLength="1" cx="147.7" cy="104" r="32" fill="none" stroke="#D7DEE6" stroke-width="1.2"></circle>
+<circle class="dC" pathLength="1" cx="147.7" cy="136" r="32" fill="none" stroke="#D7DEE6" stroke-width="1.2"></circle>
+<circle class="dC" pathLength="1" cx="120" cy="152" r="32" fill="none" stroke="#D7DEE6" stroke-width="1.2"></circle>
+<circle class="dC" pathLength="1" cx="92.3" cy="136" r="32" fill="none" stroke="#D7DEE6" stroke-width="1.2"></circle>
+<circle class="dC" pathLength="1" cx="92.3" cy="104" r="32" fill="none" stroke="#D7DEE6" stroke-width="1.2"></circle>
+<path class="dE" pathLength="1" d="M64.6 88 C 70 196, 170 196, 175.4 152" fill="none" stroke-width="4" stroke-linecap="round" style="stroke: var(--accent)"></path>
+<g class="popJ"><circle cx="120" cy="56" r="7" fill="#D7DEE6"></circle><circle cx="120" cy="56" r="3.5" fill="#0B1420"></circle></g>
+<g class="popJ"><circle cx="175.4" cy="88" r="7" fill="#D7DEE6"></circle><circle cx="175.4" cy="88" r="3.5" fill="#0B1420"></circle></g>
+<g class="popJ"><circle cx="120" cy="184" r="7" fill="#D7DEE6"></circle><circle cx="120" cy="184" r="3.5" fill="#0B1420"></circle></g>
+<g class="popJ"><circle cx="64.6" cy="152" r="7" fill="#D7DEE6"></circle><circle cx="64.6" cy="152" r="3.5" fill="#0B1420"></circle></g>
+<g class="popJ"><circle cx="120" cy="120" r="8" fill="#D7DEE6"></circle><circle cx="120" cy="120" r="4" fill="#0B1420"></circle></g>
+<g class="popL"><circle class="glow" cx="64.6" cy="88" r="12" style="fill: var(--accent)"></circle><circle cx="64.6" cy="88" r="7" style="fill: var(--accent)"></circle><circle cx="63" cy="86.5" r="2.5" fill="#FFFFFF" opacity="0.7"></circle></g>
+<g class="popL"><circle class="glow" cx="175.4" cy="152" r="12" style="fill: var(--accent)"></circle><circle cx="175.4" cy="152" r="7" style="fill: var(--accent)"></circle><circle cx="173.8" cy="150.5" r="2.5" fill="#FFFFFF" opacity="0.7"></circle></g>
+</svg>
+</div>
+<div class="wipe" style="grid-column: 2; grid-row: 3; font-family: 'Oxanium', sans-serif; font-weight: 700; font-size: 64px; letter-spacing: 0.04em; line-height: 1">SWITCHBOARD</div>
+<div class="rT" style="grid-column: 2; grid-row: 4; font-size: 16px; color: #8FA3B8">The command center over every project</div>
+<div class="rP" style="grid-column: 2; grid-row: 5; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; border-top: 1px solid #24344A; padding-top: 20px; font-size: 15px; letter-spacing: 0.04em">
+<span>SPEC-1</span><span style="color: var(--accent)">·</span><span>pdx1</span><span style="color: var(--accent)">·</span><span>proc_track</span><span style="color: var(--accent)">·</span><span>gatepost</span><span style="color: var(--accent)">·</span><span>Notitia Civica</span>
+</div>
+</div>
+</body>
+</html>

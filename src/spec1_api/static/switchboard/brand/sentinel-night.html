@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1280">
+<title>The Sentinel night watch</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oxanium:wght@600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap">
+<link rel="stylesheet" href="brand.css">
+<script src="accent.js"></script>
+<style>
+.tw{animation:tw 3.2s ease-in-out infinite}
+@keyframes tw{0%,100%{opacity:.25}50%{opacity:1}}
+.blink{animation:blink 2.4s steps(1) infinite}
+@keyframes blink{0%,60%{opacity:1}61%,100%{opacity:.15}}
+.flick{animation:flick 5s ease-in-out infinite}
+@keyframes flick{0%,100%{opacity:.85}40%{opacity:.5}70%{opacity:1}}
+.shim{transform-box:fill-box;transform-origin:50% 0;animation:shim 2.6s ease-in-out infinite}
+@keyframes shim{0%,100%{opacity:.7;transform:scaleX(1)}50%{opacity:.35;transform:scaleX(.6)}}
+.beamA,.beamB{transform-box:view-box;animation:beam 9s ease-in-out infinite alternate}
+.beamA{transform-origin:842px 402px}
+.beamB{transform-origin:1082px 402px;animation-duration:11s;animation-direction:alternate-reverse}
+@keyframes beam{0%{transform:rotate(-16deg)}100%{transform:rotate(14deg)}}
+.mist{animation:mist 22s ease-in-out infinite alternate}
+.mist2{animation-duration:30s;animation-direction:alternate-reverse}
+@keyframes mist{0%{transform:translateX(-60px)}100%{transform:translateX(60px)}}
+.cloud{animation:cloud 40s linear infinite}
+@keyframes cloud{0%{transform:translateX(-160px)}100%{transform:translateX(220px)}}
+.ping{transform-box:fill-box;transform-origin:center;animation:ping 2s ease-out infinite}
+@keyframes ping{0%{transform:scale(.4);opacity:.9}100%{transform:scale(2.6);opacity:0}}
+.pulse{transform-box:fill-box;transform-origin:center;animation:pulse 2.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.25}50%{opacity:.7}}
+@media (prefers-reduced-motion: reduce){.tw,.blink,.flick,.shim,.beamA,.beamB,.mist,.cloud,.ping,.pulse{animation:none}}
+</style>
+</head>
+<body>
+<div style="width: 1280px; height: 640px; position: relative; overflow: hidden; background: #03070D; color: #F3EEE3; font-family: 'IBM Plex Mono', monospace">
+<svg width="1280" height="640" viewBox="0 0 1280 640" role="img" aria-label="Night scene: the Sentinel robot stands on a dark cliff with its back to the viewer, looking across a misty lake toward a distant city skyline glowing with bright, ominous lights under a cloud-veiled moon" style="position: absolute; left: 0; top: 0">
+<defs>
+<linearGradient id="sn-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#03070D"></stop><stop offset="0.62" stop-color="#0B1626"></stop><stop offset="1" stop-color="#1A2233"></stop></linearGradient>
+<radialGradient id="sn-glow" cx="0.5" cy="1" r="0.75"><stop offset="0" stop-opacity="0.42" style="stop-color: var(--accent)"></stop><stop offset="0.45" stop-opacity="0.12" style="stop-color: var(--accent)"></stop><stop offset="1" stop-opacity="0" style="stop-color: var(--accent)"></stop></radialGradient>
+<linearGradient id="sn-lake" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0B1626"></stop><stop offset="1" stop-color="#03070D"></stop></linearGradient>
+<linearGradient id="sn-ref" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F2C46B" stop-opacity="0.6"></stop><stop offset="1" stop-color="#F2C46B" stop-opacity="0"></stop></linearGradient>
+<linearGradient id="sn-refA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-opacity="0.65" style="stop-color: var(--accent)"></stop><stop offset="1" stop-opacity="0" style="stop-color: var(--accent)"></stop></linearGradient>
+<linearGradient id="sn-beam" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#D7DEE6" stop-opacity="0.28"></stop><stop offset="1" stop-color="#D7DEE6" stop-opacity="0"></stop></linearGradient>
+<pattern id="sn-w1" width="7" height="9" patternUnits="userSpaceOnUse"><rect x="2" y="2" width="2" height="3" fill="#F2C46B"></rect></pattern>
+<pattern id="sn-w2" width="10" height="12" patternUnits="userSpaceOnUse"><rect x="5" y="4" width="2" height="3" fill="#D7DEE6"></rect></pattern>
+<pattern id="sn-w3" width="23" height="19" patternUnits="userSpaceOnUse"><rect x="8" y="6" width="2" height="3" style="fill: var(--accent)"></rect></pattern>
+<g id="sn-bldgs">
+<rect x="600" y="372" width="24" height="30"></rect><rect x="626" y="360" width="18" height="42"></rect><rect x="646" y="380" width="30" height="22"></rect><rect x="678" y="340" width="22" height="62"></rect><rect x="702" y="366" width="16" height="36"></rect><rect x="720" y="318" width="34" height="84"></rect><rect x="756" y="352" width="20" height="50"></rect><rect x="778" y="300" width="26" height="102"></rect><rect x="806" y="344" width="18" height="58"></rect><rect x="826" y="330" width="38" height="72"></rect><rect x="866" y="290" width="14" height="112"></rect><rect x="882" y="336" width="28" height="66"></rect><rect x="912" y="360" width="22" height="42"></rect><rect x="936" y="262" width="44" height="140"></rect><rect x="982" y="322" width="20" height="80"></rect><rect x="1004" y="346" width="30" height="56"></rect><rect x="1036" y="300" width="18" height="102"></rect><rect x="1056" y="334" width="36" height="68"></rect><rect x="1094" y="358" width="22" height="44"></rect><rect x="1118" y="342" width="30" height="60"></rect><rect x="1150" y="368" width="18" height="34"></rect><rect x="1170" y="352" width="40" height="50"></rect><rect x="1212" y="376" width="30" height="26"></rect>
+</g>
+</defs>
+<rect x="0" y="0" width="1280" height="402" fill="url(#sn-sky)"></rect>
+<g fill="#D7DEE6">
+<circle class="tw" cx="540" cy="44" r="1.2"></circle><circle class="tw" cx="612" cy="120" r="1" style="animation-delay:.6s"></circle><circle class="tw" cx="690" cy="62" r="1.4" style="animation-delay:1.3s"></circle><circle class="tw" cx="770" cy="150" r="1" style="animation-delay:.3s"></circle><circle class="tw" cx="842" cy="38" r="1.2" style="animation-delay:2s"></circle><circle class="tw" cx="918" cy="96" r="1" style="animation-delay:1s"></circle><circle class="tw" cx="996" cy="30" r="1.3" style="animation-delay:2.6s"></circle><circle class="tw" cx="1040" cy="170" r="1" style="animation-delay:.9s"></circle><circle class="tw" cx="1210" cy="56" r="1.2" style="animation-delay:1.7s"></circle><circle class="tw" cx="1250" cy="190" r="1" style="animation-delay:.4s"></circle><circle class="tw" cx="470" cy="160" r="1" style="animation-delay:2.2s"></circle><circle class="tw" cx="380" cy="70" r="1.2" style="animation-delay:1.5s"></circle>
+</g>
+<circle cx="1120" cy="112" r="72" fill="#D7DEE6" opacity="0.06"></circle>
+<circle cx="1120" cy="112" r="32" fill="#D7DEE6" opacity="0.82"></circle>
+<g class="cloud"><ellipse cx="1080" cy="118" rx="90" ry="12" fill="#0B1626" opacity="0.92"></ellipse><ellipse cx="1150" cy="104" rx="60" ry="8" fill="#0B1626" opacity="0.85"></ellipse></g>
+<g class="beamA"><polygon points="842,402 826,30 858,30" fill="url(#sn-beam)"></polygon></g>
+<g class="beamB"><polygon points="1082,402 1068,40 1096,40" fill="url(#sn-beam)"></polygon></g>
+<ellipse cx="920" cy="402" rx="440" ry="150" fill="url(#sn-glow)"></ellipse>
+<path d="M500 402 L600 362 L680 384 L760 344 L860 374 L960 334 L1060 368 L1160 340 L1280 372 L1280 402 Z" fill="#0B1626"></path>
+<use href="#sn-bldgs" fill="#060D18"></use>
+<use href="#sn-bldgs" fill="url(#sn-w1)" opacity="0.5"></use>
+<use class="flick" href="#sn-bldgs" fill="url(#sn-w2)" opacity="0.32"></use>
+<use class="flick" href="#sn-bldgs" fill="url(#sn-w3)" style="animation-delay:1.6s"></use>
+<path d="M873 290 L873 262 M958 262 L958 226 M791 300 L791 282" stroke="#34465E" stroke-width="2"></path>
+<circle class="blink" cx="873" cy="260" r="2.6" style="fill: var(--accent)"></circle>
+<circle class="blink" cx="958" cy="224" r="3" style="animation-delay:.8s; fill: var(--accent)"></circle>
+<circle class="blink" cx="791" cy="280" r="2.4" style="animation-delay:1.5s; fill: var(--accent)"></circle>
+<rect x="0" y="402" width="1280" height="238" fill="url(#sn-lake)"></rect>
+<line x1="480" y1="402.5" x2="1280" y2="402.5" stroke="#F2C46B" stroke-width="1" opacity="0.25"></line>
+<rect class="shim" x="726" y="404" width="20" height="96" fill="url(#sn-ref)"></rect>
+<rect class="shim" x="782" y="404" width="16" height="120" fill="url(#sn-ref)" style="animation-delay:.5s"></rect>
+<rect class="shim" x="832" y="404" width="24" height="84" fill="url(#sn-ref)" style="animation-delay:1.1s"></rect>
+<rect class="shim" x="942" y="404" width="30" height="150" fill="url(#sn-refA)" style="animation-delay:.3s"></rect>
+<rect class="shim" x="1040" y="404" width="12" height="110" fill="url(#sn-ref)" style="animation-delay:1.6s"></rect>
+<rect class="shim" x="1062" y="404" width="24" height="80" fill="url(#sn-ref)" style="animation-delay:.9s"></rect>
+<rect class="shim" x="1124" y="404" width="20" height="70" fill="url(#sn-ref)" style="animation-delay:1.9s"></rect>
+<rect class="shim" x="955" y="404" width="6" height="190" fill="url(#sn-refA)" style="animation-delay:1.3s"></rect>
+<path d="M600 430 L680 430 M760 446 L880 446 M940 462 L1060 462 M1100 438 L1200 438 M700 484 L820 484 M980 504 L1120 504" stroke="#8FA3B8" stroke-width="1" opacity="0.14"></path>
+<ellipse class="mist" cx="860" cy="414" rx="420" ry="16" fill="#8FA3B8" opacity="0.07"></ellipse>
+<ellipse class="mist mist2" cx="760" cy="446" rx="360" ry="12" fill="#8FA3B8" opacity="0.05"></ellipse>
+<path d="M0 640 L0 452 L110 440 L200 456 L252 470 L352 468 L424 492 L474 532 L520 584 L548 640 Z" fill="#03070D"></path>
+<path d="M0 452 L110 440 L200 456 L252 470 L352 468 L424 492 L474 532 L520 584" fill="none" stroke="#34465E" stroke-width="1.5" opacity="0.6"></path>
+<g transform="translate(300 470) scale(0.62) translate(-460 -604)">
+<g fill="#0A1320" stroke="#2A3A52" stroke-width="3" stroke-linejoin="round">
+<polygon points="410,372 452,372 446,470 416,470"></polygon><circle cx="431" cy="475" r="7"></circle><polygon points="416,482 446,482 442,548 420,548"></polygon><polygon points="430,524 398,604 462,604"></polygon>
+<polygon points="468,372 510,372 504,470 474,470"></polygon><circle cx="489" cy="475" r="7"></circle><polygon points="474,482 504,482 500,548 478,548"></polygon><polygon points="490,524 458,604 522,604"></polygon>
+<polygon points="404,300 516,300 520,368 400,368"></polygon>
+<rect x="446" y="150" width="28" height="18"></rect>
+<polygon points="390,166 530,166 514,296 406,296"></polygon>
+<circle cx="366" cy="188" r="27"></circle><circle cx="554" cy="188" r="27"></circle>
+<rect x="346" y="214" width="38" height="60" rx="3"></rect><rect x="342" y="280" width="44" height="70" rx="3"></rect><rect x="348" y="354" width="32" height="18" rx="6"></rect>
+<rect x="536" y="214" width="38" height="60" rx="3"></rect><rect x="534" y="280" width="44" height="70" rx="3"></rect><rect x="540" y="354" width="32" height="18" rx="6"></rect>
+<polygon points="318,284 347.4,301 347.4,335 318,352 288.6,335 288.6,301"></polygon>
+<path d="M420 152 L420 104 A42 42 0 0 1 460 62 A42 42 0 0 1 500 104 L500 152 Z"></path>
+</g>
+<path d="M500 104 L500 152 M530 166 L514 296 M581 188 A27 27 0 0 0 554 161 M578 280 L578 350 M574 214 L574 274 M510 372 L504 470 M504 482 L500 548 M522 604 L490 524" fill="none" stroke="#5E7591" stroke-width="3" stroke-linecap="round" opacity="0.9"></path>
+<rect x="452" y="182" width="16" height="96" rx="5" opacity="0.18" style="fill: var(--accent)"></rect>
+<rect class="pulse" x="455" y="188" width="10" height="84" rx="4" style="fill: var(--accent)"></rect>
+<path d="M300 318 L330 318" stroke-width="2" opacity="0.35" style="stroke: var(--accent)"></path>
+<line x1="460" y1="62" x2="460" y2="44" stroke="#2A3A52" stroke-width="4"></line>
+<polygon points="460,32 450,50 470,50" fill="#0A1320" stroke="#2A3A52" stroke-width="3"></polygon>
+<circle cx="460" cy="30" r="6" style="fill: var(--accent)"></circle>
+<circle class="ping" cx="460" cy="30" r="9" fill="none" stroke-width="2" style="stroke: var(--accent)"></circle>
+<path d="M588 362 A32 32 0 0 1 620 330 A20 20 0 0 1 640 350 A12 12 0 0 1 628 362" fill="none" stroke="#2A3A52" stroke-width="6" stroke-linecap="round"></path>
+<circle cx="620" cy="330" r="5" style="fill: var(--accent)"></circle>
+<circle class="pulse" cx="620" cy="330" r="14" style="fill: var(--accent)"></circle>
+</g>
+</svg>
+<div style="position: absolute; left: 48px; top: 40px; font-size: 13px; letter-spacing: 0.14em; color: #8FA3B8">SWITCHBOARD SYSTEM · NIGHT WATCH</div>
+<div style="position: absolute; left: 48px; bottom: 48px; display: flex; flex-direction: column; gap: 10px">
+<div style="font-family: 'Oxanium', sans-serif; font-weight: 700; font-size: 44px; letter-spacing: 0.06em; line-height: 1">THE SENTINEL</div>
+<div style="font-size: 17px; color: #A9B8C8">Sworn to protect.</div>
+</div>
+</div>
+</body>
+</html>

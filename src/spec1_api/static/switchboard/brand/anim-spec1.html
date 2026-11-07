@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1280">
+<title>SPEC-1 animated intro</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oxanium:wght@600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap">
+<link rel="stylesheet" href="brand.css">
+<script src="accent.js"></script>
+<style>
+.dA,.dB,.dC,.dE{stroke-dasharray:1;stroke-dashoffset:1;animation-duration:8s;animation-iteration-count:infinite;animation-timing-function:ease-in-out}
+.dA{animation-name:dA}.dB{animation-name:dB}.dC{animation-name:dC}.dE{animation-name:dE}
+@keyframes dA{0%,2%{stroke-dashoffset:1;opacity:1}16%,88%{stroke-dashoffset:0;opacity:1}96%,100%{stroke-dashoffset:0;opacity:0}}
+@keyframes dB{0%,10%{stroke-dashoffset:1;opacity:1}26%,88%{stroke-dashoffset:0;opacity:1}96%,100%{stroke-dashoffset:0;opacity:0}}
+@keyframes dC{0%,18%{stroke-dashoffset:1;opacity:1}36%,88%{stroke-dashoffset:0;opacity:1}96%,100%{stroke-dashoffset:0;opacity:0}}
+@keyframes dE{0%,40%{stroke-dashoffset:1;opacity:1}54%,88%{stroke-dashoffset:0;opacity:1}96%,100%{stroke-dashoffset:0;opacity:0}}
+.popJ,.popL{transform-box:fill-box;transform-origin:center;animation-duration:8s;animation-iteration-count:infinite;animation-timing-function:cubic-bezier(.3,1.6,.5,1)}
+.popJ{animation-name:popJ}.popL{animation-name:popL}
+@keyframes popJ{0%,26%{transform:scale(0);opacity:1}32%,88%{transform:scale(1);opacity:1}96%,100%{transform:scale(1);opacity:0}}
+@keyframes popL{0%,54%{transform:scale(0);opacity:1}60%,88%{transform:scale(1);opacity:1}96%,100%{transform:scale(1);opacity:0}}
+.glow{transform-box:fill-box;transform-origin:center;animation:glow 2s ease-in-out infinite}
+@keyframes glow{0%,100%{opacity:.15;transform:scale(.8)}50%{opacity:.5;transform:scale(1.35)}}
+.rH,.rT,.rP{animation-duration:8s;animation-iteration-count:infinite;animation-timing-function:ease-out}
+.rH{animation-name:rH}.rT{animation-name:rT}.rP{animation-name:rP}
+@keyframes rH{0%,4%{opacity:0;transform:translateY(14px)}12%,88%{opacity:1;transform:translateY(0)}96%,100%{opacity:0;transform:translateY(0)}}
+@keyframes rT{0%,62%{opacity:0;transform:translateY(14px)}70%,88%{opacity:1;transform:translateY(0)}96%,100%{opacity:0;transform:translateY(0)}}
+@keyframes rP{0%,68%{opacity:0;transform:translateY(14px)}76%,88%{opacity:1;transform:translateY(0)}96%,100%{opacity:0;transform:translateY(0)}}
+.wipe{animation:wipe 8s cubic-bezier(.2,.8,.2,1) infinite}
+@keyframes wipe{0%,52%{clip-path:inset(0 100% 0 0);opacity:1}64%,88%{clip-path:inset(0 0 0 0);opacity:1}96%,100%{clip-path:inset(0 0 0 0);opacity:0}}
+@media (prefers-reduced-motion: reduce){.dA,.dB,.dC,.dE{animation:none;stroke-dashoffset:0}.popJ,.popL,.glow,.rH,.rT,.rP,.wipe{animation:none}}
+</style>
+</head>
+<body>
+<div style="width: 1280px; height: 640px; box-sizing: border-box; background: #0E1A2B; color: #F3EEE3; font-family: 'IBM Plex Mono', monospace; display: grid; grid-template-columns: 560px minmax(0, 1fr); grid-template-rows: auto 1fr auto auto auto; column-gap: 64px; row-gap: 20px; padding: 56px 64px 56px 56px">
+<div class="rH" style="grid-column: 2; grid-row: 1; display: flex; justify-content: space-between; font-size: 13px; letter-spacing: 0.12em; color: #8FA3B8"><span>SWITCHBOARD SYSTEM</span><span>v0.6.2 · 476 COMMITS</span></div>
+<div style="grid-column: 1; grid-row: 1 / 6; display: flex; align-items: center; justify-content: center">
+<svg width="500" height="500" viewBox="0 0 240 240" role="img" aria-label="Animated SPEC-1 mark: a golden rectangle and its spiral draw themselves, then a bold numeral 1 is written across them" style="filter: drop-shadow(3px 4px 0 #050B14)">
+<circle class="dA" pathLength="1" cx="120" cy="120" r="94" fill="none" stroke="#8FA3B8" stroke-width="1.2"></circle>
+<circle class="dA" pathLength="1" cx="120" cy="120" r="102" fill="none" stroke="#5E7591" stroke-width="1"></circle>
+<rect class="dB" pathLength="1" x="70.5" y="40" width="99" height="160" fill="none" stroke="#D7DEE6" stroke-width="1.6"></rect>
+<path class="dB" pathLength="1" d="M70.5 101 L169.5 101 M108.5 40 L108.5 101 M70.5 78 L108.5 78 M93.5 78 L93.5 101" stroke="#8FA3B8" stroke-width="1.1"></path>
+<path class="dC" pathLength="1" d="M70.5 101 A99 99 0 0 0 169.5 200 M169.5 101 A61 61 0 0 0 108.5 40 M108.5 40 A38 38 0 0 0 70.5 78 M70.5 78 A23 23 0 0 0 93.5 101" fill="none" stroke="#D7DEE6" stroke-width="1.6"></path>
+<path class="dA" pathLength="1" d="M70.5 40 L169.5 200 M169.5 40 L70.5 200" stroke="#5E7591" stroke-width="0.9" opacity="0.7"></path>
+<path class="dE" pathLength="1" d="M106 76 L126 60 L126 184 M108 184 L144 184" fill="none" stroke="#08111D" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" opacity="0.6" transform="translate(2,2)"></path>
+<path class="dE" pathLength="1" d="M106 76 L126 60 L126 184 M108 184 L144 184" fill="none" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" style="stroke: var(--accent)"></path>
+<g class="popJ"><circle cx="70.5" cy="40" r="3" fill="#D7DEE6"></circle></g>
+<g class="popJ"><circle cx="169.5" cy="40" r="3" fill="#D7DEE6"></circle></g>
+<g class="popJ"><circle cx="70.5" cy="200" r="3" fill="#D7DEE6"></circle></g>
+<g class="popJ"><circle cx="169.5" cy="200" r="3" fill="#D7DEE6"></circle></g>
+<g class="popL"><circle class="glow" cx="88" cy="88" r="10" style="fill: var(--accent)"></circle><circle cx="88" cy="88" r="5" style="fill: var(--accent)"></circle></g>
+</svg>
+</div>
+<div class="wipe" style="grid-column: 2; grid-row: 3; font-family: 'Oxanium', sans-serif; font-weight: 700; font-size: 64px; letter-spacing: 0.04em; line-height: 1">SPEC-1</div>
+<div class="rT" style="grid-column: 2; grid-row: 4; font-size: 16px; color: #8FA3B8">Automated triage of 40+ public sources</div>
+<div class="rP" style="grid-column: 2; grid-row: 5; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; border-top: 1px solid #24344A; padding-top: 20px; font-size: 15px; letter-spacing: 0.04em">
+<span>59.5k lines Python</span><span style="color: var(--accent)">·</span><span>1,597 tests</span>
+</div>
+</div>
+</body>
+</html>

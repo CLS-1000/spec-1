@@ -1,0 +1,19 @@
+/* SWITCHBOARD brand tokens, shared by every board page and the gallery. */
+:root {
+  --accent: #F26A1B;
+  --navy: #0E1A2B;
+  --navy-deep: #08111D;
+  --rule: #24344A;
+  --steel: #5E7591;
+  --mist: #8FA3B8;
+  --frost: #D7DEE6;
+  --paper: #F3EEE3;
+}
+
+body {
+  margin: 0;
+  background: var(--navy);
+}
+
+a { color: var(--paper); }
+a:hover { color: #FFFFFF; }
