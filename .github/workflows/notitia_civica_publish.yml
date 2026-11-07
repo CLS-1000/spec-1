@@ -17,9 +17,9 @@
 # PUBLISH GUARD: nothing is published unless the brief's provenance sidecar
 # (briefs/spec1_brief_<date>.meta.json) says analysis_tier = llm_verified.
 # GitHub Actions has no model, so the cloud cycle here runs --triage-only
-# (harvest + 4 gates + deterministic rules, no brief). With NOTITIA_PAT set,
-# this job therefore fails at the guard (exit 1) instead of publishing
-# rule-based output. Real briefs come from the local-model cycle on Kali.
+# (harvest + 4 gates + deterministic rules, no brief). Publication is skipped
+# unless an eligible dated brief is available. Real briefs come from the
+# local-model cycle on Kali.
 
 name: Notitia Civica — Publish Brief
 
@@ -90,8 +90,9 @@ jobs:
             echo "date=$(date -u '+%Y-%m-%d')" >> "$GITHUB_OUTPUT"
           fi
 
-      # ── 5b. Publish guard — refuse anything not llm_verified ─────────────
-      - name: Publish guard (refuse rule-based briefs)
+      # ── 5b. Publish guard — only publish llm_verified briefs ──────────────
+      - name: Check publication eligibility
+        id: publish_guard
         if: ${{ env.PUBLISH_ENABLED == 'true' }}
         working-directory: spec-1
         env:
@@ -100,17 +101,20 @@ jobs:
         run: |
           brief="briefs/spec1_brief_${PUB_DATE}.md"
           if [ ! -f "$brief" ]; then
-            echo "::error::REFUSED: no brief for ${PUB_DATE} (triage-only cloud cycles write none)."
-            exit 1
+            echo "publishable=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping publication: no brief for ${PUB_DATE} (triage-only cloud cycles write none)."
+            exit 0
           fi
-          python -m spec1_core.briefing.writer --check "$brief" || {
-            echo "::error::REFUSED: $brief is not llm_verified — see the line above."
-            exit 1
-          }
+          if ! python -m spec1_core.briefing.writer --check "$brief"; then
+            echo "publishable=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping publication: $brief is not llm_verified."
+            exit 0
+          fi
+          echo "publishable=true" >> "$GITHUB_OUTPUT"
 
       # ── 6. Checkout notitia-civica ────────────────────────────────────────
       - name: Checkout notitia-civica
-        if: ${{ env.PUBLISH_ENABLED == 'true' }}
+        if: ${{ env.PUBLISH_ENABLED == 'true' && steps.publish_guard.outputs.publishable == 'true' }}
         uses: actions/checkout@v4
         with:
           repository: CLS-1000/notitia-civica
@@ -119,7 +123,7 @@ jobs:
 
       # ── 7. Inject brief into print template ───────────────────────────────
       - name: Inject SPEC-1 brief into Notitia Civica print template
-        if: ${{ env.PUBLISH_ENABLED == 'true' }}
+        if: ${{ env.PUBLISH_ENABLED == 'true' && steps.publish_guard.outputs.publishable == 'true' }}
         env:
           PUB_DATE: ${{ steps.pub_date.outputs.date }}
           PYTHONPATH: spec-1/src
@@ -132,7 +136,7 @@ jobs:
 
       # ── 8. Copy brief Markdown files ──────────────────────────────────────
       - name: Copy brief Markdown files to notitia-civica
-        if: ${{ env.PUBLISH_ENABLED == 'true' }}
+        if: ${{ env.PUBLISH_ENABLED == 'true' && steps.publish_guard.outputs.publishable == 'true' }}
         env:
           PUB_DATE: ${{ steps.pub_date.outputs.date }}
         run: |
@@ -153,7 +157,7 @@ jobs:
 
       # ── 9. Commit and push to notitia-civica ──────────────────────────────
       - name: Commit and push to notitia-civica
-        if: ${{ env.PUBLISH_ENABLED == 'true' }}
+        if: ${{ env.PUBLISH_ENABLED == 'true' && steps.publish_guard.outputs.publishable == 'true' }}
         working-directory: notitia-civica
         env:
           PUB_DATE: ${{ steps.pub_date.outputs.date }}
@@ -190,9 +194,14 @@ jobs:
         if: always()
         env:
           PUB_DATE: ${{ steps.pub_date.outputs.date }}
+          PUBLISHABLE: ${{ steps.publish_guard.outputs.publishable }}
         run: |
           if [ "${PUBLISH_ENABLED:-false}" = "true" ]; then
-            publish_status="enabled"
+            if [ "${PUBLISHABLE:-false}" = "true" ]; then
+              publish_status="enabled"
+            else
+              publish_status="skipped (no llm_verified brief available)"
+            fi
           else
             publish_status="skipped (NOTITIA_PAT secret not configured)"
           fi
