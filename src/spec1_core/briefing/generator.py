@@ -25,7 +25,7 @@ import re
 from datetime import datetime, timezone
 
 
-from spec1_labels import VERIF_CORROBORATED
+from spec1_labels import BRIEF_RULE_FALLBACK_NOTE, VERIF_CORROBORATED
 from spec1_core.briefing.templates import (
     GEO_SYSTEM_PROMPT,
     GEO_USER_PROMPT_TEMPLATE,
@@ -241,7 +241,7 @@ def _fallback_brief(
     lines = [
         f"## SPEC-1 DAILY BRIEF — {date_str}",
         "",
-        f"*AI brief unavailable — {reason}. Rule-based brief generated from cycle data.*",
+        f"*AI brief unavailable — {reason}. {BRIEF_RULE_FALLBACK_NOTE}.*",
         "",
         f"**Run:** {run_id}  ",
         f"**Completed:** {finished}  ",
@@ -368,6 +368,15 @@ def handoff_doc(records: list[dict], cycle_stats: dict, mode: str = "standard") 
     )
 
 
+def _require_content(brief: str, backend: str) -> None:
+    """Raise if *brief* is below the content floor, so the caller falls through a tier."""
+    from spec1_core.briefing.writer import BRIEF_MIN_WORDS, brief_content_words
+
+    words = brief_content_words(brief)
+    if words < BRIEF_MIN_WORDS:
+        raise ValueError(f"{backend} returned a degenerate brief ({words} words, minimum {BRIEF_MIN_WORDS})")
+
+
 def generate_brief(records: list[dict], cycle_stats: dict, mode: str = "standard") -> tuple[str, str]:
     """Generate the daily intelligence brief: local Qwen 2.5, then Claude, then rules.
 
@@ -385,6 +394,11 @@ def generate_brief(records: list[dict], cycle_stats: dict, mode: str = "standard
           Legislative mode is triggered by cls_legislative when that module
           feeds into the brief pipeline. Not yet auto-triggered by cycle.py.
     """
+    # Failure-first: with nothing past the gates there is nothing to synthesise.
+    # Never hand a model an empty record set — write the explicit empty brief.
+    if not records:
+        return _fallback_brief(cycle_stats, [], reason="no records cleared the gates this cycle"), ""
+
     try:
         sys_prompt, user_prompt = build_brief_prompts(records, cycle_stats, mode=mode)
         prompts_text = f"## SYSTEM PROMPT\n\n{sys_prompt.strip()}\n\n---\n\n## USER PROMPT\n\n{user_prompt.strip()}\n"
@@ -397,6 +411,7 @@ def generate_brief(records: list[dict], cycle_stats: dict, mode: str = "standard
         from spec1_core.llm.fallback_client import LocalTier3Client
 
         brief = LocalTier3Client().chat(user_prompt, system_prompt=sys_prompt)
+        _require_content(brief, "local model")
         cycle_stats["brief_backend"] = "local"
         logger.info("Brief generated via local qwen2.5 (mode=%s) — %d words", mode, len(brief.split()))
         return brief, prompts_text
@@ -424,6 +439,7 @@ def generate_brief(records: list[dict], cycle_stats: dict, mode: str = "standard
             messages=[{"role": "user", "content": user_prompt}],
         )
         brief = message.content[0].text.strip()
+        _require_content(brief, "Claude")
         cycle_stats["brief_backend"] = "claude"
         logger.info("Brief generated via Claude (mode=%s) — %d words", mode, len(brief.split()))
         return brief, prompts_text

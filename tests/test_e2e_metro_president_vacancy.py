@@ -13,8 +13,8 @@ clears all structural gates and fires the publication trigger.
 
 from __future__ import annotations
 
-from cls_pdx1.demos.metro_president_vacancy import run_vacancy_demo
-from cls_pdx1.gates import provenance_gate, signal_freshness_gate
+from titan.demos.metro_president_vacancy import run_vacancy_demo
+from titan.gates import provenance_gate, signal_freshness_gate
 
 
 class TestMetroPresidentVacancyDemo:
@@ -58,7 +58,7 @@ class TestMetroPresidentVacancyDemo:
         assert "Metro" in result.entity.canonical_name
 
     def test_affiliation_edge_type_is_board_seat(self):
-        from cls_pdx1.models import EdgeType
+        from titan.models import EdgeType
         result = run_vacancy_demo()
         assert result.affiliation.edge_type == EdgeType.BOARD_SEAT
 

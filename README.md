@@ -8,13 +8,13 @@ Every decision is written down, including the decision to throw something out. N
 
 | | |
 |---|---|
-| **Sources** | 10 national-security RSS feeds; Oregon's legislative API (bills and interim committees); OpenStates / LegiScan; FARA; Congress; courts; Portland campaign finance and seven local institutions |
+| **Sources** | 13 RSS feeds on national security, Korea, law and politics; Oregon's legislative API (bills and interim committees); OpenStates / LegiScan; FARA; Congress; courts; Portland campaign finance and seven local institutions |
 | **Filtering** | 4 gates (credibility, volume, velocity, novelty). Every pass *and* every rejection is logged with its score and the score it needed |
 | **Models** | Local first: Qwen 2.5 on Ollama does the analysis and writes the brief. Claude is the fallback, deterministic rules the floor. The cycle never crashes for lack of a model |
 | **Publishing** | A brief is publishable only if every record behind it is `llm_verified`. Rule-based output is refused by the publisher, not just labelled |
 | **Integrity** | Append-only records; published findings sealed in an Ed25519 chain anyone can verify offline |
 | **Surfaces** | HTTP API, Triage Desk UI, MCP server (17 tools), CLIs |
-| **Tests** | 1,718 tests across 80 files |
+| **Tests** | 1,805 tests across 82 files |
 
 ---
 
@@ -71,7 +71,7 @@ PYTHONPATH=src python -m cls_civica verify out/civica_2025R1 --pubkey <public ke
 
 ### The standard desk (default)
 
-**Harvest.** Ten RSS feeds: War on the Rocks, The Cipher Brief, Just Security, RAND, the Atlantic Council, Defense One, 38 North, NK News, CSIS's Korea Chair and Yonhap. The list is one dictionary in `src/spec1_core/signal/harvester.py`. Items already in the store are skipped.
+**Harvest.** Thirteen RSS feeds: War on the Rocks, The Cipher Brief, Just Security, RAND, the Atlantic Council, Defense One, 38 North, NK News, CSIS's Korea Chair, Yonhap, Lawfare, ProPublica and Politico. The list is one dictionary in `src/spec1_core/signal/harvester.py`. Items already in the store are skipped.
 
 **Score.** Each item must clear all four gates.
 
@@ -79,7 +79,7 @@ PYTHONPATH=src python -m cls_civica verify out/civica_2025R1 --pubkey <public ke
 |---|---|---|
 | Credibility | The source's weight in the operator's credibility table. Unlisted sources get 0.60. | 0.65 |
 | Volume | Length, in tiers from under 30 words to over 500 | 0.30 (about 30 words) |
-| Velocity | Age. Steps down from 1.0 (under six hours) to 0.75, 0.50, 0.25 and 0.10 (over a week). | 0.50 (under 72 hours) |
+| Velocity | Age. Steps down from 1.0 (under six hours) to 0.75, 0.50, 0.25 and 0.10 (over a week). An item with no readable date scores 0. | 0.50 (under 72 hours) |
 | Novelty | Terms that signal something new: arrests, charges, classified material, corruption and similar | 1 term |
 
 Because the credibility gate sits just above the default weight, a source not in the table does not get through. The thresholds live in one file, `src/spec1_core/config/calibration.py`. A person sets them; the system never adjusts them.
@@ -162,7 +162,7 @@ Rule-based output is never analysis, so it is never published.
 
 **Research mode.** A standing dossier on a topic you define by keywords, entities and questions. Each run adds to it. Research mode skips the gates and makes no model calls.
 
-**PDX-1i, the Portland metro module.** Campaign finance from ORESTAR and Washington's Public Disclosure Commission, bills from Oregon's legislative API, statements of economic interest, and watchers on seven local institutions: OHSU, the Portland Police Bureau, TriMet, PGE, NW Natural, Schnitzer and the Water Bureau. Officials are tracked as seats rather than as named people, and a section cannot be published unless it cites records the system holds.
+**Titan, the Portland metro module** (`src/titan/`; separate from the [pdx-1i](https://github.com/CLS-1000/pdx-1i) repository). Campaign finance from ORESTAR and Washington's Public Disclosure Commission, bills from Oregon's legislative API, statements of economic interest, and watchers on seven local institutions: OHSU, the Portland Police Bureau, TriMet, PGE, NW Natural, Schnitzer and the Water Bureau. Officials are tracked as seats rather than as named people, and a section cannot be published unless it cites records the system holds.
 
 **Verdicts and calibration.** Anyone reviewing a record can mark it correct, incorrect, partial or unclear. The calibration report shows where the system's confidence and the verdicts disagree. It proposes threshold changes and applies none of them.
 
@@ -246,7 +246,7 @@ This is a beta, and these are its known limits as of 0.8.0:
 
 ## Tests
 
-1,718 tests across 80 files. Two suites, `test_olis_live.py` and `test_orestar_resolver.py`, call live government services and are left out of offline runs. No test reaches a real model: the Claude API and Ollama are blocked in `tests/conftest.py`. The Civica tests expect the [proc_track](https://github.com/CLS-1000/proc_track) repository beside this one, or at `SPEC1_PROC_TRACK_HOME`.
+1,805 tests across 82 files. Two suites, `test_olis_live.py` and `test_orestar_resolver.py`, call live government services and are left out of offline runs. No test reaches a real model: the Claude API and Ollama are blocked in `tests/conftest.py`. The Civica tests expect the [proc_track](https://github.com/CLS-1000/proc_track) repository beside this one, or at `SPEC1_PROC_TRACK_HOME`.
 
 ```bash
 pytest tests/ --ignore=tests/test_olis_live.py --ignore=tests/test_orestar_resolver.py

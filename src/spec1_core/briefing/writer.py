@@ -20,6 +20,7 @@ from pathlib import Path
 from spec1_labels import (
     ANALYSIS_TIER_LLM_VERIFIED,
     ANALYSIS_TIER_RULE_BASED,
+    BRIEF_RULE_FALLBACK_NOTE,
     BRIEF_SOURCE_HAND_WRITTEN,
     BRIEF_SOURCE_MODEL,
 )
@@ -30,6 +31,16 @@ BRIEFS_DIR = Path("briefs")
 _lock = threading.Lock()
 
 PDF_INSTRUCTIONS_HEADING = "### PDF Conversion"
+
+# Content floor for a brief, in words, counted by brief_content_words() (the
+# PDF-conversion footer and symbol-only tokens such as ``━━━`` rules are not
+# counted). A model reply below this is treated as a failed generation, and the
+# publish guard refuses a brief below it whatever its sidecar says.
+# run-fe8f2b8df1af (2026-10-26): qwen2.5:3b returned 62 ``━`` characters and it
+# was stamped llm_verified and passed --check. The value is a human call.
+BRIEF_MIN_WORDS = 150
+
+_WORD_RE = re.compile(r"\w")
 
 _PLACEHOLDER_RE = re.compile(r"\{[A-Za-z_][A-Za-z0-9_ /\-]*\}")
 _HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)$")
@@ -68,6 +79,17 @@ def _strip_unresolved_placeholders(brief: str) -> str:
         i += 1
     result = "\n".join(out)
     return result + "\n" if brief.endswith("\n") else result
+
+
+def brief_content_words(text: str) -> int:
+    """Words of actual content in *text*.
+
+    Drops everything from the PDF-conversion footer on, and counts only tokens
+    with at least one letter or digit, so rules, bullets and box-drawing
+    characters do not count.
+    """
+    body = text.split(PDF_INSTRUCTIONS_HEADING, 1)[0]
+    return sum(1 for tok in body.split() if _WORD_RE.search(tok))
 
 
 def _pdf_instructions(md_name: str) -> str:
@@ -344,6 +366,45 @@ def mark_hand_written(brief_path: str | Path) -> dict:
     return meta
 
 
+# A home directory or Windows user folder in brief text means machine output
+# (stack traces, harvest errors) leaked into the brief.
+LOCAL_PATH_RE = re.compile(r"(?<![\w.~/-])/(?:home|Users)/[^/\s]+/|(?<!\w)[A-Za-z]:\\Users\\", re.IGNORECASE)
+
+
+def evidence_block_reason(meta: dict, text: str) -> str | None:
+    """Why a brief labelled llm_verified still may not publish, judged on evidence.
+
+    The label alone is not enough: the sidecar's record counts must show
+    model-verified records and nothing rule-based, and the text must not be the
+    rule fallback, carry local file paths, or fall below BRIEF_MIN_WORDS.
+    """
+    tiers = meta.get("record_tiers") or {}
+    counts = {}
+    for key, value in tiers.items():
+        try:
+            counts[key] = int(value or 0)
+        except (TypeError, ValueError):
+            counts[key] = 0
+    verified = counts.get(ANALYSIS_TIER_LLM_VERIFIED, 0)
+    other = sum(v for k, v in counts.items() if k != ANALYSIS_TIER_LLM_VERIFIED)
+    if verified < 1:
+        return (f"sidecar says {ANALYSIS_TIER_LLM_VERIFIED} but record_tiers shows no "
+                f"{ANALYSIS_TIER_LLM_VERIFIED} records ({tiers or 'empty'}); the label is not evidence")
+    if other:
+        return f"record_tiers includes {other} record(s) that are not {ANALYSIS_TIER_LLM_VERIFIED} ({tiers})"
+    if BRIEF_RULE_FALLBACK_NOTE in text:
+        return ("brief text is the rule-based fallback; write the brief from the handoff "
+                "before marking it hand-written")
+    hit = LOCAL_PATH_RE.search(text)
+    if hit:
+        return f"brief contains a local file path ({hit.group(0)}...); remove machine output before publishing"
+    words = brief_content_words(text)
+    if words < BRIEF_MIN_WORDS:
+        return (f"brief has {words} words of content (minimum {BRIEF_MIN_WORDS}, excluding the "
+                "PDF-conversion footer); a degenerate model reply is not a brief")
+    return None
+
+
 def publish_block_reason(brief_path: str | Path) -> str | None:
     """None if *brief_path* may be published; otherwise why it may not."""
     meta = read_brief_meta(brief_path)
@@ -353,7 +414,11 @@ def publish_block_reason(brief_path: str | Path) -> str | None:
     if tier != ANALYSIS_TIER_LLM_VERIFIED:
         return (f"brief is {tier or 'unlabelled'} (records_tier={meta.get('records_tier')}, "
                 f"brief_source={meta.get('brief_source')}); only {ANALYSIS_TIER_LLM_VERIFIED} briefs publish")
-    return None
+    try:
+        text = Path(brief_path).read_text(encoding="utf-8")
+    except OSError as exc:
+        return f"brief unreadable: {exc}"
+    return evidence_block_reason(meta, text)
 
 
 if __name__ == "__main__":

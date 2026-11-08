@@ -24,6 +24,7 @@ import feedparser
 import requests
 
 from spec1_core.schemas.models import Signal
+from spec1_labels import SIGNAL_DATE_MISSING_KEY
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +40,10 @@ DEFAULT_FEEDS: dict[str, str] = {
     "nk_news": "https://www.nknews.org/feed/",
     "csis_korea": "https://beyondparallel.csis.org/feed/",
     "yonhap": "https://en.yna.co.kr/RSS/news.xml",
+    # Law / accountability / politics (already calibrated in SOURCE_CREDIBILITY)
+    "lawfare": "https://www.lawfaremedia.org/feeds/articles",
+    "propublica": "https://www.propublica.org/feeds/propublica/main",
+    "politico": "https://rss.politico.com/politics-news.xml",
 }
 
 TIMEOUT = 15
@@ -81,8 +86,8 @@ def _make_signal_id(url: str, title: str) -> str:
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
 
 
-def _parse_date(entry: feedparser.FeedParserDict) -> datetime:
-    """Extract published datetime from a feedparser entry."""
+def _entry_date(entry: feedparser.FeedParserDict) -> Optional[datetime]:
+    """Return the entry's published (or updated) datetime, or None if it has none."""
     if hasattr(entry, "published_parsed") and entry.published_parsed:
         try:
             t = entry.published_parsed
@@ -95,7 +100,12 @@ def _parse_date(entry: feedparser.FeedParserDict) -> datetime:
             return datetime(*t[:6], tzinfo=timezone.utc)
         except Exception:
             pass
-    return datetime.now(timezone.utc)
+    return None
+
+
+def _parse_date(entry: feedparser.FeedParserDict) -> datetime:
+    """Extract published datetime from a feedparser entry (now() when it has none)."""
+    return _entry_date(entry) or datetime.now(timezone.utc)
 
 
 def _get_text(entry: feedparser.FeedParserDict) -> str:
@@ -195,7 +205,11 @@ def fetch_feed(
 
         text = _get_text(entry)
         author = _get_author(entry)
-        published_at = _parse_date(entry)
+        dated = _entry_date(entry)
+        published_at = dated or datetime.now(timezone.utc)
+        metadata = {"feed_url": url, "tags": [name]}
+        if dated is None:
+            metadata[SIGNAL_DATE_MISSING_KEY] = True
 
         yield Signal(
             signal_id=_make_signal_id(link, title),
@@ -209,7 +223,7 @@ def fetch_feed(
             engagement=0.0,
             run_id=run_id,
             environment=environment,
-            metadata={"feed_url": url, "tags": [name]},
+            metadata=metadata,
         )
 
 

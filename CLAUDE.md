@@ -93,7 +93,8 @@ spec-1/
 │   │   ├── dual_write.py        # Atomic JSONL + SQLite write
 │   │   └── migrate.py           # Schema migration runner
 │   │
-│   ├── cls_pdx1/                # PDX-1i — Portland Metro Intelligence module
+│   ├── titan/                   # Portland Metro Intelligence module (renamed from cls_pdx1
+│   │                            # 2026-11-01; not the separate CLS-1000/pdx-1i repo)
 │   │   ├── models.py            # Official, Affiliation, Bill, Signal, Anomaly, Issue
 │   │   │                        # ConfidenceTier, EdgeType, AnomalyTier (Pydantic v2)
 │   │   ├── pipeline.py          # CycleResult orchestrator (adapter errors skipped, not fatal)
@@ -195,7 +196,7 @@ spec-1/
 │   ├── test_pdf_render.py / test_logging_utils.py
 │   ├── test_api.py / test_mcp_server.py / test_spec1_api_scheduler.py
 │   ├── test_analyst_loop.py / test_research.py / test_leg_jud.py / test_leg_jud_desk.py
-│   ├── test_pdx1_*.py           # pdx1 anomaly, gates, legislation, models, neutrality,
+│   ├── test_titan_*.py          # titan anomaly, gates, legislation, models, neutrality,
 │   │                            # pipeline, publication, sources, triggers, watch
 │   ├── test_adapter_registry.py / test_pdx911.py / test_resolver.py
 │   ├── test_auth.py / test_webhooks.py / test_metrics.py
@@ -259,7 +260,7 @@ RSS / FARA / Congress / Narrative / Judicial / State-Leg / PDX-911
          │
          ├────────────────────────────────────────────────────────────────────────────┐
          ▼                                                                            ▼
-  cls_pdx1.pipeline               cls_research.pipeline
+  titan.pipeline               cls_research.pipeline
   → Affiliation / Bill /          → ResearchArtifact[]
     Signal / Anomaly / Issue      → dossiers/<topic_id>/dossier_v<n>.md
   → Metro Citizens Brief
@@ -327,7 +328,7 @@ RSS / FARA / Congress / Narrative / Judicial / State-Leg / PDX-911
   confidence, source_weight, analyst_weight
 - `ProposalReport` / `SuggestedAdjustment` — descriptive proposals; humans apply changes
 
-### cls_pdx1
+### titan
 - `Official` — elected official in the Portland bi-state metro (Multnomah / Washington / Clackamas / Clark WA)
 - `Affiliation` — edge between an official and an entity (donation, board seat, contract, lobbying, etc.)
 - `Bill` — legislative bill from OR or WA
@@ -607,7 +608,7 @@ All test functions must be fully implemented — no `pass` stubs, no `pytest.ski
 ## Implementation Rules
 
 1. No stubs — every function body must be implemented.
-2. Use `dataclasses` for internal models, `pydantic` for API schemas and `cls_pdx1` models.
+2. Use `dataclasses` for internal models, `pydantic` for API schemas and `titan` models.
 3. All stores write append-only JSONL; `cls_db` additionally writes SQLite.
 4. `cls_db.dual_write` wraps every store write so JSONL and SQLite stay in sync.
 5. API routers read from JSONL stores (via repository) — not direct DB queries.
@@ -625,7 +626,7 @@ All test functions must be fully implemented — no `pass` stubs, no `pytest.ski
     processes never import weasyprint or its native deps.
 14. `SECTION_TITLES` keys in `cls_leg_jud` are stable — the PDF generator (ReportLab) and
     any X publisher integration depend on these exact strings; do not rename.
-15. `cls_pdx1.ConfidenceTier.INFERRED` (tier 3) signals are not publish-eligible alone.
+15. `titan.ConfidenceTier.INFERRED` (tier 3) signals are not publish-eligible alone.
     `AnomalyTier.TIER_1` (≥3σ) is required for publication gating.
 16. Import from `spec1_core.*`. `spec1_engine` was archived to `_ARCHIVE/` on
     2026-10-24 and is not on the import path.
@@ -667,7 +668,7 @@ Agents may freely modify:
 - `src/spec1_core/briefing/` (except `templates.py` imports — edit `.md` files instead)
 - `src/spec1_core/tools/`
 - `src/cls_osint/`, `src/cls_psyop/`, `src/cls_leads/`
-- `src/cls_pdx1/`, `src/cls_research/`, `src/cls_analyst_loop/`, `src/cls_leg_jud/`
+- `src/titan/`, `src/cls_research/`, `src/cls_analyst_loop/`, `src/cls_leg_jud/`
 - `src/spec1_api/`
 - `tests/`
 
@@ -699,10 +700,11 @@ Every PR must include (use `.github/pull_request_template.md`):
 
 ### Shorthand glossary — confirm before acting on these
 - "spec-1" / "the repo" → CLS-1000/spec-1, develop branch
-- "pdx1-i" → PDX-1i / cls_pdx1 (Portland Metro Intelligence module)
+- "titan" → src/titan, this repo's Portland Metro Intelligence module (was cls_pdx1)
+- "pdx1-i" / "PDX-1i" → the separate CLS-1000/pdx-1i repo (production pipeline), not titan
 - "gh research" → push/pull Research Mode work to GitHub
 - "The Downlow" → [spell this one out once before acting on it — not yet defined]
-- "Metro Citizens Brief" → cls_pdx1 publication output (not cls_world_brief)
+- "Metro Citizens Brief" → titan publication output (not cls_world_brief)
 - "Research Mode" → cls_research (topic-directed dossiers, no LLM, no 4-gate filter)
 - "analyst loop" → cls_analyst_loop (chain-of-custody workflow for leads → verdicts)
 - "Leg-Jud" / "legislative desk" → cls_leg_jud

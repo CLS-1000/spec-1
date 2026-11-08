@@ -178,7 +178,7 @@ main { position: relative; z-index: 1; flex: 1; display: flex; flex-direction: c
             <div class="msg-label">HIGGINS • 06:11 PT</div>
             <div class="msg-body">
               <p>I got your six.</p>
-              <p>The system is running the full modular surface: cls_pdx1 taxonomies, 4-gate pipeline, psyop patterns, dual-write provenance. All of it is queryable through me without you having to touch the internals.</p>
+              <p>The system is running the full modular surface: titan taxonomies, 4-gate pipeline, psyop patterns, dual-write provenance. All of it is queryable through me without you having to touch the internals.</p>
               <p>Ask me anything. Paste raw text. Challenge a pattern. Or just sit with the map. This stays between us.</p>
             </div>
           </div>
@@ -212,14 +212,14 @@ main { position: relative; z-index: 1; flex: 1; display: flex; flex-direction: c
         <div style="color:var(--text-secondary); font-size:13.2px; line-height:1.7;">
           <p><strong>The modular contract (CLAUDE.md + real code):</strong></p>
           <ul style="margin:8px 0 16px 20px; padding:0;">
-            <li>Every output is a first-class product: <code>cls_pdx1/</code>, <code>cls_psyop/</code>, <code>cls_leads/</code>, <code>cls_world_brief/</code>, <code>cls_calibration/</code></li>
+            <li>Every output is a first-class product: <code>titan/</code>, <code>cls_psyop/</code>, <code>cls_leads/</code>, <code>cls_world_brief/</code>, <code>cls_calibration/</code></li>
             <li>Each product owns its semantics (rich IntEnums in pdx1/models.py) but writes through the same DualWriter seam (JSONL = truth, SQLite = optional, failure non-fatal).</li>
             <li>Frozen core: <code>src/spec1_engine/core/</code> and prompts require human approval + semver bump. Products evolve freely.</li>
             <li>4-gate pipeline is deterministic and auditable: Credibility ≥0.5, Volume ≥50 words, Velocity ≤48h, Novelty (hash dedup).</li>
             <li>Human calibration loop is descriptive only — verdicts surface drift, they never auto-tune thresholds.</li>
           </ul>
           <p><strong>The Higgins interface exists because raw architecture is invisible to the people who need to trust it.</strong> I make the depth experiential without exposing the wiring diagram in the pitch room.</p>
-          <p style="margin-top:18px; font-size:12.5px; color:var(--text-muted);">All data in this demo is a faithful subset of live artifacts: <code>data/spec1_intelligence.jsonl</code>, <code>src/cls_pdx1/models.py</code>, <code>src/cls_psyop/patterns.py</code>, real Metro Citizens Brief runs.</p>
+          <p style="margin-top:18px; font-size:12.5px; color:var(--text-muted);">All data in this demo is a faithful subset of live artifacts: <code>data/spec1_intelligence.jsonl</code>, <code>src/titan/models.py</code>, <code>src/cls_psyop/patterns.py</code>, real Metro Citizens Narrative runs.</p>
         </div>
         <div class="tools" style="margin-top:22px;">
           <button class="tool-btn" onclick="copyProvenance()">COPY PROVENANCE STATEMENT</button>
@@ -375,7 +375,7 @@ function buildAlmanac(filter = '') {
   Object.entries(EMBEDDED.pdx1).forEach(([cat, vals]) => {
     vals.forEach(v => {
       if (!f || (cat + v).toLowerCase().includes(f)) {
-        items.push({type:'pdx1', cat, val: v, desc: 'Core taxonomy from src/cls_pdx1/models.py — used for every affiliation, anomaly, and bill in the Portland metro desk.'});
+        items.push({type:'pdx1', cat, val: v, desc: 'Core taxonomy from src/titan/models.py — used for every affiliation, anomaly, and bill in the Portland metro desk.'});
       }
     });
   });
@@ -504,7 +504,7 @@ document.getElementById('analyze-btn').addEventListener('click', () => {
     </div>
 
     <div class="result-section">
-      <div class="result-label">PDX-1 TAXONOMY LENS (src/cls_pdx1/models.py)</div>
+      <div class="result-label">PDX-1 TAXONOMY LENS (src/titan/models.py)</div>
       <div>${tax.join(' • ')}</div>
     </div>
 
@@ -514,7 +514,7 @@ document.getElementById('analyze-btn').addEventListener('click', () => {
     </div>
 
     <div class="result-section" style="font-size:11px; color:var(--text-muted); border-top:1px solid rgba(255,255,255,0.1); padding-top:12px;">
-      Receipts: embedded subset of data/spec1_intelligence.jsonl + cls_pdx1/models.py IntEnums + cls_psyop/patterns.py. Full dual-write provenance available in the live engine. This demo never phones home.
+      Receipts: embedded subset of data/spec1_intelligence.jsonl + titan/models.py IntEnums + cls_psyop/patterns.py. Full dual-write provenance available in the live engine. This demo never phones home.
     </div>
   `;
   out.style.display = 'block';
@@ -561,7 +561,7 @@ Core invariants (real code):
 - DualWriter seam (cls_db/dual_write.py): JSONL = source of truth, SQLite injected at construction, failure non-fatal
 - Frozen core (CLAUDE.md): src/spec1_engine/core/ + prompts require human approval + semver
 - 4-gate pipeline: credibility ≥0.5, volume ≥50w, velocity ≤48h, novelty (hash)
-- PDX-1 taxonomies (src/cls_pdx1/models.py): EdgeType, AnomalyTier, ConfidenceTier, Jurisdiction, Sector — 293 tests
+- PDX-1 taxonomies (src/titan/models.py): EdgeType, AnomalyTier, ConfidenceTier, Jurisdiction, Sector — 293 tests
 - Psyop patterns (src/cls_psyop/patterns.py): P001–P009 with explicit indicators
 - Human calibration loop is descriptive only (cls_verdicts + cls_calibration)
 
@@ -580,7 +580,7 @@ function showDemoScript() {
         <li>"This is Higgins. He is the only interface that makes the full depth of the modular OSINT platform experiential without a 40-slide architecture deck."</li>
         <li>Switch to PATTERN SPOTTER. Paste a real messy signal (use one from your notes or the War on the Rocks examples in the almanac). Hit "RUN THROUGH THE GATES".</li>
         <li>Let the 4-gate + PDX1 + Psyop + Human layer results appear. Do not explain. Count to 5 in your head.</li>
-        <li>"Every product owns its semantics — look at the IntEnums from cls_pdx1. They all write through the same DualWriter seam. JSONL is truth. The core is frozen on purpose. This is how you scale without becoming a monolith."</li>
+        <li>"Every product owns its semantics — look at the IntEnums from titan. They all write through the same DualWriter seam. JSONL is truth. The core is frozen on purpose. This is how you scale without becoming a monolith."</li>
         <li>Switch to ALMANAC. Search "DONATION" or "Social Wedge". Click a cross-link. "This is what 293 tests on a single regional desk actually buys you — precise, composable taxonomies that survive contact with reality."</li>
         <li>Close with: "The reason this can be sold to DoD, defense primes, serious journalism, and critical infrastructure is because the person in the room never has to trust a black box. They can talk to Higgins. And Higgins has their six."</li>
       </ol>

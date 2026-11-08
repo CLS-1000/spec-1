@@ -98,7 +98,7 @@ def olis_measure_signals(
     environment: str,
     counts: dict[str, int],
 ) -> list[Signal]:
-    """cls_pdx1 ``Bill`` records whose last action is on or after *since*."""
+    """titan ``Bill`` records whose last action is on or after *since*."""
     out: list[Signal] = []
     for bill in bills:
         acted = bill.last_action_at or bill.introduced_at
@@ -262,13 +262,13 @@ def state_leg_signals(
 # ── Orchestration ─────────────────────────────────────────────────────────────
 
 def _default_olis_bills() -> tuple[list[Any], list[str]]:
-    from cls_pdx1.sources.olis import OlisAdapter
+    from titan.sources.olis import OlisAdapter
     result = OlisAdapter().fetch()
     return result.records, result.errors
 
 
 def _default_interim(since: datetime, until: datetime) -> list[dict[str, Any]]:
-    from cls_pdx1.sources.olis import fetch_interim_meetings, latest_interim_session_key
+    from titan.sources.olis import fetch_interim_meetings, latest_interim_session_key
     return fetch_interim_meetings(latest_interim_session_key(), since, until)
 
 

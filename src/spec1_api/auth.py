@@ -36,6 +36,8 @@ _PUBLIC_PATHS = frozenset({
     "/",
     "/desk/legislative",      # page shell only; its data calls carry the key
     "/desk/legislative/",
+    "/desk/narrative",         # page shell only; generate/publish still need the key
+    "/desk/narrative/",
     "/health",
     "/metrics",
     "/metrics/json",

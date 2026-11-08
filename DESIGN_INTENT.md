@@ -119,7 +119,7 @@ DOMAIN BRIEFINGS
 Separate sections per active domain this cycle:
   - Cyber
   - Geopolitical
-  - Regional (cls_pdx1 when active)
+  - Regional (titan when active)
   - Legislative (cls_legislative when active)
   - Quantitative (when equity signals fire)
   - Conflict Detection (when active)
@@ -167,7 +167,7 @@ background actors, history, related events, prior patterns, open questions.
 This section primes the analyst before they route.]
 
 ROUTING RECOMMENDATION
-Module: [cls_pdx1 / cls_legislative / cls_osint / quant / conflict / ...]
+Module: [titan / cls_legislative / cls_osint / quant / conflict / ...]
 Adapter: [specific adapter if applicable]
 Suggested lens: [the investigative angle the data supports]
 
@@ -220,7 +220,7 @@ When a Story Lead recommends routing, these are the available modules:
 
 | Module | Domain | Adapter |
 |---|---|---|
-| `cls_pdx1` | Portland Metro Regional Intelligence | OLIS, ORESTAR, SEI |
+| `titan` | Portland Metro Regional Intelligence | OLIS, ORESTAR, SEI |
 | `cls_legislative` | Cross-jurisdictional Bill Analysis | OLIS OData |
 | `cls_osint` | Open Source Intelligence | n8n, journalist registry |
 | `cls_psyop` | Influence Operation Detection | Pattern signatures |
@@ -288,4 +288,4 @@ SWITCHBOARD     The city intelligence platform. cls_metro + city adapters.
 NOTITIA CIVICA  Citizen Cognisance. Civic awareness intelligence layer.
 
 These names are locked. Do not rename modules to match product names.
-Internal code names (cls_pdx1, cls_metro, cls_osint) stay as-is.
+Internal code names (titan, cls_metro, cls_osint) stay as-is.

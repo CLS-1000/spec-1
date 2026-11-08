@@ -4,7 +4,7 @@
 # @status:   testing
 # @depends:  NONE
 
-"""Tests for cls_pdx1.sources.olis — OlisAdapter offline coverage.
+"""Tests for titan.sources.olis — OlisAdapter offline coverage.
 
 All tests use in-memory fixture data — no HTTP calls.
 """
@@ -15,8 +15,8 @@ from unittest.mock import patch
 
 import requests
 
-from cls_pdx1.models import BillStatus
-from cls_pdx1.sources.olis import OlisAdapter, _map_status
+from titan.models import BillStatus
+from titan.sources.olis import OlisAdapter, _map_status
 
 
 _INTRODUCED_FIXTURE = {
@@ -132,7 +132,7 @@ class TestOlisAdapterOffline:
 
     def test_no_bill_data_returns_error(self, tmp_path):
         """Live fetch fails and no cache exists — adapter returns one graceful error."""
-        with patch("cls_pdx1.sources.olis.requests.get") as mock_get:
+        with patch("titan.sources.olis.requests.get") as mock_get:
             mock_get.side_effect = requests.RequestException("connection refused")
             adapter = OlisAdapter(cache_dir=tmp_path)
             result = adapter.fetch()
