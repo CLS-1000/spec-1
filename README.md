@@ -1,6 +1,6 @@
-# SPEC-1
+# [SPEC-1]
 
-**Status:** Beta · **Version:** 0.8.0 · Python 3.11+ · Proprietary · EVASTARARCANA LLC, Portland, Oregon
+**Status:** Beta · **Version:** 0.8.0 · Python + · Proprietary · EVASTARARCANA LLC, Portland, Oregon
 
 SPEC-1 is an open-source intelligence engine that runs on a single laptop. It reads public sources on a schedule, decides which items deserve a closer look, checks them with a language model running on your own machine, and drafts what it found for a person to edit.
 
