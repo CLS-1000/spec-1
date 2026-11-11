@@ -8,7 +8,7 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 
 
 from titan.gates import (
@@ -36,7 +36,7 @@ def _prov(uri: str = "https://example.com/x") -> Provenance:
     return Provenance(
         source_uri=uri,
         source_name="test",
-        fetched_at=datetime.utcnow(),
+        fetched_at=datetime.now(timezone.utc),
     )
 
 
@@ -49,8 +49,8 @@ class TestProvenanceGate:
     def test_accepts_record_with_valid_provenance(self):
         signal = Signal(
             kind="donation_made",
-            occurred_at=datetime.utcnow(),
-            detected_at=datetime.utcnow(),
+            occurred_at=datetime.now(timezone.utc),
+            detected_at=datetime.now(timezone.utc),
             provenance=_prov(),
         )
         ok, reason = provenance_gate(signal)
@@ -63,7 +63,7 @@ class TestProvenanceGate:
             "provenance": {
                 "source_uri": "https://example.com/a",
                 "source_name": "t",
-                "fetched_at": datetime.utcnow(),
+                "fetched_at": datetime.now(timezone.utc),
             },
         }
         ok, reason = provenance_gate(record)
@@ -115,7 +115,7 @@ class TestTimeBoundingGate:
             entity_id="e",
             edge_type=EdgeType.DONATION,
             confidence=ConfidenceTier.HARD_RECORD,
-            observed_at=datetime.utcnow(),
+            observed_at=datetime.now(timezone.utc),
             valid_from=vf,
             valid_to=vt,
             provenance=_prov(),
@@ -190,7 +190,7 @@ class TestAnomalyPublicationGate:
         return Anomaly(
             entity_id="ent-1",
             tier=tier,
-            detected_at=datetime.utcnow(),
+            detected_at=datetime.now(timezone.utc),
             kind="donation_spike",
             description="x",
             baseline_window_days=90,
@@ -224,8 +224,8 @@ class TestSignalFreshnessGate:
     def test_fresh_signal_passes(self):
         s = Signal(
             kind="x",
-            occurred_at=datetime.utcnow(),
-            detected_at=datetime.utcnow(),
+            occurred_at=datetime.now(timezone.utc),
+            detected_at=datetime.now(timezone.utc),
             provenance=_prov(),
         )
         ok, _ = signal_freshness_gate(s)
@@ -234,8 +234,8 @@ class TestSignalFreshnessGate:
     def test_stale_signal_rejected(self):
         s = Signal(
             kind="x",
-            occurred_at=datetime.utcnow() - timedelta(days=365),
-            detected_at=datetime.utcnow() - timedelta(days=365),
+            occurred_at=datetime.now(timezone.utc) - timedelta(days=365),
+            detected_at=datetime.now(timezone.utc) - timedelta(days=365),
             provenance=_prov(),
         )
         ok, reason = signal_freshness_gate(s)

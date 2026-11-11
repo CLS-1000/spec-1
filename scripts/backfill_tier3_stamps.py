@@ -1,4 +1,4 @@
-"""Targeted Tier-3 synthesis backfill for high-value signals."""
+"""Targeted Tier-3 synthesis backfill for remaining high-value signals."""
 import argparse
 import json
 import logging
@@ -22,8 +22,8 @@ def backfill_high_priority(conn: sqlite3.Connection, limit: int = 25, min_score:
         "SELECT id, record_id, signal_source, opportunity_score, signal_excerpt, gate_results "
         "FROM intelligence_records "
         "WHERE signal_source != 'rand' "
-        "  AND opportunity_score >= ? "
-        "  AND (llm_reasoning IS NULL OR llm_reasoning = '') "
+        "  AND (opportunity_priority IN ('ELEVATED', 'CRITICAL') OR opportunity_score >= ?) "
+        "  AND analysis_tier != 'llm_verified' "
         "ORDER BY opportunity_score DESC "
     )
     if limit > 0:
@@ -31,7 +31,7 @@ def backfill_high_priority(conn: sqlite3.Connection, limit: int = 25, min_score:
 
     cursor.execute(query, (min_score,))
     rows = cursor.fetchall()
-    logger.info("Found %d candidate records (min_score=%.2f, limit=%d)", len(rows), min_score, limit)
+    logger.info("Found %d remaining candidate records (min_score=%.2f, limit=%d)", len(rows), min_score, limit)
 
     stamped_records = {}
     for idx, (row_id, rec_id, source, opp_score, excerpt, gate_raw) in enumerate(rows, 1):
@@ -59,7 +59,7 @@ def backfill_high_priority(conn: sqlite3.Connection, limit: int = 25, min_score:
             "UPDATE intelligence_records SET analysis_tier = ?, llm_reasoning = ? WHERE id = ?",
             (tier, justification, row_id),
         )
-        logger.info("[%d/%d] Evaluated %s (%s, score=%.2f) -> tier=%s", idx, len(rows), rec_id, source, opp_score or 0.0, tier)
+        logger.info("[%d/%d] Verified %s (%s, score=%.2f) -> tier=%s", idx, len(rows), rec_id, source, opp_score or 0.0, tier)
         conn.commit()
 
     return stamped_records

@@ -1,3 +1,5 @@
+from __future__ import annotations
+from datetime import date, datetime, timezone
 # @domain:   spec-1
 # @module:   test_pdx1_models
 # @loc:      gh_main
@@ -6,9 +8,7 @@
 
 """Tests for titan.models."""
 
-from __future__ import annotations
 
-from datetime import date, datetime
 
 
 from titan.models import (
@@ -34,7 +34,7 @@ def _prov() -> Provenance:
     return Provenance(
         source_uri="https://example.com/source",
         source_name="test",
-        fetched_at=datetime.utcnow(),
+        fetched_at=datetime.now(timezone.utc),
     )
 
 
@@ -88,7 +88,7 @@ class TestAffiliation:
             entity_id="ent_xyz",
             edge_type=EdgeType.DONATION,
             confidence=ConfidenceTier.HARD_RECORD,
-            observed_at=datetime.utcnow(),
+            observed_at=datetime.now(timezone.utc),
             valid_from=date(2024, 1, 1),
             provenance=_prov(),
         )
@@ -100,7 +100,7 @@ class TestAffiliation:
             entity_id="ent_xyz",
             edge_type=EdgeType.BOARD_SEAT,
             confidence=ConfidenceTier.HARD_RECORD,
-            observed_at=datetime.utcnow(),
+            observed_at=datetime.now(timezone.utc),
             valid_from=date(2023, 6, 1),
             valid_to=None,
             provenance=_prov(),
@@ -130,8 +130,8 @@ class TestSignal:
     def test_auto_id(self):
         s = Signal(
             kind="donation_made",
-            occurred_at=datetime.utcnow(),
-            detected_at=datetime.utcnow(),
+            occurred_at=datetime.now(timezone.utc),
+            detected_at=datetime.now(timezone.utc),
             provenance=_prov(),
         )
         assert s.signal_id.startswith("sig_")
@@ -139,8 +139,8 @@ class TestSignal:
     def test_default_weight(self):
         s = Signal(
             kind="x",
-            occurred_at=datetime.utcnow(),
-            detected_at=datetime.utcnow(),
+            occurred_at=datetime.now(timezone.utc),
+            detected_at=datetime.now(timezone.utc),
             provenance=_prov(),
         )
         assert s.weight == 1.0
@@ -151,7 +151,7 @@ class TestAnomaly:
         a = Anomaly(
             entity_id="ent_pge",
             tier=AnomalyTier.TIER_1,
-            detected_at=datetime.utcnow(),
+            detected_at=datetime.now(timezone.utc),
             kind="donation_spike",
             description="3-sigma spike",
             provenance=_prov(),
@@ -166,15 +166,15 @@ class TestAnomaly:
 
 class TestIssue:
     def test_make_id(self):
-        iid = Issue.make_id(1, datetime.utcnow())
+        iid = Issue.make_id(1, datetime.now(timezone.utc))
         assert iid.startswith("issue_")
 
     def test_empty_sections(self):
         issue = Issue(
-            issue_id=Issue.make_id(1, datetime.utcnow()),
+            issue_id=Issue.make_id(1, datetime.now(timezone.utc)),
             issue_number=1,
             title="Test",
-            published_at=datetime.utcnow(),
+            published_at=datetime.now(timezone.utc),
         )
         assert issue.sections == []
 
