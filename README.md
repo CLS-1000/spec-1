@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/brand/spec-1-banner.png" alt="SPEC-1" width="100%"></p>
+
 # [SPEC-1]
 
 **Status:** Beta · **Version:** 0.8.0 · Python + · Proprietary · EVASTARARCANA LLC, Portland, Oregon
