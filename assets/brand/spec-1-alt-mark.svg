@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="512" height="512" viewBox="0 0 240 240" role="img" aria-label="SPEC-1 mark: a golden rectangle with its spiral, crossed by a bold numeral 1" style="filter: drop-shadow(3px 4px 0 #050B14)">
+<defs>
+<symbol id="ss1-mark" viewBox="0 0 240 240">
+<circle cx="120" cy="120" r="94" fill="none" stroke="#8FA3B8" stroke-width="1.2"></circle>
+<circle cx="120" cy="120" r="102" fill="none" stroke="#5E7591" stroke-width="1"></circle>
+<rect x="70.5" y="40" width="99" height="160" fill="none" stroke="#D7DEE6" stroke-width="1.6"></rect>
+<path d="M70.5 101 L169.5 101 M108.5 40 L108.5 101 M70.5 78 L108.5 78 M93.5 78 L93.5 101" stroke="#8FA3B8" stroke-width="1.1"></path>
+<path d="M70.5 101 A99 99 0 0 0 169.5 200 M169.5 101 A61 61 0 0 0 108.5 40 M108.5 40 A38 38 0 0 0 70.5 78 M70.5 78 A23 23 0 0 0 93.5 101" fill="none" stroke="#D7DEE6" stroke-width="1.6"></path>
+<path d="M70.5 40 L169.5 200 M169.5 40 L70.5 200" stroke="#5E7591" stroke-width="0.9" opacity="0.7"></path>
+<path d="M106 76 L126 60 L126 184 M108 184 L144 184" fill="none" stroke="#08111D" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" opacity="0.6" transform="translate(2,2)"></path>
+<path d="M106 76 L126 60 L126 184 M108 184 L144 184" fill="none" stroke="#F26A1B" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"></path>
+<path d="M107 74 L125 60 L125 182" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" opacity="0.3"></path>
+<circle cx="88" cy="88" r="5" fill="#F26A1B"></circle>
+<circle cx="70.5" cy="40" r="3" fill="#D7DEE6"></circle>
+<circle cx="169.5" cy="40" r="3" fill="#D7DEE6"></circle>
+<circle cx="70.5" cy="200" r="3" fill="#D7DEE6"></circle>
+<circle cx="169.5" cy="200" r="3" fill="#D7DEE6"></circle>
+</symbol>
+</defs>
+<use href="#ss1-mark" width="240" height="240"></use>
+</svg>
