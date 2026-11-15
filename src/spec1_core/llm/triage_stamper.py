@@ -24,7 +24,7 @@ class TriageStamper:
             # Deterministic fallback when daemon is down or validation fails
             record["analysis_tier"] = "rule_based"
             record["triage_confidence"] = 0.0
-            record["triage_justification"] = "Local Tier-3 daemon unreachable; defaulted to rule_based"
+            record["triage_justification"] = ""
             record["triage_flags"] = ["FALLBACK_RULE_BASED"]
             record["triage_classification"] = "UNVERIFIED"
 
