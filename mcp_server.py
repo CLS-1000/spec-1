@@ -23,6 +23,7 @@ Tools exposed:
   - generate_brief     Build a daily brief for one run_id (operator tool, Claude + fallback)
   - generate_leads     Derive Lead objects from intelligence records (operator tool)
   - run_research       Run analyst-defined topic research dossier expansion
+  - score_signal       Score one signal through the 3-pass operator evaluation
 
 This server uses a simple JSON-RPC 2.0 over stdio protocol compatible
 with the Claude MCP specification.
@@ -34,9 +35,19 @@ import json
 import os
 import sys
 import traceback
+import uuid
+from collections import deque
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+# Store paths default to names relative to the SPEC-1 home (this file's
+# directory, or $SPEC1_HOME). main() changes into it so the server finds the
+# same stores whichever directory the MCP client launches it from.
+SPEC1_HOME = Path(os.environ.get("SPEC1_HOME", Path(__file__).resolve().parent))
+_SRC = SPEC1_HOME / "src"
+if _SRC.is_dir() and str(_SRC) not in sys.path:
+    sys.path.insert(0, str(_SRC))
 
 
 # ---------------------------------------------------------------------------
@@ -51,9 +62,20 @@ def _make_error(request_id: Any, code: int, message: str) -> dict:
     return {"jsonrpc": "2.0", "id": request_id, "error": {"code": code, "message": message}}
 
 
+# The JSON-RPC channel. main() saves the real stdout here and points
+# sys.stdout at stderr, so print() calls and SPEC-1 loggers (which write to
+# sys.stdout) can never inject non-protocol lines into the stream.
+_PROTOCOL_OUT = None
+
+
+def _write(payload: Any) -> None:
+    out = _PROTOCOL_OUT or sys.stdout
+    out.write(json.dumps(payload) + "\n")
+    out.flush()
+
+
 def _send(obj: dict) -> None:
-    sys.stdout.write(json.dumps(obj) + "\n")
-    sys.stdout.flush()
+    _write(obj)
 
 
 # ---------------------------------------------------------------------------
@@ -64,11 +86,23 @@ def _store_path(env_var: str, default: str) -> Path:
     return Path(os.environ.get(env_var, default))
 
 
-def _read_jsonl(path: Path, limit: int = 20) -> list[dict]:
-    """Read the last `limit` records from a JSONL file."""
+def _limit(args: dict, default: int = 20) -> int:
+    """Read a non-negative `limit` argument."""
+    return max(0, int(args.get("limit", default)))
+
+
+def _tail(records: list, n: int) -> list:
+    """Last `n` items; n <= 0 gives [] (plain records[-0:] would return everything)."""
+    return list(records[-n:]) if n > 0 else []
+
+
+def _read_jsonl(path: Path, limit: int | None = 20) -> list[dict]:
+    """Read the last `limit` records from a JSONL file (None = all records)."""
     if not path.exists():
         return []
-    records: list[dict] = []
+    if limit is not None and limit <= 0:
+        return []
+    records: deque[dict] = deque(maxlen=limit)
     with path.open("r", encoding="utf-8") as fh:
         for line in fh:
             line = line.strip()
@@ -78,7 +112,7 @@ def _read_jsonl(path: Path, limit: int = 20) -> list[dict]:
                 records.append(json.loads(line))
             except json.JSONDecodeError:
                 continue
-    return records[-limit:]
+    return list(records)
 
 
 def tool_run_cycle(args: dict) -> dict:
@@ -99,31 +133,32 @@ def tool_run_cycle(args: dict) -> dict:
 
 def tool_get_signals(args: dict) -> list[dict]:
     """Return recent OSINT signals."""
-    limit = int(args.get("limit", 20))
+    limit = _limit(args)
     path = _store_path("SPEC1_OSINT_PATH", "osint_records.jsonl")
     return _read_jsonl(path, limit=limit)
 
 
 def tool_get_intel(args: dict) -> list[dict]:
     """Return intelligence records."""
-    limit = int(args.get("limit", 20))
+    limit = _limit(args)
     min_confidence = float(args.get("min_confidence", 0.0))
     path = _store_path("SPEC1_STORE_PATH", "spec1_intelligence.jsonl")
-    records = _read_jsonl(path, limit=200)
-    if min_confidence > 0:
-        records = [r for r in records if float(r.get("confidence", 0)) >= min_confidence]
-    return records[-limit:]
+    if min_confidence <= 0:
+        return _read_jsonl(path, limit=limit)
+    records = _read_jsonl(path, limit=None)
+    records = [r for r in records if float(r.get("confidence") or 0) >= min_confidence]
+    return _tail(records, limit)
 
 
 def tool_get_leads(args: dict) -> list[dict]:
     """Return actionable intelligence leads."""
-    limit = int(args.get("limit", 20))
+    limit = _limit(args)
     priority = args.get("priority")
     path = _store_path("SPEC1_LEADS_PATH", "leads.jsonl")
-    records = _read_jsonl(path, limit=200)
+    records = _read_jsonl(path, limit=None)
     if priority:
-        records = [r for r in records if r.get("priority") == priority.upper()]
-    return records[-limit:]
+        records = [r for r in records if r.get("priority") == str(priority).upper()]
+    return _tail(records, limit)
 
 
 def tool_get_brief(args: dict) -> dict:
@@ -137,29 +172,30 @@ def tool_get_brief(args: dict) -> dict:
 
 def tool_get_psyop(args: dict) -> list[dict]:
     """Return psyop detection scores."""
-    limit = int(args.get("limit", 20))
+    limit = _limit(args)
     min_risk = args.get("min_classification", "LOW_RISK")
     path = _store_path("SPEC1_PSYOP_PATH", "psyop_scores.jsonl")
-    records = _read_jsonl(path, limit=200)
+    records = _read_jsonl(path, limit=None)
     order = {"CLEAN": 0, "LOW_RISK": 1, "MEDIUM_RISK": 2, "HIGH_RISK": 3}
     threshold = order.get(min_risk, 1)
     filtered = [r for r in records if order.get(r.get("classification", "CLEAN"), 0) >= threshold]
-    return filtered[-limit:]
+    return _tail(filtered, limit)
 
 
 def tool_get_fara(args: dict) -> list[dict]:
     """Return FARA filing records."""
-    limit = int(args.get("limit", 20))
+    limit = _limit(args)
     country = args.get("country")
     path = _store_path("SPEC1_OSINT_PATH", "osint_records.jsonl")
-    records = _read_jsonl(path, limit=500)
+    records = _read_jsonl(path, limit=None)
     fara_records = [r for r in records if r.get("source_type") == "fara"]
     if country:
+        wanted = str(country).lower()
         fara_records = [
             r for r in fara_records
-            if r.get("metadata", {}).get("country", "").lower() == country.lower()
+            if str((r.get("metadata") or {}).get("country") or "").lower() == wanted
         ]
-    return fara_records[-limit:]
+    return _tail(fara_records, limit)
 
 
 def tool_analyse_psyop(args: dict) -> dict:
@@ -189,6 +225,13 @@ def tool_get_stats(args: dict) -> dict:
                 stats[name] = sum(1 for line in fh if line.strip())
         else:
             stats[name] = 0
+    # Lines can repeat a record_id (re-stored records); report distinct ids too.
+    ids = {
+        r.get("record_id") or r.get("id")
+        for r in _read_jsonl(paths["intelligence"], limit=None)
+    }
+    ids.discard(None)
+    stats["intelligence_unique"] = len(ids)
     stats["checked_at"] = datetime.now(timezone.utc).isoformat()  # type: ignore[assignment]
     return stats
 
@@ -226,13 +269,13 @@ def tool_get_verdicts(args: dict) -> list[dict]:
     from cls_verdicts.store import VerdictStore
 
     record_id = args.get("record_id")
-    limit = int(args.get("limit", 20))
+    limit = _limit(args)
     store = VerdictStore(_store_path("SPEC1_VERDICTS_PATH", "verdicts.jsonl"))
 
     if record_id:
         return store.for_record(str(record_id))
     # Tail of the JSONL — last `limit` verdicts in insertion order.
-    return list(store.read_all())[-limit:]
+    return _tail(list(store.read_all()), limit)
 
 
 def tool_run_psyop(args: dict) -> dict:
@@ -245,10 +288,10 @@ def tool_run_psyop(args: dict) -> dict:
     from cls_psyop.store import PsyopStore
 
     intel_path = _store_path("SPEC1_STORE_PATH", "spec1_intelligence.jsonl")
-    out_path = Path(args.get("out") or os.environ.get("SPEC1_PSYOP_PATH", "generated/psyop_scores.jsonl"))
+    out_path = Path(args.get("out") or os.environ.get("SPEC1_PSYOP_PATH", "psyop_scores.jsonl"))
     min_classification = args.get("min_classification", "CLEAN")
 
-    records = _read_jsonl(intel_path, limit=10**9)
+    records = _read_jsonl(intel_path, limit=None)
     scores = score_records(records)
     if min_classification != "CLEAN":
         scores = filter_risky(scores, min_classification=min_classification)
@@ -328,12 +371,12 @@ def tool_generate_leads(args: dict) -> dict:
     from cls_leads.store import LeadStore
 
     intel_path = _store_path("SPEC1_STORE_PATH", "spec1_intelligence.jsonl")
-    out_path = Path(args.get("out") or os.environ.get("SPEC1_LEADS_PATH", "generated/leads.jsonl"))
+    out_path = Path(args.get("out") or os.environ.get("SPEC1_LEADS_PATH", "leads.jsonl"))
     min_confidence = float(args.get("min_confidence", 0.3))
     max_leads = int(args.get("max_leads", 50))
     priority_filter = args.get("priority")
 
-    records = _read_jsonl(intel_path, limit=10**9)
+    records = _read_jsonl(intel_path, limit=None)
     leads = generate_leads(records, min_confidence=min_confidence, max_leads=max_leads)
     if priority_filter:
         leads = [lead for lead in leads if lead.priority == priority_filter]
@@ -362,8 +405,8 @@ def tool_get_calibration(args: dict) -> dict:
     sample_floor = int(args.get("sample_floor", 5))
     delta_floor = float(args.get("delta_floor", 0.15))
 
-    intel = _read_jsonl(_store_path("SPEC1_STORE_PATH", "spec1_intelligence.jsonl"), limit=10**9)
-    verdicts = _read_jsonl(_store_path("SPEC1_VERDICTS_PATH", "verdicts.jsonl"), limit=10**9)
+    intel = _read_jsonl(_store_path("SPEC1_STORE_PATH", "spec1_intelligence.jsonl"), limit=None)
+    verdicts = _read_jsonl(_store_path("SPEC1_VERDICTS_PATH", "verdicts.jsonl"), limit=None)
 
     report = produce_report(intel, verdicts)
     out = report.to_dict()
@@ -413,7 +456,7 @@ def tool_score_signal(args: dict) -> dict:
         published_at = published_at.replace(tzinfo=timezone.utc)
 
     sig = Signal(
-        signal_id=f"sig-mcp-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}",
+        signal_id=f"sig-mcp-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:8]}",
         source=source,
         source_type="mcp",
         text=signal_text,
@@ -431,19 +474,59 @@ def tool_score_signal(args: dict) -> dict:
     return output.to_dict()
 
 
+def _env_dir(names: tuple[str, ...], default: str) -> Path:
+    for name in names:
+        if os.environ.get(name):
+            return Path(os.environ[name])
+    return Path(default)
+
+
 def tool_run_research(args: dict) -> dict:
-    """Run analyst-defined topic research dossier expansion."""
-    from spec1_core.tools.run_research import run_research
+    """Run analyst-defined topic research dossier expansion.
 
-    topic_name = args.get("topic_name")
-    topics_path = _store_path("SPEC1_RESEARCH_TOPICS_PATH", "research/topics")
-    dossier_path = _store_path("SPEC1_RESEARCH_DOSSIER_PATH", "research/dossiers")
+    With topic_name, runs the one topic profile whose topic_id or name matches
+    (case-insensitive; a "topic_" prefix is optional). Without it, runs every
+    profile in the topics directory. Mirrors spec1_core.tools.run_research.
+    """
+    from cls_research.pipeline import run_research
+    from cls_research.store import DossierStore
+    from cls_research.topics import list_topic_profiles
 
-    return run_research(
-        topic_name=topic_name,
-        topics_path=topics_path,
-        dossier_path=dossier_path,
-    )
+    # The MCP names come first; the CLI's env names are accepted too.
+    topics_dir = _env_dir(
+        ("SPEC1_RESEARCH_TOPICS_PATH", "SPEC1_RESEARCH_TOPICS_DIR"), "research/topics")
+    dossiers_dir = _env_dir(
+        ("SPEC1_RESEARCH_DOSSIER_PATH", "SPEC1_RESEARCH_DOSSIERS_DIR"), "research/dossiers")
+
+    profiles = list_topic_profiles(topics_dir)
+    if not profiles:
+        return {"error": f"no topic profiles found in {topics_dir}"}
+
+    topic_name = str(args.get("topic_name") or "").strip()
+    if topic_name:
+        wanted = topic_name.lower()
+        keys = lambda p: {p.topic_id.lower(), p.topic_id.lower().removeprefix("topic_"),
+                          str(p.name).lower()}
+        profiles = [p for p in profiles if wanted in keys(p)]
+        if not profiles:
+            return {
+                "error": f"unknown topic {topic_name!r}",
+                "available": [p.topic_id for p in list_topic_profiles(topics_dir)],
+            }
+
+    store = DossierStore(base_dir=dossiers_dir)
+    results = []
+    for profile in profiles:
+        artifact = run_research(profile, dossier_store=store, markdown_dir=dossiers_dir)
+        results.append({
+            "topic_id": profile.topic_id,
+            "version": artifact.version,
+            "items": len(artifact.collected_items),
+            "findings": len(artifact.notable_findings),
+            "gaps": len(artifact.unresolved_questions),
+            "markdown": str(dossiers_dir / profile.topic_id / f"dossier_v{artifact.version}.md"),
+        })
+    return {"topics_run": len(results), "results": results}
 
 
 # ---------------------------------------------------------------------------
@@ -596,7 +679,7 @@ TOOLS: dict[str, dict] = {
         "parameters": {
             "type": "object",
             "properties": {
-                "out": {"type": "string", "description": "Output JSONL path (default generated/psyop_scores.jsonl)"},
+                "out": {"type": "string", "description": "Output JSONL path (default $SPEC1_PSYOP_PATH or psyop_scores.jsonl, the file get_psyop reads)"},
                 "min_classification": {
                     "type": "string",
                     "enum": ["CLEAN", "LOW_RISK", "MEDIUM_RISK", "HIGH_RISK"],
@@ -639,7 +722,7 @@ TOOLS: dict[str, dict] = {
         "parameters": {
             "type": "object",
             "properties": {
-                "out": {"type": "string", "description": "Output JSONL path (default generated/leads.jsonl)"},
+                "out": {"type": "string", "description": "Output JSONL path (default $SPEC1_LEADS_PATH or leads.jsonl, the file get_leads reads)"},
                 "min_confidence": {"type": "number", "default": 0.3},
                 "max_leads": {"type": "integer", "default": 50},
                 "priority": {"type": "string", "enum": ["CRITICAL", "HIGH", "MEDIUM", "LOW"]},
@@ -721,8 +804,11 @@ def handle_tools_list(request_id: Any, params: dict) -> dict:
 
 
 def handle_tools_call(request_id: Any, params: dict) -> dict:
+    params = params if isinstance(params, dict) else {}
     tool_name = params.get("name", "")
-    arguments = params.get("arguments", {})
+    arguments = params.get("arguments")
+    if not isinstance(arguments, dict):
+        arguments = {}
 
     if tool_name not in TOOLS:
         return _make_error(request_id, -32601, f"Tool not found: {tool_name}")
@@ -739,6 +825,34 @@ def handle_tools_call(request_id: Any, params: dict) -> dict:
         })
 
 
+def _dispatch(request: Any) -> dict | None:
+    """Handle one JSON-RPC message; returns the response, or None for notifications."""
+    if not isinstance(request, dict):
+        return _make_error(None, -32600, "Invalid Request: expected a JSON object")
+
+    is_notification = "id" not in request
+    request_id = request.get("id")
+    method = request.get("method", "")
+    params = request.get("params")
+    if not isinstance(params, dict):
+        params = {}
+
+    if is_notification:
+        return None  # Notifications (initialized, cancelled, ...) never get a reply.
+    try:
+        if method == "initialize":
+            return handle_initialize(request_id, params)
+        if method == "ping":
+            return _make_response(request_id, {})
+        if method == "tools/list":
+            return handle_tools_list(request_id, params)
+        if method == "tools/call":
+            return handle_tools_call(request_id, params)
+        return _make_error(request_id, -32601, f"Method not found: {method}")
+    except Exception as exc:  # never let one bad message kill the server
+        return _make_error(request_id, -32603, f"Internal error: {exc}")
+
+
 def handle_request(line: str) -> None:
     try:
         request = json.loads(line)
@@ -746,20 +860,18 @@ def handle_request(line: str) -> None:
         _send(_make_error(None, -32700, f"Parse error: {exc}"))
         return
 
-    request_id = request.get("id")
-    method = request.get("method", "")
-    params = request.get("params", {})
+    if isinstance(request, list):  # JSON-RPC batch
+        if not request:
+            _send(_make_error(None, -32600, "Invalid Request: empty batch"))
+            return
+        responses = [r for r in (_dispatch(item) for item in request) if r is not None]
+        if responses:
+            _write(responses)
+        return
 
-    if method == "initialize":
-        _send(handle_initialize(request_id, params))
-    elif method == "tools/list":
-        _send(handle_tools_list(request_id, params))
-    elif method == "tools/call":
-        _send(handle_tools_call(request_id, params))
-    elif method == "notifications/initialized":
-        pass  # No response needed for notifications
-    else:
-        _send(_make_error(request_id, -32601, f"Method not found: {method}"))
+    response = _dispatch(request)
+    if response is not None:
+        _send(response)
 
 
 # ---------------------------------------------------------------------------
@@ -768,6 +880,10 @@ def handle_request(line: str) -> None:
 
 def main() -> None:
     """Run the MCP server, reading JSON-RPC requests from stdin."""
+    global _PROTOCOL_OUT
+    _PROTOCOL_OUT = sys.stdout
+    sys.stdout = sys.stderr  # tool logs/prints go to stderr, not the protocol
+    os.chdir(SPEC1_HOME)
     for line in sys.stdin:
         line = line.strip()
         if not line:
