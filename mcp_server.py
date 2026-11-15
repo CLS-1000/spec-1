@@ -62,9 +62,20 @@ def _make_error(request_id: Any, code: int, message: str) -> dict:
     return {"jsonrpc": "2.0", "id": request_id, "error": {"code": code, "message": message}}
 
 
+# The JSON-RPC channel. main() saves the real stdout here and points
+# sys.stdout at stderr, so print() calls and SPEC-1 loggers (which write to
+# sys.stdout) can never inject non-protocol lines into the stream.
+_PROTOCOL_OUT = None
+
+
+def _write(payload: Any) -> None:
+    out = _PROTOCOL_OUT or sys.stdout
+    out.write(json.dumps(payload) + "\n")
+    out.flush()
+
+
 def _send(obj: dict) -> None:
-    sys.stdout.write(json.dumps(obj) + "\n")
-    sys.stdout.flush()
+    _write(obj)
 
 
 # ---------------------------------------------------------------------------
@@ -463,19 +474,59 @@ def tool_score_signal(args: dict) -> dict:
     return output.to_dict()
 
 
+def _env_dir(names: tuple[str, ...], default: str) -> Path:
+    for name in names:
+        if os.environ.get(name):
+            return Path(os.environ[name])
+    return Path(default)
+
+
 def tool_run_research(args: dict) -> dict:
-    """Run analyst-defined topic research dossier expansion."""
-    from spec1_core.tools.run_research import run_research
+    """Run analyst-defined topic research dossier expansion.
 
-    topic_name = args.get("topic_name")
-    topics_path = _store_path("SPEC1_RESEARCH_TOPICS_PATH", "research/topics")
-    dossier_path = _store_path("SPEC1_RESEARCH_DOSSIER_PATH", "research/dossiers")
+    With topic_name, runs the one topic profile whose topic_id or name matches
+    (case-insensitive; a "topic_" prefix is optional). Without it, runs every
+    profile in the topics directory. Mirrors spec1_core.tools.run_research.
+    """
+    from cls_research.pipeline import run_research
+    from cls_research.store import DossierStore
+    from cls_research.topics import list_topic_profiles
 
-    return run_research(
-        topic_name=topic_name,
-        topics_path=topics_path,
-        dossier_path=dossier_path,
-    )
+    # The MCP names come first; the CLI's env names are accepted too.
+    topics_dir = _env_dir(
+        ("SPEC1_RESEARCH_TOPICS_PATH", "SPEC1_RESEARCH_TOPICS_DIR"), "research/topics")
+    dossiers_dir = _env_dir(
+        ("SPEC1_RESEARCH_DOSSIER_PATH", "SPEC1_RESEARCH_DOSSIERS_DIR"), "research/dossiers")
+
+    profiles = list_topic_profiles(topics_dir)
+    if not profiles:
+        return {"error": f"no topic profiles found in {topics_dir}"}
+
+    topic_name = str(args.get("topic_name") or "").strip()
+    if topic_name:
+        wanted = topic_name.lower()
+        keys = lambda p: {p.topic_id.lower(), p.topic_id.lower().removeprefix("topic_"),
+                          str(p.name).lower()}
+        profiles = [p for p in profiles if wanted in keys(p)]
+        if not profiles:
+            return {
+                "error": f"unknown topic {topic_name!r}",
+                "available": [p.topic_id for p in list_topic_profiles(topics_dir)],
+            }
+
+    store = DossierStore(base_dir=dossiers_dir)
+    results = []
+    for profile in profiles:
+        artifact = run_research(profile, dossier_store=store, markdown_dir=dossiers_dir)
+        results.append({
+            "topic_id": profile.topic_id,
+            "version": artifact.version,
+            "items": len(artifact.collected_items),
+            "findings": len(artifact.notable_findings),
+            "gaps": len(artifact.unresolved_questions),
+            "markdown": str(dossiers_dir / profile.topic_id / f"dossier_v{artifact.version}.md"),
+        })
+    return {"topics_run": len(results), "results": results}
 
 
 # ---------------------------------------------------------------------------
@@ -815,8 +866,7 @@ def handle_request(line: str) -> None:
             return
         responses = [r for r in (_dispatch(item) for item in request) if r is not None]
         if responses:
-            sys.stdout.write(json.dumps(responses) + "\n")
-            sys.stdout.flush()
+            _write(responses)
         return
 
     response = _dispatch(request)
@@ -830,6 +880,9 @@ def handle_request(line: str) -> None:
 
 def main() -> None:
     """Run the MCP server, reading JSON-RPC requests from stdin."""
+    global _PROTOCOL_OUT
+    _PROTOCOL_OUT = sys.stdout
+    sys.stdout = sys.stderr  # tool logs/prints go to stderr, not the protocol
     os.chdir(SPEC1_HOME)
     for line in sys.stdin:
         line = line.strip()

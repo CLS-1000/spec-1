@@ -502,3 +502,69 @@ class TestAuditFixes:
         monkeypatch.chdir(tmp_path)
         assert mcp_server.tool_run_psyop({})["out_path"] == "psyop_scores.jsonl"
         assert mcp_server.tool_generate_leads({})["out_path"] == "leads.jsonl"
+
+
+class TestRunResearchTool:
+    def _topics(self, tmp_path):
+        topics = tmp_path / "topics"
+        topics.mkdir()
+        src = Path(__file__).parent.parent / "research" / "topics"
+        for f in sorted(src.glob("*.json")):
+            (topics / f.name).write_text(f.read_text())
+        return topics
+
+    def test_runs_named_topic_with_profile(self, tmp_path, monkeypatch):
+        topics = self._topics(tmp_path)
+        if not any(topics.iterdir()):
+            import pytest
+            pytest.skip("no sample topic profiles in research/topics")
+        monkeypatch.setenv("SPEC1_RESEARCH_TOPICS_PATH", str(topics))
+        monkeypatch.setenv("SPEC1_RESEARCH_DOSSIER_PATH", str(tmp_path / "dossiers"))
+        seen = []
+
+        class FakeArtifact:
+            version = 1
+            collected_items = [1, 2]
+            notable_findings = [1]
+            unresolved_questions = []
+
+        def fake_run_research(profile, dossier_store=None, markdown_dir=None):
+            seen.append(profile.topic_id)
+            return FakeArtifact()
+
+        import cls_research.pipeline
+        monkeypatch.setattr(cls_research.pipeline, "run_research", fake_run_research)
+        first = sorted(topics.glob("*.json"))[0].stem
+        result = mcp_server.tool_run_research({"topic_name": first.upper()})
+        assert result["topics_run"] == 1 and seen == [first]
+        assert result["results"][0]["items"] == 2
+
+    def test_unknown_topic_lists_available(self, tmp_path, monkeypatch):
+        topics = self._topics(tmp_path)
+        monkeypatch.setenv("SPEC1_RESEARCH_TOPICS_PATH", str(topics))
+        result = mcp_server.tool_run_research({"topic_name": "__nope__"})
+        assert "error" in result
+
+    def test_tool_output_never_reaches_protocol_stream(self, tmp_path):
+        import subprocess
+        script = tmp_path / "drive.py"
+        script.write_text(
+            "import sys, logging\n"
+            f"sys.path.insert(0, {str(Path(__file__).parent.parent)!r})\n"
+            "import mcp_server\n"
+            "def noisy(args):\n"
+            "    print('PRINTED NOISE')\n"
+            "    from spec1_core.core.logging_utils import get_logger\n"
+            "    get_logger('noisy_test').info('LOGGED NOISE')\n"
+            "    return {'ok': True}\n"
+            "mcp_server.TOOLS['noisy'] = {'description': 'x', 'parameters': {}, 'fn': noisy}\n"
+            "mcp_server.main()\n"
+        )
+        req = json.dumps({"jsonrpc": "2.0", "id": 1, "method": "tools/call",
+                          "params": {"name": "noisy", "arguments": {}}}) + "\n"
+        proc = subprocess.run([sys.executable, str(script)], input=req,
+                              capture_output=True, text=True, timeout=60)
+        lines = [l for l in proc.stdout.splitlines() if l.strip()]
+        assert len(lines) == 1, proc.stdout
+        assert json.loads(lines[0])["result"]["isError"] is False
+        assert "PRINTED NOISE" in proc.stderr and "LOGGED NOISE" in proc.stderr
