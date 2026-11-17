@@ -13,10 +13,55 @@ Produces ParsedSignal dataclass instances.
 from __future__ import annotations
 
 import re
+import unicodedata
 
 from bs4 import BeautifulSoup
 
 from spec1_core.schemas.models import ParsedSignal, Signal
+
+# Cyrillic & Greek visual homoglyphs -> ASCII Latin equivalents (applied after NFKC)
+_CONFUSABLES_MAP: dict[int, str] = str.maketrans({
+    # Cyrillic uppercase & lowercase lookalikes
+    "\u0410": "A", "\u0430": "a",  # А а -> A a
+    "\u0412": "B", "\u0432": "b",  # В в -> B b
+    "\u0421": "C", "\u0441": "c",  # С с -> C c
+    "\u0415": "E", "\u0435": "e",  # Е е -> E e
+    "\u0401": "E", "\u0451": "e",  # Ё ё -> E e
+    "\u041d": "H", "\u043d": "h",  # Н н -> H h
+    "\u0406": "I", "\u0456": "i",  # І і -> I i
+    "\u0408": "J", "\u0458": "j",  # Ј ј -> J j
+    "\u041a": "K", "\u043a": "k",  # К к -> K k
+    "\u041c": "M", "\u043c": "m",  # М м -> M m
+    "\u041e": "O", "\u043e": "o",  # О о -> O o
+    "\u0420": "P", "\u0440": "p",  # Р р -> P p
+    "\u0405": "S", "\u0455": "s",  # Ѕ ѕ -> S s
+    "\u0422": "T", "\u0442": "t",  # Т т -> T t
+    "\u0423": "Y", "\u0443": "y",  # У у -> Y y
+    "\u0425": "X", "\u0445": "x",  # Х х -> X x
+    # Greek uppercase & lowercase lookalikes
+    "\u0391": "A", "\u03b1": "a",  # Α α -> A a
+    "\u0392": "B", "\u03b2": "b",  # Β β -> B b
+    "\u0395": "E", "\u03b5": "e",  # Ε ε -> E e
+    "\u0396": "Z", "\u03b6": "z",  # Ζ ζ -> Z z
+    "\u0397": "H", "\u03b7": "h",  # Η η -> H h
+    "\u0399": "I", "\u03b9": "i",  # Ι ι -> I i
+    "\u039a": "K", "\u03ba": "k",  # Κ κ -> K k
+    "\u039c": "M", "\u03bc": "m",  # Μ μ -> M m
+    "\u039d": "N", "\u03bd": "n",  # Ν ν -> N n
+    "\u039f": "O", "\u03bf": "o",  # Ο ο -> O o
+    "\u03a1": "P", "\u03c1": "p",  # Ρ ρ -> P p
+    "\u03a4": "T", "\u03c4": "t",  # Τ τ -> T t
+    "\u03a5": "Y", "\u03c5": "y",  # Υ υ -> Y y
+    "\u03a7": "X", "\u03c7": "x",  # Χ χ -> X x
+})
+
+
+def normalize_text(text: str) -> str:
+    """Normalize text for gate evaluation: NFKC -> homoglyph fold -> casefold."""
+    if not text:
+        return ""
+    folded = unicodedata.normalize("NFKC", text).translate(_CONFUSABLES_MAP).casefold()
+    return re.sub(r"\s+", " ", folded).strip()
 
 STOPWORDS: set[str] = {
     "the", "a", "an", "and", "or", "but", "in", "on", "at", "to", "for",

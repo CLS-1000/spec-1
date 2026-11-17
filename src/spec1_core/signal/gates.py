@@ -24,6 +24,8 @@ from collections import Counter
 from datetime import datetime, timezone
 from typing import List
 
+from spec1_core.signal.parser import normalize_text
+
 # ── Single source of truth ────────────────────────────────────────────────────
 GATE_THRESHOLD: float = 0.40  # exclusive — score must be > this value
 
@@ -122,7 +124,7 @@ def score_velocity(published_at: datetime) -> float:
 # ── Novelty (bag-of-words cosine similarity, no external deps) ────────────────
 
 def _tokenize(text: str) -> List[str]:
-    return re.findall(r"[a-z]+", text.lower())
+    return re.findall(r"[^\W_]+", normalize_text(text))
 
 
 def _cosine(a: Counter, b: Counter) -> float:
