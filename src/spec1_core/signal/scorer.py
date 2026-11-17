@@ -19,11 +19,13 @@ Only signals passing all 4 gates become Opportunity instances.
 
 from __future__ import annotations
 
+import re
 import uuid
 from datetime import datetime, timezone
 from typing import Optional
 
 from spec1_core.schemas.models import Opportunity, ParsedSignal, Signal
+from spec1_core.signal.parser import normalize_text
 from spec1_core.config.calibration import (
     SOURCE_CREDIBILITY,
     DEFAULT_CREDIBILITY,
@@ -107,11 +109,27 @@ def _score_velocity(signal: Signal) -> float:
         return 0.0
 
 
+def _compile_novelty_pattern(term: str) -> re.Pattern[str]:
+    norm_term = normalize_text(term)
+    parts = [re.escape(part) for part in norm_term.split()]
+    body = r"\s+".join(parts)
+    return re.compile(rf"(?<!\w){body}(?!\w)")
+
+
+_NOVELTY_PATTERNS: dict[str, re.Pattern[str]] = {
+    term: _compile_novelty_pattern(term) for term in NOVELTY_TERMS
+}
+
+
 def _score_novelty(text: str, keywords: list[str]) -> tuple[float, int]:
-    """Return (score, hit_count) for novelty terms."""
-    lower_text = text.lower()
-    kw_set = {k.lower() for k in keywords}
-    hits = sum(1 for term in NOVELTY_TERMS if term in lower_text or term in kw_set)
+    """Return (score, hit_count) using normalized word-boundary matching."""
+    norm_text = normalize_text(text)
+    kw_set = {normalize_text(k) for k in keywords if k}
+    hits = sum(
+        1
+        for term, pattern in _NOVELTY_PATTERNS.items()
+        if normalize_text(term) in kw_set or pattern.search(norm_text) is not None
+    )
     if hits == 0:
         return 0.0, 0
     elif hits == 1:
