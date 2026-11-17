@@ -14,6 +14,8 @@ import threading
 import time
 from pathlib import Path
 
+from spec1_core.intelligence.store import resolve_store_path
+
 from spec1_core.core.ids import run_id as new_run_id
 
 logger = logging.getLogger(__name__)
@@ -36,7 +38,7 @@ def _run_cycle_job() -> None:
     try:
         from spec1_core.app.cycle import run_cycle
         stats = run_cycle(
-            store_path=Path(os.environ.get("SPEC1_STORE_PATH", "spec1_intelligence.jsonl")),
+            store_path=resolve_store_path(),
             run_id=cycle_run_id,
             environment=os.environ.get("SPEC1_ENVIRONMENT", "production"),
             verbose=False,

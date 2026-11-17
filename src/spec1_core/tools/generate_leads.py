@@ -25,6 +25,8 @@ import os
 import sys
 from pathlib import Path
 
+from spec1_core.intelligence.store import resolve_store_path
+
 from cls_leads.generator import generate_leads
 from cls_leads.store import LeadStore
 from spec1_labels import PRIORITY_CRITICAL, PRIORITY_HIGH, PRIORITY_MEDIUM, PRIORITY_LOW
@@ -50,7 +52,7 @@ def build_argparser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="spec1_core.tools.generate_leads")
     p.add_argument(
         "--intel",
-        default=os.environ.get("SPEC1_STORE_PATH", "spec1_intelligence.jsonl"),
+        default=str(resolve_store_path()),
         help="Path to intelligence JSONL store",
     )
     p.add_argument(

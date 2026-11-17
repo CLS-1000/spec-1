@@ -9,8 +9,8 @@
 from __future__ import annotations
 
 import logging
-import os
-from pathlib import Path
+
+from spec1_core.intelligence.store import resolve_store_path
 
 from fastapi import APIRouter, BackgroundTasks
 from fastapi import HTTPException
@@ -29,7 +29,7 @@ _last_run: dict = {}
 @router.post("/run", response_model=CycleResponse)
 def run_cycle(request: CycleRequest, background_tasks: BackgroundTasks) -> CycleResponse:
     """Trigger a full SPEC-1 intelligence cycle (all steps: psyop, brief, publication, workspace)."""
-    store_path = Path(os.environ.get("SPEC1_STORE_PATH", "spec1_intelligence.jsonl"))
+    store_path = resolve_store_path()
     try:
         stats = _execute_cycle(
             store_path=store_path,

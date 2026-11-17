@@ -44,8 +44,31 @@ class DualWriter:
         self.db = db
         self.repo = Repository(db, table, pk_field)
         self.table = table
+        self.pk_field = pk_field
+        self.mirror_pending_path = self.jsonl_path.with_name(
+            f"{self.jsonl_path.stem}_mirror_pending.jsonl"
+        )
         self._lock = threading.Lock()
         ensure_schema(db)
+
+    def _record_mirror_pending(self, entries: list[dict], exc: Exception) -> None:
+        self.mirror_pending_path.parent.mkdir(parents=True, exist_ok=True)
+        failed_at = _now()
+        with self.mirror_pending_path.open("a", encoding="utf-8") as fh:
+            for entry in entries:
+                marker = {
+                    self.pk_field: entry.get(self.pk_field),
+                    "table": self.table,
+                    "failed_at": failed_at,
+                    "error": str(exc),
+                }
+                fh.write(json.dumps(marker) + "\n")
+
+    def mirror_pending_count(self) -> int:
+        if not self.mirror_pending_path.exists():
+            return 0
+        with self.mirror_pending_path.open("r", encoding="utf-8") as fh:
+            return sum(1 for line in fh if line.strip())
 
     def write(self, record: dict) -> dict:
         """Write a single record to both JSONL and SQLite."""
@@ -61,6 +84,7 @@ class DualWriter:
             except Exception as _e:
                 import logging
                 logging.getLogger(__name__).warning("SQLite write failed (non-fatal): %s", _e)
+                self._record_mirror_pending([entry], _e)
         return entry
 
     def write_batch(self, records: list[dict]) -> list[dict]:
@@ -79,6 +103,7 @@ class DualWriter:
             except Exception as _e:
                 import logging
                 logging.getLogger(__name__).warning("SQLite batch write failed (non-fatal): %s", _e)
+                self._record_mirror_pending(entries, _e)
         return entries
 
     def append(self, record: dict) -> dict:

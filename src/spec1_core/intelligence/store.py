@@ -13,6 +13,7 @@ Single-writer rule enforced via threading.Lock.
 from __future__ import annotations
 
 import json
+import os
 import threading
 from datetime import datetime, timezone
 from pathlib import Path
@@ -126,13 +127,37 @@ class JsonlStore:
 
 
 # Module-level convenience functions for backwards compatibility
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
+
+def spec1_home() -> Path:
+    """Return the canonical SPEC-1 root directory (``$SPEC1_HOME`` or repo root)."""
+    env_home = os.environ.get("SPEC1_HOME", "").strip()
+    return Path(env_home).expanduser().resolve() if env_home else _REPO_ROOT
+
+
+def resolve_store_path(path: Optional[Path | str] = None, filename: str = "spec1_intelligence.jsonl") -> Path:
+    """Resolve an absolute JSONL store path independent of current working directory.
+
+    Precedence: explicit *path* argument -> ``$SPEC1_STORE_PATH`` (for the primary
+    intelligence store) -> ``<spec1_home()>/<filename>``.
+    """
+    if path is not None:
+        return Path(path).expanduser().resolve()
+    if filename == "spec1_intelligence.jsonl":
+        env_store = os.environ.get("SPEC1_STORE_PATH", "").strip()
+        if env_store:
+            return Path(env_store).expanduser().resolve()
+    return (spec1_home() / filename).resolve()
+
+
 _DEFAULT_STORE: Optional[JsonlStore] = None
-_DEFAULT_PATH = Path("spec1_intelligence.jsonl")
+_DEFAULT_PATH = resolve_store_path()
 
 
 def _get_default_store(path: Optional[Path] = None) -> JsonlStore:
     global _DEFAULT_STORE
-    target = path or _DEFAULT_PATH
+    target = resolve_store_path(path)
     if _DEFAULT_STORE is None or _DEFAULT_STORE.path != target:
         _DEFAULT_STORE = JsonlStore(target)
     return _DEFAULT_STORE

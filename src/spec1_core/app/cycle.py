@@ -50,7 +50,7 @@ from spec1_core.signal.gate_log import (
 from spec1_core.investigation.generator import generate_investigation
 from spec1_core.investigation.verifier import verify_investigation
 from spec1_core.intelligence.analyzer import analyze
-from spec1_core.intelligence.store import JsonlStore
+from spec1_core.intelligence.store import JsonlStore, resolve_store_path
 from spec1_labels import ANALYSIS_TIER_LLM_VERIFIED, ANALYSIS_TIER_RULE_BASED
 try:
     from cls_db.dual_write import make_dual_writer as _make_dual_writer
@@ -61,8 +61,8 @@ except ImportError:
 configure_root()
 logger = get_logger(__name__)
 
-DEFAULT_STORE_PATH = Path("spec1_intelligence.jsonl")
-LEGISLATIVE_STORE_PATH = Path("spec1_legislative.jsonl")
+DEFAULT_STORE_PATH = resolve_store_path()
+LEGISLATIVE_STORE_PATH = resolve_store_path(filename="spec1_legislative.jsonl")
 DESK_STANDARD = "standard"
 DESK_LEGISLATIVE = "legislative"
 DESKS = (DESK_STANDARD, DESK_LEGISLATIVE)
@@ -180,7 +180,7 @@ def make_store(store_path: Path):
 
 
 def run_cycle(
-    store_path: Path = DEFAULT_STORE_PATH,
+    store_path: Optional[Path] = None,
     run_id: Optional[str] = None,
     environment: str = "production",
     feed_timeout: int = 15,
@@ -213,14 +213,23 @@ def run_cycle(
     run_id = run_id or new_run_id()
     if desk == DESK_LEGISLATIVE:
         from spec1_core.app.legislative_desk import run_legislative_desk
+        leg_store = (
+            resolve_store_path(store_path)
+            if store_path is not None
+            else resolve_store_path(filename="spec1_legislative.jsonl")
+        )
+        logger.info("Resolved legislative store path: %s", leg_store)
         return run_legislative_desk(
-            store_path=store_path if store_path != DEFAULT_STORE_PATH else LEGISLATIVE_STORE_PATH,
+            store_path=leg_store,
             run_id=run_id, environment=environment, max_signals=max_signals,
             verbose=verbose, skip_seen=skip_seen, triage_only=triage_only,
             since_days=since_days)
     if desk != DESK_STANDARD:
         raise ValueError(f"unknown desk {desk!r}; expected one of {DESKS}")
-    store = make_store(store_path)
+    resolved_store = resolve_store_path(store_path)
+    logger.info("Resolved intelligence store path: %s", resolved_store)
+    store = make_store(resolved_store)
+    store_path = resolved_store
     started_at = datetime.now(timezone.utc).isoformat()
 
     if verbose:
@@ -243,6 +252,8 @@ def run_cycle(
         "outcomes_verified": 0,
         "records_stored": 0,
         "signals_skipped_seen": 0,
+        "mirror_pending": store.mirror_pending_count() if hasattr(store, "mirror_pending_count") else 0,
+        "store_path": str(store_path),
         "mode": "triage_only" if triage_only else "full",
         "analysis_tiers": {ANALYSIS_TIER_LLM_VERIFIED: 0, ANALYSIS_TIER_RULE_BASED: 0},
         "errors": [],
@@ -279,6 +290,8 @@ def run_cycle(
         if verbose:
             print(f"      [ERROR] Harvest failed: {exc}")
         stats["finished_at"] = datetime.now(timezone.utc).isoformat()
+        if hasattr(store, "mirror_pending_count"):
+            stats["mirror_pending"] = store.mirror_pending_count()
         return stats
 
     # ── Step 2: Parse signals ─────────────────────────────────────────────────
@@ -447,6 +460,8 @@ def run_cycle(
                   f"({tiers}). No brief, handoff, PDF or case research in this mode.")
             print(f"\n{'='*60}\n  Cycle Complete (triage-only)\n  Records stored : {records_stored}"
                   f"\n  Errors         : {len(stats['errors'])}\n{'='*60}\n")
+        if hasattr(store, "mirror_pending_count"):
+            stats["mirror_pending"] = store.mirror_pending_count()
         return stats
 
     # ── Briefing ──────────────────────────────────────────────────────────────
@@ -580,6 +595,8 @@ def run_cycle(
         print(f"  Finished       : {stats['finished_at']}")
         print(f"{'='*60}\n")
 
+    if hasattr(store, "mirror_pending_count"):
+        stats["mirror_pending"] = store.mirror_pending_count()
     return stats
 
 
@@ -607,7 +624,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     summary = run_cycle(
-        store_path=Path(args.store) if args.store else DEFAULT_STORE_PATH,
+        store_path=Path(args.store) if args.store else None,
         environment=args.env,
         feed_timeout=args.timeout,
         max_signals=args.max_signals,

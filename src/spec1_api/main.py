@@ -16,6 +16,8 @@ import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+from spec1_core.intelligence.store import resolve_store_path
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import HTTPException
@@ -156,7 +158,7 @@ def create_app() -> FastAPI:
     @app.get("/spec1_intelligence_export.json", include_in_schema=False)
     async def political_intel_data() -> FileResponse:
         """Serve the intelligence export JSON for the political intel viewer."""
-        store = os.environ.get("SPEC1_STORE_PATH", "spec1_intelligence.jsonl")
+        store = str(resolve_store_path())
         path = Path(store).parent / "spec1_intelligence_export.json"
         if not path.is_file():
             raise HTTPException(status_code=404, detail="Intelligence export not found")
