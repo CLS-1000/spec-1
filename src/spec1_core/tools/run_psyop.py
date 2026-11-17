@@ -25,6 +25,8 @@ import os
 import sys
 from pathlib import Path
 
+from spec1_core.intelligence.store import resolve_store_path
+
 from cls_psyop.scorer import filter_risky, score_records
 from cls_psyop.store import PsyopStore
 from spec1_labels import PSYOP_CLEAN, PSYOP_LOW_RISK, PSYOP_MEDIUM_RISK, PSYOP_HIGH_RISK
@@ -50,7 +52,7 @@ def build_argparser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="spec1_core.tools.run_psyop")
     p.add_argument(
         "--intel",
-        default=os.environ.get("SPEC1_STORE_PATH", "spec1_intelligence.jsonl"),
+        default=str(resolve_store_path()),
         help="Path to intelligence JSONL store",
     )
     p.add_argument(

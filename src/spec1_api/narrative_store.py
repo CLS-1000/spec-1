@@ -31,6 +31,8 @@ import subprocess  # nosec B404 — fixed argv, no shell
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
+
+from spec1_core.intelligence.store import resolve_store_path
 from typing import Optional
 
 from spec1_labels import ANALYSIS_TIER_LLM_VERIFIED, ANALYSIS_TIER_RULE_BASED
@@ -66,7 +68,7 @@ def releases_dir() -> Path:
 def store_path(desk: str) -> Path:
     if desk == "legislative":
         return Path(os.environ.get("SPEC1_LEGISLATIVE_STORE", "spec1_legislative.jsonl"))
-    return Path(os.environ.get("SPEC1_STORE_PATH", "spec1_intelligence.jsonl"))
+    return resolve_store_path()
 
 
 def _sidecar(md: Path, suffix: str) -> Path:

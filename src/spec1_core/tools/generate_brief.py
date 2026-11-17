@@ -30,6 +30,8 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 
+from spec1_core.intelligence.store import resolve_store_path
+
 
 def _read_jsonl(path: Path) -> list[dict]:
     if not path.exists():
@@ -146,7 +148,7 @@ def build_argparser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="spec1_core.tools.generate_brief")
     p.add_argument(
         "--intel",
-        default=os.environ.get("SPEC1_STORE_PATH", "spec1_intelligence.jsonl"),
+        default=str(resolve_store_path()),
         help="Path to intelligence JSONL store",
     )
     p.add_argument(

@@ -52,7 +52,7 @@ def test_run_cycle_job_runs_engine_when_no_kill_file(kill_file_in_tmp):
         mock_run.return_value = {"records_stored": 3, "errors": []}
         sched._run_cycle_job()
         mock_run.assert_called_once_with(
-            store_path=sched.Path("spec1_intelligence.jsonl"),
+            store_path=sched.resolve_store_path(),
             run_id="run-scheduled-test",
             environment="production",
             verbose=False,

@@ -29,6 +29,8 @@ import os
 import re
 from dataclasses import dataclass
 from pathlib import Path
+
+from spec1_core.intelligence.store import resolve_store_path
 from typing import Any, Iterable, Optional
 
 from spec1_core.signal.gate_log import default_gate_log_path
@@ -54,7 +56,7 @@ _FEED_LINE = re.compile(r"^\s+-\s+([A-Za-z0-9_.\-]+):\s+\S+")
 # ── paths ─────────────────────────────────────────────────────────────────────
 
 def _store_path() -> Path:
-    return Path(os.environ.get("SPEC1_STORE_PATH", "spec1_intelligence.jsonl"))
+    return resolve_store_path()
 
 
 def _run_log_dir() -> Path:
