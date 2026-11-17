@@ -142,14 +142,35 @@ def _build_psyop_signal(
     }
 
 
+import hashlib as _hashlib
+from importlib.metadata import PackageNotFoundError as _PackageNotFoundError, version as _pkg_version
+
+SPEC1_RECORD_SCHEMA_VERSION = 2
+try:
+    _HARVESTER_VERSION = _pkg_version("spec1-core")
+except _PackageNotFoundError:
+    _HARVESTER_VERSION = "0.8.0"
+
+
 def build_record_dict(record, *, sig, ps, opp, inv, outcome, run_id: str, environment: str) -> dict:
     """The stored form of one analyzed signal — shared by every desk."""
+    raw_sha256 = _hashlib.sha256((sig.text or "").encode("utf-8")).hexdigest()
+    published_at = (
+        sig.published_at.isoformat()
+        if isinstance(sig.published_at, datetime)
+        else str(sig.published_at)
+    )
     return {
         **record.to_dict(),
+        "schema_version": SPEC1_RECORD_SCHEMA_VERSION,
+        "harvester_version": _HARVESTER_VERSION,
+        "raw_sha256": raw_sha256,
         "run_id": run_id,
         "signal_id": sig.signal_id,
         "signal_source": sig.source,
+        "source_type": sig.source_type,
         "signal_url": sig.url,
+        "signal_published_at": published_at,
         "environment": environment,
         "opportunity_id": opp.opportunity_id,
         "opportunity_score": opp.score,
