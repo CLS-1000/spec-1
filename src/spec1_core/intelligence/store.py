@@ -164,17 +164,38 @@ def resolve_store_path(path: Optional[Path | str] = None, filename: str = "spec1
     return (spec1_home() / filename).resolve()
 
 
-def resolve_db_path(path: Optional[Path | str] = None) -> Path:
+#: The stores whose rows belong in the main ``spec1.db`` (both desks' defaults).
+STANDARD_STORE_FILENAMES = ("spec1_intelligence.jsonl", "spec1_legislative.jsonl")
+
+
+def is_standard_store(store_path: Path | str) -> bool:
+    """True when *store_path* is one of the default stores under :func:`spec1_home`."""
+    target = Path(store_path).expanduser().resolve()
+    return any(target == (spec1_home() / name).resolve() for name in STANDARD_STORE_FILENAMES)
+
+
+def resolve_db_path(
+    path: Optional[Path | str] = None, store_path: Optional[Path | str] = None
+) -> Path:
     """Resolve the SQLite mirror path independent of current working directory.
 
     Precedence: explicit *path* argument -> ``$SPEC1_DB_PATH`` (relative values are
-    anchored to :func:`spec1_home`) -> ``<spec1_home()>/spec1.db``.
+    anchored to :func:`spec1_home`) -> for a non-standard *store_path* (a temp
+    ``--store``, or a ``$SPEC1_STORE_PATH`` that is not a default store), a
+    ``<stem>.db`` next to that store -> ``<spec1_home()>/spec1.db``.
+
+    The ``<stem>.db`` rule keeps rows from an ad-hoc store out of the main
+    database: a cycle whose JSONL is thrown away must not leave orphans in
+    ``spec1.db`` (see run-77b65a751fb2).
     """
     if path is not None:
         return Path(path).expanduser().resolve()
     env_db = os.environ.get("SPEC1_DB_PATH", "").strip()
     if env_db:
         return anchor_to_home(env_db)
+    if store_path is not None and not is_standard_store(store_path):
+        store = Path(store_path).expanduser().resolve()
+        return store.with_name(f"{store.stem}.db")
     return (spec1_home() / "spec1.db").resolve()
 
 

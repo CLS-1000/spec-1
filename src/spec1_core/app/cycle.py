@@ -193,7 +193,7 @@ def make_store(store_path: Path):
     if _DUAL_WRITE_AVAILABLE:
         return _make_dual_writer(
             jsonl_path=store_path,
-            db_path=resolve_db_path(),
+            db_path=resolve_db_path(store_path=store_path),
             table="intelligence_records",
             pk_field="record_id",
         )

@@ -83,7 +83,10 @@ def _send(obj: dict) -> None:
 # ---------------------------------------------------------------------------
 
 def _store_path(env_var: str, default: str) -> Path:
-    return Path(os.environ.get(env_var, default))
+    """``$env_var`` or *default*; a relative value is anchored to the SPEC-1 home."""
+    from spec1_core.intelligence.store import anchor_to_home
+
+    return anchor_to_home(os.environ.get(env_var, "").strip() or default)
 
 
 def _limit(args: dict, default: int = 20) -> int:
