@@ -39,7 +39,7 @@ class JsonlStore:
         with self._lock:
             self.path.parent.mkdir(parents=True, exist_ok=True)
             with self.path.open("a", encoding="utf-8") as fh:
-                fh.write(json.dumps(entry) + "\n")
+                fh.write(json.dumps(entry, sort_keys=True) + "\n")
         return entry
 
     def append_batch(self, records: list[dict]) -> list[dict]:
@@ -55,7 +55,7 @@ class JsonlStore:
                     if not isinstance(record, dict):
                         raise TypeError(f"record must be dict, got {type(record)}")
                     entry = {**record, "written_at": now}
-                    fh.write(json.dumps(entry) + "\n")
+                    fh.write(json.dumps(entry, sort_keys=True) + "\n")
                     written.append(entry)
         return written
 
