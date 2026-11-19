@@ -30,7 +30,7 @@ from pathlib import Path
 from typing import Any
 
 from cls_psyop.evidence import EvidenceChain, EvidenceStore
-from spec1_core.intelligence.store import JsonlStore
+from spec1_core.intelligence.store import JsonlStore, anchor_to_home
 from spec1_labels import PSYOP_CLEAN
 
 # ─── Pattern name constants (strings) ────────────────────────────────────────
@@ -70,13 +70,15 @@ REQUIRED_FIELDS: frozenset[str] = frozenset({
 })
 
 # ─── Module-level JSONL store (for legacy psyop_signals.jsonl output) ─────────
+# Relative to the SPEC-1 home, resolved when used (not to the working directory);
+# an absolute value (tests patch one in) is used as is.
 _DEFAULT_STORE_PATH = Path("data/psyop_signals.jsonl")
 _store: JsonlStore | None = None
 
 
 def _get_store(path: Path | None = None) -> JsonlStore:
     global _store
-    target = path or _DEFAULT_STORE_PATH
+    target = path or anchor_to_home(_DEFAULT_STORE_PATH)
     if _store is None or _store.path != Path(target):
         _store = JsonlStore(Path(target))
     return _store

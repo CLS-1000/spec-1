@@ -77,7 +77,7 @@ class DualWriter:
             # JSONL write
             self.jsonl_path.parent.mkdir(parents=True, exist_ok=True)
             with self.jsonl_path.open("a", encoding="utf-8") as fh:
-                fh.write(json.dumps(entry) + "\n")
+                fh.write(json.dumps(entry, sort_keys=True) + "\n")
             # SQLite write
             try:
                 self.repo.insert(entry)
@@ -97,7 +97,7 @@ class DualWriter:
             self.jsonl_path.parent.mkdir(parents=True, exist_ok=True)
             with self.jsonl_path.open("a", encoding="utf-8") as fh:
                 for entry in entries:
-                    fh.write(json.dumps(entry) + "\n")
+                    fh.write(json.dumps(entry, sort_keys=True) + "\n")
             try:
                 self.repo.insert_batch(entries)
             except Exception as _e:
