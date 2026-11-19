@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import threading
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Annotated
 
 import json
@@ -19,12 +18,11 @@ from fastapi import APIRouter, HTTPException, Query
 
 from spec1_core.core.ids import run_id as new_run_id
 from spec1_core.api.scheduler import KILL_FILE
-from spec1_core.intelligence.store import JsonlStore
+from spec1_core.intelligence.store import JsonlStore, resolve_store_path
 import spec1_core.briefing.writer as _brief_writer
 
 router = APIRouter()
 
-STORE_PATH = Path("spec1_intelligence.jsonl")
 VERSION = "0.2"
 
 
@@ -73,7 +71,7 @@ def signals_latest(
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
 ) -> list[dict]:
     """Return last N records from the JSONL store that contain signal_id."""
-    store = JsonlStore(STORE_PATH)
+    store = JsonlStore(resolve_store_path())
     all_records = store.read_all()
     signal_records = [r for r in all_records if "signal_id" in r]
     return signal_records[-limit:]
@@ -86,7 +84,7 @@ def intelligence_latest(
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
 ) -> list[dict]:
     """Return last N intelligence records from the JSONL store."""
-    store = JsonlStore(STORE_PATH)
+    store = JsonlStore(resolve_store_path())
     all_records = store.read_all()
     return all_records[-limit:]
 

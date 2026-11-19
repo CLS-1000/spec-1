@@ -15,7 +15,7 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from spec1_core.intelligence.store import JsonlStore
+from spec1_core.intelligence.store import JsonlStore, resolve_db_path, resolve_store_path
 from cls_osint.store import OsintStore
 from cls_leads.store import LeadStore
 from cls_psyop.store import PsyopStore
@@ -31,8 +31,7 @@ def _env_path(env_var: str, default: str) -> Path:
 
 @lru_cache(maxsize=1)
 def get_intel_store() -> JsonlStore:
-    path = _env_path("SPEC1_STORE_PATH", "spec1_intelligence.jsonl")
-    return JsonlStore(path)
+    return JsonlStore(resolve_store_path())
 
 
 @lru_cache(maxsize=1)
@@ -68,8 +67,7 @@ def get_verdict_store() -> VerdictStore:
 
 @lru_cache(maxsize=1)
 def get_database() -> Database:
-    path = _env_path("SPEC1_DB_PATH", "spec1.db")
-    db = Database(path)
+    db = Database(resolve_db_path())
     ensure_schema(db)
     return db
 

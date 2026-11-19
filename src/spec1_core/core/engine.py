@@ -26,7 +26,7 @@ from spec1_core.signal.scorer import score_signal
 from spec1_core.investigation.generator import generate_investigation
 from spec1_core.investigation.verifier import verify_investigation
 from spec1_core.intelligence.analyzer import analyze
-from spec1_core.intelligence.store import JsonlStore
+from spec1_core.intelligence.store import JsonlStore, resolve_store_path
 
 logger = get_logger(__name__)
 
@@ -37,7 +37,7 @@ class EngineConfig:
 
     run_id: str = field(default_factory=new_run_id)
     environment: str = "production"
-    store_path: Path = field(default_factory=lambda: Path("spec1_intelligence.jsonl"))
+    store_path: Path = field(default_factory=resolve_store_path)
     feed_timeout: int = 15
     max_signals: Optional[int] = None
 

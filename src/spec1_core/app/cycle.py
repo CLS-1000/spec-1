@@ -50,7 +50,7 @@ from spec1_core.signal.gate_log import (
 from spec1_core.investigation.generator import generate_investigation
 from spec1_core.investigation.verifier import verify_investigation
 from spec1_core.intelligence.analyzer import analyze
-from spec1_core.intelligence.store import JsonlStore, resolve_store_path
+from spec1_core.intelligence.store import JsonlStore, resolve_db_path, resolve_store_path
 from spec1_labels import ANALYSIS_TIER_LLM_VERIFIED, ANALYSIS_TIER_RULE_BASED
 try:
     from cls_db.dual_write import make_dual_writer as _make_dual_writer
@@ -193,7 +193,7 @@ def make_store(store_path: Path):
     if _DUAL_WRITE_AVAILABLE:
         return _make_dual_writer(
             jsonl_path=store_path,
-            db_path=Path(os.environ.get("SPEC1_DB_PATH", "spec1.db")),
+            db_path=resolve_db_path(store_path=store_path),
             table="intelligence_records",
             pk_field="record_id",
         )
