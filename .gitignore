@@ -113,3 +113,5 @@ AUDIT_REPORT.md
 *.key
 DEMO_KEY.pem
 out/
+*.db-wal
+*.db-shm
