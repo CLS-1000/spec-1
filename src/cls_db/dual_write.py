@@ -62,7 +62,7 @@ class DualWriter:
                     "failed_at": failed_at,
                     "error": str(exc),
                 }
-                fh.write(json.dumps(marker) + "\n")
+                fh.write(json.dumps(marker, sort_keys=True) + "\n")
 
     def mirror_pending_count(self) -> int:
         if not self.mirror_pending_path.exists():

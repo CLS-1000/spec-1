@@ -136,19 +136,46 @@ def spec1_home() -> Path:
     return Path(env_home).expanduser().resolve() if env_home else _REPO_ROOT
 
 
+def anchor_to_home(value: Path | str) -> Path:
+    """Absolute *value* unchanged; relative *value* resolved against :func:`spec1_home`.
+
+    Used for paths read from the environment (``.env`` holds relative values such
+    as ``spec1.db``), so they mean the same file whatever the working directory.
+    """
+    candidate = Path(value).expanduser()
+    if not candidate.is_absolute():
+        candidate = spec1_home() / candidate
+    return candidate.resolve()
+
+
 def resolve_store_path(path: Optional[Path | str] = None, filename: str = "spec1_intelligence.jsonl") -> Path:
     """Resolve an absolute JSONL store path independent of current working directory.
 
-    Precedence: explicit *path* argument -> ``$SPEC1_STORE_PATH`` (for the primary
-    intelligence store) -> ``<spec1_home()>/<filename>``.
+    Precedence: explicit *path* argument (relative to CWD, like any CLI path) ->
+    ``$SPEC1_STORE_PATH`` (for the primary intelligence store; relative values are
+    anchored to :func:`spec1_home`) -> ``<spec1_home()>/<filename>``.
     """
     if path is not None:
         return Path(path).expanduser().resolve()
     if filename == "spec1_intelligence.jsonl":
         env_store = os.environ.get("SPEC1_STORE_PATH", "").strip()
         if env_store:
-            return Path(env_store).expanduser().resolve()
+            return anchor_to_home(env_store)
     return (spec1_home() / filename).resolve()
+
+
+def resolve_db_path(path: Optional[Path | str] = None) -> Path:
+    """Resolve the SQLite mirror path independent of current working directory.
+
+    Precedence: explicit *path* argument -> ``$SPEC1_DB_PATH`` (relative values are
+    anchored to :func:`spec1_home`) -> ``<spec1_home()>/spec1.db``.
+    """
+    if path is not None:
+        return Path(path).expanduser().resolve()
+    env_db = os.environ.get("SPEC1_DB_PATH", "").strip()
+    if env_db:
+        return anchor_to_home(env_db)
+    return (spec1_home() / "spec1.db").resolve()
 
 
 _DEFAULT_STORE: Optional[JsonlStore] = None
