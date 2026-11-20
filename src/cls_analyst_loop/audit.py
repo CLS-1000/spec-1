@@ -23,6 +23,7 @@ import logging
 from datetime import datetime, timezone
 
 from spec1_core.llm.fallback_client import FallbackLLMClient
+from spec1_labels import LLM_TIER_RULES, LLM_TIER_RULES_ALIASES
 
 from cls_analyst_loop.schemas import AuditResult
 
@@ -112,8 +113,7 @@ Audit this report using the instructions above."""
     return result
 
 
-# Tier label FallbackLLMClient reports when neither Claude nor Ollama answered.
-_RULES_TIER = "mock"
+# FallbackLLMClient reports tier "rules" (old name "mock") when no model answered.
 
 _AUDIT_KEYS = ("claims_confirmed", "claims_flagged", "claims_dropped", "confidence", "findings")
 
@@ -142,7 +142,7 @@ def _parse_audit(audit_text: str, output_id: str, tier: str) -> dict:
     so a rules-tier response, unparseable text, or JSON without the audit keys
     all become an explicit "no audit" record instead.
     """
-    if tier == _RULES_TIER:
+    if tier in LLM_TIER_RULES_ALIASES:  # "mock" is the old name
         logger.error("No model tier answered the audit for output %s", output_id)
         return _null_audit("No model audit ran: only the rule-based fallback tier was available.")
     try:

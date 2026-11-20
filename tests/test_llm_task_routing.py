@@ -20,20 +20,26 @@ def clean_env(monkeypatch):
 
 
 def test_default_route_is_unchanged():
-    assert resolve_route("analyze") == ["claude", "local", "mock"]
-    assert resolve_route("analyze", dev_mode=True) == ["local", "mock"]
+    assert resolve_route("analyze") == ["claude", "local", "rules"]
+    assert resolve_route("analyze", dev_mode=True) == ["local", "rules"]
 
 
 def test_task_route_overrides_global(monkeypatch):
     monkeypatch.setenv("SPEC1_LLM_ROUTE", "claude,local")
     monkeypatch.setenv("SPEC1_LLM_ROUTE_ANALYZE", "local")
-    assert resolve_route("analyze") == ["local", "mock"]
-    assert resolve_route("write") == ["claude", "local", "mock"]
+    assert resolve_route("analyze") == ["local", "rules"]
+    assert resolve_route("write") == ["claude", "local", "rules"]
 
 
-def test_route_accepts_aliases_and_always_ends_in_mock(monkeypatch):
+def test_route_accepts_aliases_and_always_ends_in_rules(monkeypatch):
     monkeypatch.setenv("SPEC1_LLM_ROUTE_ANALYZE", "Ollama, rules, bogus, ollama")
-    assert resolve_route("analyze") == ["local", "mock"]
+    assert resolve_route("analyze") == ["local", "rules"]
+
+
+def test_old_mock_and_tier3_names_still_mean_rules(monkeypatch):
+    for old in ("local,mock", "local,tier3", "local,MOCK"):
+        monkeypatch.setenv("SPEC1_LLM_ROUTE_ANALYZE", old)
+        assert resolve_route("analyze") == ["local", "rules"], old
 
 
 def _openai_response(content: str) -> MagicMock:
@@ -79,7 +85,7 @@ def test_local_failure_falls_to_rules_not_claude(monkeypatch, tmp_path):
         client = FallbackLLMClient(task="analyze", log_path=tmp_path / "llm.jsonl")
         text = client.complete("prompt")
     claude.assert_not_called()
-    assert client.get_active_tier() == "mock"
+    assert client.get_active_tier() == "rules"
     assert json.loads(text)["classification"]
 
 
@@ -90,7 +96,7 @@ def test_openai_backend_requires_model_name(monkeypatch, tmp_path):
         client = FallbackLLMClient(task="analyze", log_path=tmp_path / "llm.jsonl")
         client.complete("prompt")
     post.assert_not_called()
-    assert client.get_active_tier() == "mock"
+    assert client.get_active_tier() == "rules"
 
 
 def test_verifier_runs_under_analyze_task(monkeypatch):

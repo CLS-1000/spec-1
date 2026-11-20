@@ -126,6 +126,12 @@ class Outcome:
     # How the classification was produced; see spec1_labels.ANALYSIS_TIER_*.
     # Defaults to rule-based so nothing is ever mistaken for model output.
     analysis_tier: str = ANALYSIS_TIER_RULE_BASED
+    # Provenance: the backend that produced the classification ("claude",
+    # "ollama", "local" or "rules"), its model, and the fallback-client session
+    # id that ties the record to its logs/llm_fallback.jsonl entries.
+    tier_used: str | None = None
+    model: str | None = None
+    llm_session: str | None = None
 
     def to_dict(self) -> dict:
         return {
@@ -134,6 +140,9 @@ class Outcome:
             "confidence": self.confidence,
             "evidence": self.evidence,
             "analysis_tier": self.analysis_tier,
+            "tier_used": self.tier_used,
+            "model": self.model,
+            "llm_session": self.llm_session,
         }
 
 
@@ -228,10 +237,9 @@ class DeterministicScoreVerification(BaseModel):
 
 
 class Tier3TriageVerdict(BaseModel):
+    # No analysis_tier field: the model must never set its own tier. The caller
+    # derives it from the backend that answered (spec1_labels.analysis_tier_for).
     record_id: str = Field(description="Canonical record identifier being audited")
-    analysis_tier: Literal["llm_verified", "rule_based"] = Field(
-        description="Required by migration 011: only llm_verified unlocks publish guard"
-    )
     confidence: float = Field(ge=0.0, le=1.0, description="Evaluated confidence score between 0.0 and 1.0")
     classification: str = Field(description="Primary domain classification")
     gate_checks: DeterministicScoreVerification

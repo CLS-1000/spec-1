@@ -70,6 +70,23 @@ ANALYSIS_TIER_RULE_BASED   = "rule_based"
 ANALYSIS_TIERS = (ANALYSIS_TIER_LLM_VERIFIED, ANALYSIS_TIER_RULE_BASED)
 # Fallback-client tier names that count as a real model.
 LLM_TIERS_REAL = frozenset({"claude", "local", "ollama"})
+# The deterministic Tier 3 rules backend. Older configs and logs call it
+# "mock" or "tier3"; those names still mean this backend.
+LLM_TIER_RULES = "rules"
+LLM_TIER_RULES_ALIASES = frozenset({LLM_TIER_RULES, "mock", "tier3"})
+# Who wrote a record's analysis_tier (intelligence_records.stamped_by).
+STAMPED_BY_CYCLE    = "cycle"
+STAMPED_BY_BACKFILL = "backfill"
+
+
+def analysis_tier_for(tier_used: str | None) -> str:
+    """The analysis_tier for a record, decided only by the backend that answered.
+
+    Model output never decides this: a reply that says "llm_verified" counts
+    for nothing unless a real model backend produced it.
+    """
+    return (ANALYSIS_TIER_LLM_VERIFIED if tier_used in LLM_TIERS_REAL
+            else ANALYSIS_TIER_RULE_BASED)
 # Where the text of a brief came from (recorded in briefs/*.meta.json).
 BRIEF_SOURCE_MODEL        = "model"          # written by a model inside the cycle
 BRIEF_SOURCE_RULES        = "rule_fallback"  # rule-based fallback brief

@@ -51,7 +51,7 @@ from spec1_core.investigation.generator import generate_investigation
 from spec1_core.investigation.verifier import verify_investigation
 from spec1_core.intelligence.analyzer import analyze
 from spec1_core.intelligence.store import JsonlStore, resolve_db_path, resolve_store_path
-from spec1_labels import ANALYSIS_TIER_LLM_VERIFIED, ANALYSIS_TIER_RULE_BASED
+from spec1_labels import ANALYSIS_TIER_LLM_VERIFIED, ANALYSIS_TIER_RULE_BASED, STAMPED_BY_CYCLE
 try:
     from cls_db.dual_write import make_dual_writer as _make_dual_writer
     _DUAL_WRITE_AVAILABLE = True
@@ -185,6 +185,13 @@ def build_record_dict(record, *, sig, ps, opp, inv, outcome, run_id: str, enviro
             (e.split(":", 1)[1].strip()[:400] for e in outcome.evidence
              if e.startswith("LLM assessment:")), ""),
         "analysis_tier": outcome.analysis_tier,
+        # Provenance (migration 013): which backend and model produced the
+        # classification, the client session that ties it to
+        # logs/llm_fallback.jsonl, and that the cycle (not a backfill) stamped it.
+        "tier_used": getattr(outcome, "tier_used", None),
+        "model": getattr(outcome, "model", None),
+        "llm_session": getattr(outcome, "llm_session", None),
+        "stamped_by": STAMPED_BY_CYCLE,
     }
 
 
