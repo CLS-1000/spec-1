@@ -31,6 +31,7 @@ import subprocess  # nosec B404 — fixed argv, no shell
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
+from spec1_core.intelligence.store import anchor_to_home
 
 from spec1_core.intelligence.store import resolve_store_path
 from typing import Optional
@@ -54,7 +55,7 @@ _RUN_ID_SAFE = re.compile(r"[^A-Za-z0-9_-]")
 # ── paths ─────────────────────────────────────────────────────────────────────
 
 def briefs_dir() -> Path:
-    return Path(os.environ.get("SPEC1_BRIEFS_DIR", "briefs"))
+    return anchor_to_home(os.environ.get("SPEC1_BRIEFS_DIR", "briefs"))
 
 
 def drafts_dir() -> Path:
@@ -67,7 +68,7 @@ def releases_dir() -> Path:
 
 def store_path(desk: str) -> Path:
     if desk == "legislative":
-        return Path(os.environ.get("SPEC1_LEGISLATIVE_STORE", "spec1_legislative.jsonl"))
+        return anchor_to_home(os.environ.get("SPEC1_LEGISLATIVE_STORE", "spec1_legislative.jsonl"))
     return resolve_store_path()
 
 

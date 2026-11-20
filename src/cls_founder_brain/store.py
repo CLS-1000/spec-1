@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from spec1_core.intelligence.store import anchor_to_home
 from typing import Optional
 
 from cls_founder_brain.schemas import FounderDecision
@@ -26,7 +27,7 @@ class FounderBrainStore:
     """Append-only JSONL persistence for FounderDecision records."""
 
     def __init__(self, path: Optional[str | Path] = None):
-        self._path = Path(path) if path else Path(_DEFAULT_STORE_PATH)
+        self._path = Path(path) if path else anchor_to_home(_DEFAULT_STORE_PATH)
 
     @property
     def path(self) -> Path:

@@ -291,7 +291,7 @@ def tool_run_psyop(args: dict) -> dict:
     from cls_psyop.store import PsyopStore
 
     intel_path = _store_path("SPEC1_STORE_PATH", "spec1_intelligence.jsonl")
-    out_path = Path(args.get("out") or os.environ.get("SPEC1_PSYOP_PATH", "psyop_scores.jsonl"))
+    out_path = Path(args.get("out") or _store_path("SPEC1_PSYOP_PATH", "psyop_scores.jsonl"))
     min_classification = args.get("min_classification", "CLEAN")
 
     records = _read_jsonl(intel_path, limit=None)
@@ -331,7 +331,7 @@ def tool_generate_brief(args: dict) -> dict:
     )
 
     intel_path = _store_path("SPEC1_STORE_PATH", "spec1_intelligence.jsonl")
-    out_dir = Path(args.get("out_dir") or os.environ.get("SPEC1_BRIEFS_DIR", "generated/briefs"))
+    out_dir = Path(args.get("out_dir") or _store_path("SPEC1_BRIEFS_DIR", "generated/briefs"))
     run_id_arg = args.get("run_id", "latest")
     rule_based = bool(args.get("rule_based", False))
 
@@ -374,7 +374,7 @@ def tool_generate_leads(args: dict) -> dict:
     from cls_leads.store import LeadStore
 
     intel_path = _store_path("SPEC1_STORE_PATH", "spec1_intelligence.jsonl")
-    out_path = Path(args.get("out") or os.environ.get("SPEC1_LEADS_PATH", "leads.jsonl"))
+    out_path = Path(args.get("out") or _store_path("SPEC1_LEADS_PATH", "leads.jsonl"))
     min_confidence = float(args.get("min_confidence", 0.3))
     max_leads = int(args.get("max_leads", 50))
     priority_filter = args.get("priority")
@@ -508,8 +508,10 @@ def tool_run_research(args: dict) -> dict:
     topic_name = str(args.get("topic_name") or "").strip()
     if topic_name:
         wanted = topic_name.lower()
-        keys = lambda p: {p.topic_id.lower(), p.topic_id.lower().removeprefix("topic_"),
-                          str(p.name).lower()}
+
+        def keys(p):
+            return {p.topic_id.lower(), p.topic_id.lower().removeprefix("topic_"), str(p.name).lower()}
+
         profiles = [p for p in profiles if wanted in keys(p)]
         if not profiles:
             return {
@@ -682,7 +684,10 @@ TOOLS: dict[str, dict] = {
         "parameters": {
             "type": "object",
             "properties": {
-                "out": {"type": "string", "description": "Output JSONL path (default $SPEC1_PSYOP_PATH or psyop_scores.jsonl, the file get_psyop reads)"},
+                "out": {
+                    "type": "string",
+                    "description": "Output JSONL path (default $SPEC1_PSYOP_PATH or psyop_scores.jsonl, the file get_psyop reads)",
+                },
                 "min_classification": {
                     "type": "string",
                     "enum": ["CLEAN", "LOW_RISK", "MEDIUM_RISK", "HIGH_RISK"],

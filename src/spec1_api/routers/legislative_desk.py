@@ -22,6 +22,7 @@ import os
 import re
 from collections import Counter
 from pathlib import Path
+from spec1_core.intelligence.store import anchor_to_home
 from typing import Literal, Optional
 
 from fastapi import APIRouter, HTTPException, Query
@@ -35,11 +36,11 @@ _KINDS = ("measure", "interim_committee", "bill")
 
 
 def _store_path() -> Path:
-    return Path(os.environ.get("SPEC1_LEGISLATIVE_STORE", "spec1_legislative.jsonl"))
+    return anchor_to_home(os.environ.get("SPEC1_LEGISLATIVE_STORE", "spec1_legislative.jsonl"))
 
 
 def _briefs_dir() -> Path:
-    return Path(os.environ.get("SPEC1_BRIEFS_DIR", "briefs"))
+    return anchor_to_home(os.environ.get("SPEC1_BRIEFS_DIR", "briefs"))
 
 
 def _read_records() -> list[dict]:

@@ -29,6 +29,7 @@ import sys
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
+from spec1_core.intelligence.store import anchor_to_home
 
 from spec1_core.intelligence.store import resolve_store_path
 
@@ -158,7 +159,7 @@ def build_argparser() -> argparse.ArgumentParser:
     )
     p.add_argument(
         "--out-dir",
-        default=os.environ.get("SPEC1_BRIEFS_DIR", "generated/briefs"),
+        default=str(anchor_to_home(os.environ.get("SPEC1_BRIEFS_DIR", "generated/briefs"))),
         help="Directory to write the brief into",
     )
     p.add_argument(

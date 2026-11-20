@@ -16,11 +16,12 @@ import json
 import os
 from datetime import datetime, timezone
 from pathlib import Path
+from spec1_core.intelligence.store import anchor_to_home
 from typing import Any
 
 
 def _log_path() -> Path:
-    return Path(os.getenv("SPEC1_PUBLISH_LOG", "publish_log.jsonl"))
+    return anchor_to_home(os.getenv("SPEC1_PUBLISH_LOG", "publish_log.jsonl"))
 
 
 def append_event(event: str, **kwargs: Any) -> None:

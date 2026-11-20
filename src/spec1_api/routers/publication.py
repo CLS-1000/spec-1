@@ -11,6 +11,7 @@ from __future__ import annotations
 import logging
 import os
 from pathlib import Path
+from spec1_core.intelligence.store import anchor_to_home
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
@@ -27,7 +28,7 @@ _BRIEFS_DIR = Path("generated/briefs")
 def _safe_pdf_path(p: Path) -> Path:
     """Resolve path and ensure it stays within _BRIEFS_DIR (no symlink escape)."""
     resolved = p.resolve()
-    base = _BRIEFS_DIR.resolve()
+    base = anchor_to_home(_BRIEFS_DIR)
     if p.is_symlink() or not resolved.is_relative_to(base):
         raise HTTPException(status_code=403, detail="Access denied")
     return resolved
@@ -35,10 +36,10 @@ def _safe_pdf_path(p: Path) -> Path:
 
 def _real_pdfs() -> list[tuple[Path, os.stat_result]]:
     """Return (path, stat) pairs for non-symlink PDFs; files deleted mid-scan are skipped."""
-    if not _BRIEFS_DIR.exists():
+    if not anchor_to_home(_BRIEFS_DIR).exists():
         return []
     result = []
-    for p in _BRIEFS_DIR.glob("spec1_issue_*.pdf"):
+    for p in anchor_to_home(_BRIEFS_DIR).glob("spec1_issue_*.pdf"):
         if p.is_symlink():
             continue
         try:
@@ -76,7 +77,7 @@ def generate_publication_endpoint(intel_store: IntelStoreDep) -> dict:
     """Generate a new publication PDF from the latest brief and current intelligence records."""
     from spec1_core.tools.publication_generator import generate_publication as _gen
 
-    briefs_dir = Path(os.environ.get("SPEC1_BRIEFS_DIR", "briefs"))
+    briefs_dir = anchor_to_home(os.environ.get("SPEC1_BRIEFS_DIR", "briefs"))
     brief_path = briefs_dir / "spec1_brief_latest.md"
     brief_text = brief_path.read_text(encoding="utf-8") if brief_path.is_file() else ""
 

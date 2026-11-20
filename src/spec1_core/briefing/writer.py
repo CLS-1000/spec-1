@@ -16,6 +16,7 @@ import sys
 import threading
 from datetime import datetime, timezone
 from pathlib import Path
+from spec1_core.intelligence.store import anchor_to_home
 
 from spec1_labels import (
     ANALYSIS_TIER_LLM_VERIFIED,
@@ -189,7 +190,8 @@ def write_brief(
     ``{prefix}_{date}.md``, ``{prefix}_latest.md``, ``{prefix}_prompts_*``,
     ``{prefix}_index.jsonl`` — so it never overwrites or joins the daily brief.
     """
-    BRIEFS_DIR.mkdir(parents=True, exist_ok=True)
+    briefs_dir = anchor_to_home(BRIEFS_DIR)
+    briefs_dir.mkdir(parents=True, exist_ok=True)
 
     # Parse date from timestamp; fall back to today
     try:
@@ -199,13 +201,13 @@ def write_brief(
     date_str = dt.strftime("%Y-%m-%d")
 
     prompts_prefix = "spec1_prompts" if prefix == "spec1_brief" else f"{prefix}_prompts"
-    dated_path = BRIEFS_DIR / f"{prefix}_{date_str}.md"
-    latest_path = BRIEFS_DIR / f"{prefix}_latest.md"
-    prompts_dated_path = BRIEFS_DIR / f"{prompts_prefix}_{date_str}.md"
-    prompts_latest_path = BRIEFS_DIR / f"{prompts_prefix}_latest.md"
+    dated_path = briefs_dir / f"{prefix}_{date_str}.md"
+    latest_path = briefs_dir / f"{prefix}_latest.md"
+    prompts_dated_path = briefs_dir / f"{prompts_prefix}_{date_str}.md"
+    prompts_latest_path = briefs_dir / f"{prompts_prefix}_latest.md"
     # The daily index is copied to the public site by notitia_civica_publish.yml;
     # other desks keep their own so they can't be listed as a daily brief.
-    index_path = BRIEFS_DIR / ("brief_index.jsonl" if prefix == "spec1_brief" else f"{prefix}_index.jsonl")
+    index_path = briefs_dir / ("brief_index.jsonl" if prefix == "spec1_brief" else f"{prefix}_index.jsonl")
 
     brief = _strip_unresolved_placeholders(brief)
 
@@ -278,15 +280,16 @@ def write_brief_pdf(brief_md_path: Path, out_pdf_path: Path) -> Path:
 
 def write_handoff(doc: str, timestamp: str) -> str:
     """Write briefs/spec1_handoff_{date}.md (+ _latest) and return the dated path."""
-    BRIEFS_DIR.mkdir(parents=True, exist_ok=True)
+    briefs_dir = anchor_to_home(BRIEFS_DIR)
+    briefs_dir.mkdir(parents=True, exist_ok=True)
     try:
         dt = datetime.fromisoformat(timestamp)
     except Exception:
         dt = datetime.now(timezone.utc)
-    dated = BRIEFS_DIR / f"spec1_handoff_{dt.strftime('%Y-%m-%d')}.md"
+    dated = briefs_dir / f"spec1_handoff_{dt.strftime('%Y-%m-%d')}.md"
     with _lock:
         dated.write_text(doc, encoding="utf-8")
-        (BRIEFS_DIR / "spec1_handoff_latest.md").write_text(doc, encoding="utf-8")
+        (briefs_dir / "spec1_handoff_latest.md").write_text(doc, encoding="utf-8")
     return str(dated)
 
 

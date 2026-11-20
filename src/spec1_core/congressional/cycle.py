@@ -19,6 +19,7 @@ from __future__ import annotations
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from spec1_core.intelligence.store import anchor_to_home
 from typing import Optional
 
 from spec1_core.core.ids import run_id as new_run_id
@@ -111,6 +112,7 @@ def run_congressional_cycle(
         return {"status": "killed", "run_id": None, "domain": "congressional"}
 
     run_id = run_id or new_run_id()
+    store_path = anchor_to_home(store_path) if store_path == DEFAULT_STORE_PATH else Path(store_path)
     store  = JsonlStore(store_path)
     started_at = datetime.now(timezone.utc).isoformat()
     clear_novelty_cache()
@@ -273,7 +275,7 @@ if __name__ == "__main__":
         help="Use built-in sample trades instead of live fetch.",
     )
     parser.add_argument(
-        "--store", default=str(DEFAULT_STORE_PATH),
+        "--store", default=str(anchor_to_home(DEFAULT_STORE_PATH)),
         help="JSONL output file path.",
     )
     args = parser.parse_args()

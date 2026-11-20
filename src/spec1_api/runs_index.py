@@ -29,6 +29,7 @@ import os
 import re
 from dataclasses import dataclass
 from pathlib import Path
+from spec1_core.intelligence.store import anchor_to_home
 
 from spec1_core.intelligence.store import resolve_store_path
 from typing import Any, Iterable, Optional
@@ -60,11 +61,11 @@ def _store_path() -> Path:
 
 
 def _run_log_dir() -> Path:
-    return Path(os.environ.get(RUN_LOG_DIR_ENV, "logs"))
+    return anchor_to_home(os.environ.get(RUN_LOG_DIR_ENV, "logs"))
 
 
 def _briefs_dir() -> Path:
-    return Path(os.environ.get("SPEC1_BRIEFS_DIR", "briefs"))
+    return anchor_to_home(os.environ.get("SPEC1_BRIEFS_DIR", "briefs"))
 
 
 # ── low-level readers ────────────────────────────────────────────────────────

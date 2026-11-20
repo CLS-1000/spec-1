@@ -500,8 +500,11 @@ class TestAuditFixes:
         monkeypatch.delenv("SPEC1_LEADS_PATH", raising=False)
         monkeypatch.setenv("SPEC1_STORE_PATH", str(tmp_path / "missing.jsonl"))
         monkeypatch.chdir(tmp_path)
-        assert mcp_server.tool_run_psyop({})["out_path"] == "psyop_scores.jsonl"
-        assert mcp_server.tool_generate_leads({})["out_path"] == "leads.jsonl"
+        # Writers default to the exact file the readers (get_psyop / get_leads) use,
+        # anchored to the SPEC-1 home rather than the working folder.
+        assert mcp_server.tool_run_psyop({})["out_path"] == str(mcp_server._store_path("SPEC1_PSYOP_PATH", "psyop_scores.jsonl"))
+        assert mcp_server.tool_generate_leads({})["out_path"] == str(mcp_server._store_path("SPEC1_LEADS_PATH", "leads.jsonl"))
+        assert not (tmp_path / "psyop_scores.jsonl").exists()
 
 
 class TestRunResearchTool:
