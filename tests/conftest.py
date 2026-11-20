@@ -133,12 +133,19 @@ def block_real_llm_backends(request, monkeypatch):
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 _WATCHED_DIRS = ("data", "briefs", "generated", "logs", "cache", "research", "analyst_loop", "memory")
 _IGNORED_NAMES = {".coverage", ".pytest_cache", "__pycache__", ".ruff_cache", ".mypy_cache"}
+# Test-tool output the runner itself writes at the root, by design: CI runs
+# `pytest --cov --cov-report=xml`, and coverage's parallel mode writes `.coverage.<host>.<pid>`.
+_TOOL_OUTPUT = {"coverage.xml", "coverage.json", "junit.xml"}
+
+
+def _is_tool_output(name: str) -> bool:
+    return name in _TOOL_OUTPUT or name.startswith(".coverage")
 
 
 def _checkout_state() -> dict[str, tuple[int, int]]:
     state: dict[str, tuple[int, int]] = {}
     for entry in _REPO_ROOT.iterdir():
-        if entry.is_file() and entry.name not in _IGNORED_NAMES:
+        if entry.is_file() and entry.name not in _IGNORED_NAMES and not _is_tool_output(entry.name):
             st = entry.stat()
             state[entry.name] = (st.st_mtime_ns, st.st_size)
     for name in _WATCHED_DIRS:
