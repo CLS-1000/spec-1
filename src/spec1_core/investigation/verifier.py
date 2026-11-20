@@ -20,11 +20,11 @@ import uuid
 
 from spec1_core.schemas.models import Investigation, Outcome
 from spec1_labels import (
-    ANALYSIS_TIER_LLM_VERIFIED,
     ANALYSIS_TIER_RULE_BASED,
-    LLM_TIERS_REAL,
+    LLM_TIER_RULES,
     VERIF_CONFLICTED,
     VERIF_CORROBORATED,
+    analysis_tier_for,
 )
 
 logger = logging.getLogger(__name__)
@@ -76,13 +76,15 @@ def _build_user_prompt(investigation: Investigation, article: str = "", source: 
     return "\n".join(lines)
 
 
-def _fallback_outcome() -> Outcome:
+def _fallback_outcome(llm_session: str | None = None) -> Outcome:
     return Outcome(
         outcome_id=f"out-{uuid.uuid4().hex[:12]}",
         classification="INVESTIGATE",
         confidence=0.0,
         evidence=["Fallback: API error or parse failure — manual review required."],
         analysis_tier=ANALYSIS_TIER_RULE_BASED,
+        tier_used=LLM_TIER_RULES,
+        llm_session=llm_session,
     )
 
 
@@ -173,13 +175,17 @@ def verify_investigation(
     from spec1_core.llm import tier3_rules
     from spec1_core.llm.fallback_client import FallbackLLMClient
 
-    tier = "mock"
+    tier = LLM_TIER_RULES
+    model = None
+    session = None
     try:
         prompt = _build_user_prompt(investigation, article, source)
         if use_llm:
             llm = FallbackLLMClient(task="analyze")
+            session = getattr(llm, "session_id", None)
             raw = llm.complete(prompt=prompt, system=_SYSTEM_PROMPT)
-            tier = getattr(llm, "get_active_tier", lambda: "mock")()
+            tier = getattr(llm, "get_active_tier", lambda: LLM_TIER_RULES)()
+            model = getattr(llm, "get_active_model", lambda: None)()
         else:
             raw = tier3_rules.to_verifier_json(prompt)
         # Strip markdown fences that some tiers may include.
@@ -193,7 +199,7 @@ def verify_investigation(
                 raw = inner.strip()
     except Exception as exc:
         logger.error("LLM fallback chain error: %s", exc)
-        return _fallback_outcome()
+        return _fallback_outcome(session)
 
     try:
         data = _extract_json(raw)
@@ -215,10 +221,11 @@ def verify_investigation(
             classification=classification,
             confidence=confidence,
             evidence=evidence,
-            analysis_tier=(
-                ANALYSIS_TIER_LLM_VERIFIED if tier in LLM_TIERS_REAL else ANALYSIS_TIER_RULE_BASED
-            ),
+            analysis_tier=analysis_tier_for(tier),
+            tier_used=tier,
+            model=model,
+            llm_session=session,
         )
     except Exception as exc:
         logger.error("Failed to parse Claude response %r: %s", raw, exc)
-        return _fallback_outcome()
+        return _fallback_outcome(session)

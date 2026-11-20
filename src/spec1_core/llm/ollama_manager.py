@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import shutil
 import subprocess
 import time
@@ -19,6 +20,20 @@ import urllib.request
 logger = logging.getLogger(__name__)
 
 DEFAULT_URL = "http://localhost:11434"
+# Seconds one Ollama call may take before it counts as failed. A CPU-bound
+# local model can need well over two minutes on a long article.
+DEFAULT_TIMEOUT = 180.0
+
+
+def call_timeout() -> float:
+    """Per-call Ollama timeout: SPEC1_OLLAMA_TIMEOUT seconds, default 180."""
+    raw = os.environ.get("SPEC1_OLLAMA_TIMEOUT", "").strip()
+    try:
+        value = float(raw) if raw else DEFAULT_TIMEOUT
+    except ValueError:
+        logger.warning("SPEC1_OLLAMA_TIMEOUT=%r is not a number; using %ss", raw, DEFAULT_TIMEOUT)
+        return DEFAULT_TIMEOUT
+    return value if value > 0 else DEFAULT_TIMEOUT
 MODEL_HIGH_RAM = "llama3"
 MODEL_LOW_RAM = "qwen2.5:3b"   # fits the ~7 GiB Kali/WSL box; 7B models do not
 RAM_THRESHOLD_GB = 8.0
@@ -130,9 +145,13 @@ def chat(
     system: str,
     model: str,
     base_url: str = DEFAULT_URL,
-    timeout: int = 120,
+    timeout: float | None = None,
 ) -> str:
-    """Send a chat message to Ollama and return the response text."""
+    """Send a chat message to Ollama and return the response text.
+
+    *timeout* defaults to :func:`call_timeout` (SPEC1_OLLAMA_TIMEOUT, 180s).
+    """
+    timeout = call_timeout() if timeout is None else timeout
     payload = json.dumps({
         "model": model,
         "stream": False,

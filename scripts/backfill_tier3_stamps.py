@@ -1,10 +1,15 @@
-"""Targeted Tier-3 synthesis backfill for remaining high-value signals."""
+"""Targeted Tier-3 synthesis backfill for remaining high-value signals.
+
+The tier written to each row comes from which backend answered (see
+spec1_core.llm.triage_stamper), never from the model's reply. Each update also
+writes provenance: tier_used, model, llm_session, stamped_by='backfill'.
+"""
 import argparse
 import json
 import logging
 import sqlite3
 from pathlib import Path
-from typing import Dict
+from typing import Any, Dict
 
 from spec1_core.llm.triage_stamper import evaluate_and_stamp_record
 
@@ -12,10 +17,13 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 logger = logging.getLogger("spec1.tier3_backfill")
 
 DB_FILE = Path("spec1.db")
+# Fields the backfill writes to a row and mirrors into the JSONL store.
+STAMP_FIELDS = ("analysis_tier", "tier_used", "model", "llm_session", "stamped_by")
 JSONL_FILE = Path("data/spec1_intelligence.jsonl")
 
 
-def backfill_high_priority(conn: sqlite3.Connection, limit: int = 25, min_score: float = 0.70) -> Dict[str, str]:
+def backfill_high_priority(conn: sqlite3.Connection, limit: int = 25,
+                           min_score: float = 0.70) -> Dict[str, Dict[str, Any]]:
     cursor = conn.cursor()
 
     query = (
@@ -51,21 +59,26 @@ def backfill_high_priority(conn: sqlite3.Connection, limit: int = 25, min_score:
         }
 
         stamped = evaluate_and_stamp_record(candidate)
-        tier = stamped.get("analysis_tier", "rule_based")
+        stamp = {field: stamped.get(field) for field in STAMP_FIELDS}
+        tier = stamp["analysis_tier"]
         justification = stamped.get("triage_justification", "")
-        stamped_records[rec_id] = tier
+        stamped_records[rec_id] = stamp
 
         cursor.execute(
-            "UPDATE intelligence_records SET analysis_tier = ?, llm_reasoning = ? WHERE id = ?",
-            (tier, justification, row_id),
+            "UPDATE intelligence_records SET analysis_tier = ?, llm_reasoning = ?, "
+            "tier_used = ?, model = ?, llm_session = ?, stamped_by = ? WHERE id = ?",
+            (tier, justification, stamp["tier_used"], stamp["model"],
+             stamp["llm_session"], stamp["stamped_by"], row_id),
         )
-        logger.info("[%d/%d] Verified %s (%s, score=%.2f) -> tier=%s", idx, len(rows), rec_id, source, opp_score or 0.0, tier)
+        logger.info("[%d/%d] Verified %s (%s, score=%.2f) -> tier=%s (backend=%s, model=%s)",
+                    idx, len(rows), rec_id, source, opp_score or 0.0, tier,
+                    stamp["tier_used"], stamp["model"])
         conn.commit()
 
     return stamped_records
 
 
-def sync_jsonl(stamped_lookup: Dict[str, str]):
+def sync_jsonl(stamped_lookup: Dict[str, Dict[str, Any]]):
     if not JSONL_FILE.exists() or not stamped_lookup:
         return
 
@@ -81,7 +94,7 @@ def sync_jsonl(stamped_lookup: Dict[str, str]):
             rec_id = record.get("record_id")
 
             if rec_id in stamped_lookup:
-                record["analysis_tier"] = stamped_lookup[rec_id]
+                record.update(stamped_lookup[rec_id])
                 synced += 1
 
             outfile.write(json.dumps(record) + "\n")

@@ -161,7 +161,7 @@ class TestTier1Claude:
 
         data = json.loads(result)
         assert "classification" in data
-        assert client.get_active_tier() == "mock"
+        assert client.get_active_tier() == "rules"
 
 
 # ── FallbackLLMClient — Claude 401/failure → Ollama fallback ──────────────────
@@ -246,7 +246,7 @@ class TestTier3MockFallback:
 
         data = json.loads(result)
         assert "classification" in data
-        assert client.get_active_tier() == "mock"
+        assert client.get_active_tier() == "rules"
 
     def test_analyze_mock_threat_returns_threat_verdict(self, tmp_path):
         client = make_client(tmp_path)
@@ -259,7 +259,7 @@ class TestTier3MockFallback:
                         result = client.analyze(THREAT_SIGNAL)
 
         assert result["verdict"] == "THREAT"
-        assert result["tier_used"] == "mock"
+        assert result["tier_used"] == "rules"
         assert result["cost_estimate_usd"] == 0.0
 
     def test_analyze_mock_never_raises(self, tmp_path):
@@ -386,8 +386,13 @@ class TestLatencyLogging:
                     client.analyze(THREAT_SIGNAL)
 
         log_file = tmp_path / "llm_fallback.jsonl"
-        entry = json.loads(log_file.read_text().strip())
-        assert entry["tier"] == "mock"
+        entries = [json.loads(l) for l in log_file.read_text().splitlines() if l.strip()]
+        # Each failed model attempt is its own success:false entry, then the
+        # rules fallback is logged separately.
+        assert [(e["tier"], e["success"]) for e in entries] == [
+            ("claude", False), ("ollama", False), ("rules", True)]
+        assert all(e.get("error") for e in entries[:2])
+        assert "error" not in entries[2]
 
     def test_latency_ms_is_non_negative(self, tmp_path):
         client = make_client(tmp_path)
@@ -412,7 +417,9 @@ class TestLatencyLogging:
 
         log_file = tmp_path / "llm_fallback.jsonl"
         lines = [l for l in log_file.read_text().splitlines() if l.strip()]
-        assert len(lines) == 2
+        # Two calls x (claude failed, ollama failed, rules) = 6 entries.
+        assert len(lines) == 6
+        assert [json.loads(l)["tier"] for l in lines].count("rules") == 2
 
 
 # ── investigate() ─────────────────────────────────────────────────────────────
@@ -515,7 +522,7 @@ class TestDevMode:
                         result = client.analyze(THREAT_SIGNAL)
 
         MockCls.assert_not_called()
-        assert result["tier_used"] == "mock"
+        assert result["tier_used"] == "rules"
         assert result["verdict"] in {"THREAT", "ANOMALY", "CLEAR"}
 
     def test_dev_mode_prints_alert(self, tmp_path, capsys):

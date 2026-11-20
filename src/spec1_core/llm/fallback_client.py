@@ -10,16 +10,19 @@ Backends:
   claude — Anthropic Claude (ANTHROPIC_API_KEY)
   local  — a local model: Ollama, or any OpenAI-compatible server such as
            Foundry Local / AI Toolkit, vLLM, LM Studio (SPEC1_LOCAL_BACKEND)
-  mock   — rule-based Tier 3 (tier3_rules); always available
+  rules  — deterministic Tier 3 rules (tier3_rules); always available.
+           "mock" and "tier3" are accepted as old names for it.
 
 Each task has a route — the ordered list of backends it may use. Routes come
-from SPEC1_LLM_ROUTE_<TASK> (e.g. SPEC1_LLM_ROUTE_ANALYZE=local,mock), then
-SPEC1_LLM_ROUTE, else the historical order claude,local,mock (local,mock in
+from SPEC1_LLM_ROUTE_<TASK> (e.g. SPEC1_LLM_ROUTE_ANALYZE=local,rules), then
+SPEC1_LLM_ROUTE, else the historical order claude,local,rules (local,rules in
 SPEC1_DEV_MODE). The cycle's analysis can run on a local model while Claude is
 reserved for writing.
 
 All public methods are exception-safe — they never propagate errors to callers.
-Every LLM call is logged to logs/llm_fallback.jsonl with its task and backend.
+Every backend attempt is logged to logs/llm_fallback.jsonl with its task and
+backend: a model that fails or times out gets its own ``success: false`` entry,
+and the rules fallback that follows gets a separate ``tier: "rules"`` entry.
 """
 
 from __future__ import annotations
@@ -38,7 +41,14 @@ from pydantic import ValidationError
 
 from spec1_core.llm import ollama_manager, tier3_rules
 from spec1_core.schemas.models import Tier3TriageVerdict
-from spec1_labels import VERIF_CORROBORATED, VERIF_CONFLICTED, THREAT_HIGH, THREAT_MEDIUM, THREAT_LOW
+from spec1_labels import (
+    LLM_TIER_RULES,
+    THREAT_HIGH,
+    THREAT_LOW,
+    THREAT_MEDIUM,
+    VERIF_CONFLICTED,
+    VERIF_CORROBORATED,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -47,8 +57,8 @@ logger = logging.getLogger(__name__)
 _DEFAULT_CLAUDE_MODEL = "claude-haiku-4-5-20251001"
 _DEFAULT_OLLAMA_URL = "http://localhost:11434"
 _DEFAULT_OPENAI_COMPAT_URL = "http://localhost:5272/v1"   # Foundry Local / AI Toolkit
-_VALID_BACKENDS = ("claude", "local", "mock")
-_BACKEND_ALIASES = {"ollama": "local", "rules": "mock", "tier3": "mock"}
+_VALID_BACKENDS = ("claude", "local", LLM_TIER_RULES)
+_BACKEND_ALIASES = {"ollama": "local", "mock": LLM_TIER_RULES, "tier3": LLM_TIER_RULES}
 
 
 def strip_reasoning(text: str) -> str:
@@ -60,7 +70,7 @@ def strip_reasoning(text: str) -> str:
 
 
 def resolve_route(task: str = "default", dev_mode: bool = False) -> list[str]:
-    """Return the ordered backends for *task*. ``mock`` is always last."""
+    """Return the ordered backends for *task*. ``rules`` is always last."""
     env = os.environ.get
     raw = env(f"SPEC1_LLM_ROUTE_{task.upper()}") or env("SPEC1_LLM_ROUTE")
     if raw:
@@ -71,7 +81,7 @@ def resolve_route(task: str = "default", dev_mode: bool = False) -> list[str]:
                 route.append(name)
     else:
         route = ["local"] if dev_mode else ["claude", "local"]
-    route = [b for b in route if b != "mock"] + ["mock"]
+    route = [b for b in route if b != LLM_TIER_RULES] + [LLM_TIER_RULES]
     return route
 _DEFAULT_LOG_PATH = Path("logs/llm_fallback.jsonl")
 
@@ -113,6 +123,7 @@ class FallbackLLMClient:
         self._log_path = log_path or Path(env("SPEC1_LLM_LOG_PATH", str(_DEFAULT_LOG_PATH)))
         self._dev_mode = env("SPEC1_DEV_MODE", "").lower() == "true"
         self._active_tier = "claude"
+        self._active_model: str | None = None
         self._session_cost: float = 0.0
         self._session_id = uuid.uuid4().hex[:8]
         self._local_backend = env("SPEC1_LOCAL_BACKEND", "ollama").lower()
@@ -131,33 +142,38 @@ class FallbackLLMClient:
 
     def complete(self, prompt: str, system: str = "") -> str:
         """Return raw LLM text from the first backend on this task's route. Never raises."""
-        t0 = time.monotonic()
         for backend in self._route:
-            if backend == "mock":
+            if backend == LLM_TIER_RULES:
                 break
+            t0 = time.monotonic()
             try:
                 text = self._backend_complete(backend, prompt, system)
                 self._active_tier = self._tier_name(backend)
+                self._active_model = self._model_name(backend)
                 self._record(self._active_tier, t0, len(prompt + text), success=True)
                 return text
             except Exception as exc:
-                logger.warning("%s backend failed for task %s: %s", backend, self._task, exc)
+                self._record_failure(backend, t0, exc)
 
+        t0 = time.monotonic()
         text = tier3_rules.to_verifier_json(prompt)
-        self._active_tier = "mock"
-        self._record("mock", t0, len(text), success=True)
+        self._active_tier = LLM_TIER_RULES
+        self._active_model = None
+        self._record(LLM_TIER_RULES, t0, len(text), success=True)
         return text
 
     def analyze(self, prompt: str, system: str = "") -> dict[str, Any]:
         """Run analysis and return the standard output dict. Never raises."""
-        t0 = time.monotonic()
         for backend in self._route:
-            if backend == "mock":
+            if backend == LLM_TIER_RULES:
                 break
+            t0 = time.monotonic()
             try:
                 raw = self._backend_complete(backend, prompt, system)
                 tier = self._tier_name(backend)
                 result = self._parse_to_spec(raw, tier)
+                self._active_tier = tier
+                self._active_model = self._model_name(backend)
                 latency_ms = int((time.monotonic() - t0) * 1000)
                 cost = self._estimate_cost(prompt, raw) if backend == "claude" else 0.0
                 self._session_cost += cost
@@ -165,18 +181,20 @@ class FallbackLLMClient:
                 self._record(tier, t0, len(prompt + raw), success=True)
                 return result
             except Exception as exc:
-                logger.warning("%s backend failed for task %s: %s", backend, self._task, exc)
+                self._record_failure(backend, t0, exc)
 
-        # Tier 3
+        # Tier 3 rules
+        t0 = time.monotonic()
         verdict, confidence, analysis = tier3_rules.score(prompt)
         latency_ms = int((time.monotonic() - t0) * 1000)
-        self._active_tier = "mock"
-        self._record("mock", t0, len(prompt), success=True)
+        self._active_tier = LLM_TIER_RULES
+        self._active_model = None
+        self._record(LLM_TIER_RULES, t0, len(prompt), success=True)
         return {
             "verdict": verdict,
             "confidence": confidence,
             "analysis": analysis,
-            "tier_used": "mock",
+            "tier_used": LLM_TIER_RULES,
             "latency_ms": latency_ms,
             "cost_estimate_usd": 0.0,
         }
@@ -198,6 +216,15 @@ class FallbackLLMClient:
     def get_active_tier(self) -> str:
         """Return the tier used for the most recent call."""
         return self._active_tier
+
+    def get_active_model(self) -> str | None:
+        """Return the model that answered the most recent call (None for rules)."""
+        return self._active_model
+
+    @property
+    def session_id(self) -> str:
+        """This client's id, as written in each logs/llm_fallback.jsonl entry."""
+        return self._session_id
 
     def get_cost_estimate(self) -> float:
         """Return cumulative USD spent this session (Claude only)."""
@@ -222,6 +249,14 @@ class FallbackLLMClient:
         )
         self._active_tier = "claude"
         return message.content[0].text.strip()
+
+    def _model_name(self, backend: str) -> str | None:
+        """The model a backend uses, as configured for this client."""
+        if backend == "claude":
+            return os.environ.get("SPEC1_LLM_CLAUDE_MODEL", _DEFAULT_CLAUDE_MODEL)
+        if backend == "local":
+            return self._ollama_model if self._local_backend == "ollama" else (self._local_model or None)
+        return None
 
     def _tier_name(self, backend: str) -> str:
         """Name logged/returned for a backend (keeps 'ollama' for the Ollama local)."""
@@ -350,11 +385,17 @@ class FallbackLLMClient:
             6,
         )
 
-    def _record(self, tier: str, t0: float, char_count: int, *, success: bool) -> None:
+    def _record_failure(self, backend: str, t0: float, exc: Exception) -> None:
+        """Log one failed backend attempt as its own success:false entry."""
+        logger.warning("%s backend failed for task %s: %s", backend, self._task, exc)
+        self._record(self._tier_name(backend), t0, 0, success=False, error=_error_kind(exc))
+
+    def _record(self, tier: str, t0: float, char_count: int, *, success: bool,
+                error: str | None = None) -> None:
         latency_ms = int((time.monotonic() - t0) * 1000)
         try:
             self._log_path.parent.mkdir(parents=True, exist_ok=True)
-            entry = json.dumps({
+            fields = {
                 "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                 "session": self._session_id,
                 "task": self._task,
@@ -362,11 +403,33 @@ class FallbackLLMClient:
                 "latency_ms": latency_ms,
                 "char_count": char_count,
                 "success": success,
-            })
+            }
+            if error is not None:
+                fields["error"] = error
+            entry = json.dumps(fields)
             with self._log_path.open("a") as fh:
                 fh.write(entry + "\n")
         except Exception:
             pass  # logging must never crash the pipeline
+
+
+def _error_kind(exc: Exception) -> str:
+    """'timeout' for any timeout, else the exception's class name."""
+    import socket
+
+    if isinstance(exc, (TimeoutError, socket.timeout, httpx.TimeoutException)):
+        return "timeout"
+    reason = getattr(exc, "reason", None)  # urllib.error.URLError wraps the timeout
+    if isinstance(reason, (TimeoutError, socket.timeout)):
+        return "timeout"
+    try:
+        import requests
+
+        if isinstance(exc, requests.Timeout):
+            return "timeout"
+    except ImportError:
+        pass
+    return type(exc).__name__
 
 
 # ── Local Tier-3 client (Qwen 2.5 via Ollama) ─────────────────────────────────
@@ -379,13 +442,22 @@ CHAT_TIMEOUT = float(os.environ.get("SPEC1_LOCAL_CHAT_TIMEOUT", "600"))
 
 
 class LocalTier3Client:
-    """Direct Ollama client: schema-constrained triage verdicts and free-form chat."""
+    """Direct Ollama client: schema-constrained triage verdicts and free-form chat.
+
+    After each ``verify_triage_record`` call, ``last_tier`` says which backend
+    produced the answer: ``"ollama"`` when the model answered, ``"rules"`` when
+    it did not (unreachable, timed out, or invalid output). The verdict never
+    carries an analysis tier; callers derive it from ``last_tier``.
+    """
 
     def __init__(self, base_url: str = OLLAMA_BASE_URL, model: str = DEFAULT_MODEL):
         self.base_url = base_url.rstrip("/")
         self.model = model
-        # 120s timeout to allow cold-start model weight allocation
-        self.client = httpx.Client(base_url=self.base_url, timeout=120.0)
+        # Per-call timeout (SPEC1_OLLAMA_TIMEOUT, default 180s); also covers
+        # cold-start model weight allocation.
+        self.client = httpx.Client(base_url=self.base_url, timeout=ollama_manager.call_timeout())
+        self.session_id = uuid.uuid4().hex[:8]
+        self.last_tier: str = LLM_TIER_RULES
 
     def verify_triage_record(self, record: dict[str, Any]) -> Tier3TriageVerdict | None:
         """Runs candidate triage record through Qwen 2.5 with constrained JSON schema."""
@@ -397,9 +469,7 @@ class LocalTier3Client:
             f"Payload: {json.dumps(record.get('raw', {}))[:1500]}\n\n"
             f"SPEC-1 4-Gate Rubric: credibility=0.30, volume=0.20, velocity=0.20, novelty=0.30; "
             f"ingest composite floor=0.40; Tier-3 verification threshold=0.70.\n"
-            f"Rules: If Composite Score >= 0.70 and the payload contains coherent, non-corrupted signal data, "
-            f"set analysis_tier='llm_verified' to unlock the Migration 011 publish guard. "
-            f"Only set analysis_tier='rule_based' if Composite Score < 0.70 or the payload is corrupt/spam/test noise."
+            f"Assess the record on its content. Flag the payload if it is corrupt, spam or test noise."
         )
 
         payload = {
@@ -423,19 +493,22 @@ class LocalTier3Client:
             "stream": False,
         }
 
+        self.last_tier = LLM_TIER_RULES
         try:
             res = self.client.post("/api/chat", json=payload)
             res.raise_for_status()
             raw_content = res.json()["message"]["content"]
             verdict = Tier3TriageVerdict.model_validate_json(raw_content)
-            logger.info("Successfully verified record %s -> tier=%s", verdict.record_id, verdict.analysis_tier)
+            self.last_tier = "ollama"
+            logger.info("Model verified record %s (model=%s)", verdict.record_id, self.model)
             return verdict
 
         except httpx.ConnectError:
             logger.error("Ollama service unreachable on %s. Ensure 'ollama serve' is active.", self.base_url)
             return None
-        except httpx.ReadTimeout:
-            logger.error("Ollama request timed out after 120s. Check system resource allocation.")
+        except httpx.TimeoutException:
+            logger.error("Ollama request timed out after %ss. Check system resource allocation.",
+                         self.client.timeout.read)
             return None
         except (ValidationError, KeyError, json.JSONDecodeError) as e:
             logger.error("Schema validation failed for record %s: %s", record.get("record_id"), e)
