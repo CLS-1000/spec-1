@@ -1,0 +1,481 @@
+"""Builds the brief spec for the 2026-11-20 World State Brief (pack: last 48h).
+
+Prose only. Every score/source/id is a placeholder or a rowid that the
+renderer resolves from the record pack.
+"""
+import json
+import sys
+
+ELEVATED = [  # (rowid, headline) — all 33 model-tier records at or above the threshold
+    (52612, "Washington now owns equity stakes in 40 companies"),
+    (52613, "Rational Security podcast: the “Bird Dogs” edition"),
+    (52554, "Nvidia spy allegations loom over Trump’s meeting with Xi"),
+    (52555, "The OSS is back in name; the authorities are the hard part"),
+    (52614, "The data is the target: data corruption as a military strategy"),
+    (52563, "Bukele’s troops in Haiti and the U.N. guardrails"),
+    (52566, "Just Security Early Edition, November 19, 2026"),
+    (52570, "Guantanamo: USS Cole trial recesses with first 8 jurors chosen"),
+    (52615, "The U.S. paid insurers billions to cover civilians harmed in war"),
+    (52564, "Judge Kimberly Prost on international legal institutions"),
+    (52565, "Afghanistan’s 80 years at the U.N."),
+    (52619, "California teachers charged with abuse kept their licenses"),
+    (52557, "What’s holding back America’s drone revolution"),
+    (52559, "The Pentagon has an AI strategy; it needs a field guide"),
+    (52560, "America invented the drone war; why is it falling behind"),
+    (52558, "AI is not the danger; the congressional vacuum is"),
+    (52587, "The two Koreas need a ‘good divorce’"),
+    (52561, "Where did the billions from Venezuela’s oil go"),
+    (52622, "Six Flags roller coaster brain injuries blamed on riders"),
+    (52623, "Abuse continued after a federal women’s prison was shut"),
+    (52624, "Washington Democrats move to ban data centers on public lands"),
+    (52630, "Cornyn links the Nvidia scandal to perceived corruption"),
+    (52588, "North Korea shows off an AI chatbot"),
+    (52547, "The Adversarial: handshakes without headway"),
+    (52621, "New bar admits are now federal prosecutors"),
+    (52568, "Just Security litigation tracker: status key"),
+    (52569, "ICJ finds Myanmar committed genocide against the Rohingya"),
+    (52617, "DOJ intervened in a payout to a Trump golf pro"),
+    (52618, "ProPublica publishes the tariff refunds the government withheld"),
+    (52626, "Beshear defends DGA spending in Texas"),
+    (52562, "1,000 cases filed against Trump administration policies"),
+    (52567, "ABILA International Law Weekend 2026 series"),
+    (52620, "Chicago City Council orders an independent finance review"),
+]
+NOTES = {
+    52612: ("Top score in the pack. Lawfare argues the stakes are bids for control without an "
+            "exit strategy; the model classified it {{class:52612}} at {{conf:52612}}. Lead 1."),
+    52615: ("ProPublica: a federal program for injured contractor employees has made a few "
+            "insurers its biggest winners, and the government itself calls it ripe for fraud. "
+            "Lead 2."),
+    52618: ("ProPublica says it is publishing what the government would not: which importers "
+            "are receiving roughly $170 billion in refunds after the Supreme Court struck down "
+            "the emergency tariffs in February 2026. Lead 3."),
+    52561: ("Cipher Brief tests a presidential claim that “billions and billions” have "
+            "been taken out of Venezuela. Lead 4."),
+    52588: ("The only ESCALATE classification in the pack ({{conf:52588}}). The excerpt "
+            "describes a university chatbot shown at an IT exhibition; read it as a capability "
+            "marker, not a threat report."),
+}
+
+spec = {
+    "brief_date": "2026-11-20",
+    "writer": "Claude Code (hand-written from the record pack; no model wrote this brief)",
+    "executive_summary": (
+        "The record pack holds {{count:records}} stored records from one cycle "
+        "(run-5043af20d6b1, written 2026-11-19 22:48 to 2026-11-20 00:55 UTC) across "
+        "{{count:sources}} sources. {{count:usable}} were classified by the local model "
+        "(Ollama) and are used for analysis below; {{count:rules}} fell back to the rules tier "
+        "after a model timeout and are counted but not analysed. The pack does not record how "
+        "many signals the cycle harvested, only what it stored. The top score is "
+        "{{top:score}}, from {{top:source}} on Washington’s equity stakes in 40 companies "
+        "({{top:record}}). {{count:elevated}} model-tier records crossed the elevated "
+        "threshold of {{threshold:elevated}}. That count overstates urgency: the score measures "
+        "source credibility, length, recency and keyword novelty, not how new or verified the "
+        "facts are, and the model classified the top record MONITOR. The pool is wide and "
+        "shallow. It is strong on U.S. institutional accountability (ProPublica, Just "
+        "Security, Lawfare), on the Shenzhen APEC week, and on the Korean Peninsula, where "
+        "NK News alone contributes 20 records. It is thin on cyber operations. The engine’s "
+        "one psyop hit, a NARRATIVE_CLUSTER on the word “north”, tests as topic "
+        "proximity and is NOISE."
+    ),
+    "elevated_note": (
+        "{{count:elevated}} model-tier records scored at or above {{threshold:elevated}}. "
+        "Elevated here means the gates scored the source and article highly; it is not a "
+        "verification grade. Most of these records are analysis, opinion or newsletter items, "
+        "and the local model classified them INVESTIGATE or MONITOR. Five carry notes; the "
+        "rest are listed with their ids. One more record scored above the threshold "
+        "(Cipher Brief on Nvidia’s future) but came from the rules tier, so it is listed "
+        "under records counted, not analysed."
+    ),
+    "elevated": [
+        {"rowid": r, "headline": h, **({"note": NOTES[r]} if r in NOTES else {})}
+        for r, h in ELEVATED
+    ],
+    "domains": [
+        {
+            "name": "Geopolitics",
+            "rowids": [52554, 52630, 52550, 52609, 52610, 52584, 52598, 52608, 52594, 52592,
+                       52561, 52563, 52569, 52583, 52572, 52582, 52571],
+            "paragraphs": [
+                ("The Shenzhen APEC week is the densest thread. Yonhap’s running summit "
+                 "story ({{score:52609}}, {{record:52609}}) reports that Trump, Xi and Putin "
+                 "agreed to hold a dialogue on nuclear risks, and its earlier write-through "
+                 "({{record:52610}}) says the joint declaration made no mention of North "
+                 "Korea’s nuclear weapons. War on the Rocks ({{score:52550}}) frames the "
+                 "summit as the first U.S.-Chinese-Russian leaders’ meeting and a possible "
+                 "opening for trilateral arms control, while noting that for Beijing the "
+                 "symbolism matters most. NK News reports Xi backing Seoul’s push for "
+                 "U.S.-North Korea talks ({{record:52598}}) and a Kremlin line that Putin "
+                 "would “of course” meet Kim if Kim attended ({{record:52608}}). These "
+                 "records connect: the declaration’s silence on North Korean weapons sits "
+                 "next to IAEA confirmation, reported by NK News ({{score:52594}}), that "
+                 "North Korea expanded an older enrichment facility at Yongbyon."),
+                ("The Nvidia thread links the summit to Washington. Cipher Brief "
+                 "({{score:52554}}) reports allegations that a Singapore-based Nvidia cloud "
+                 "partner executive was a Ministry of State Security agent and expects the "
+                 "matter to come up between Trump and Xi; Politico ({{score:52630}}) has "
+                 "outgoing Senator Cornyn tying the Nvidia scandal and lax chip export "
+                 "controls to the midterm losses. Both are allegation-level: neither excerpt "
+                 "cites a charging document or an official finding."),
+                ("Elsewhere the pool has single-source items without corroboration in the "
+                 "pack: Venezuela oil revenues (Cipher Brief, {{score:52561}}), Salvadoran "
+                 "troops in Haiti (Just Security, {{score:52563}}), the ICJ genocide finding "
+                 "against Myanmar (Just Security, {{score:52569}}), the November 17 Crimean "
+                 "Bridge strike (Atlantic Council, {{score:52583}}) and a Bahrain dispatch on "
+                 "Iran (Atlantic Council, {{score:52571}}). The U.S. decision to withhold "
+                 "support from the U.N. resolution on North Korean human rights for the first "
+                 "time in 21 years (NK News, {{score:52592}}) is a concrete, checkable policy "
+                 "change and is not yet reflected in any other source in the pack."),
+            ],
+            "trajectory": {
+                "next_48h": ("Readouts and follow-ups from Shenzhen; watch for any written "
+                             "terms for the nuclear-risk dialogue."),
+                "seven_day": ("Whether the dialogue gets a date, a venue or a working level; "
+                              "whether North Korea is added."),
+                "limits": ("Insufficient signal depth to assess the summit outcome itself: "
+                           "the two Yonhap records are truncated leads, and no record carries "
+                           "the joint declaration text. Venezuela, Haiti and Bahrain rest on "
+                           "one record each."),
+            },
+        },
+        {
+            "name": "Cyber / Info Ops",
+            "rowids": [52586, 52614, 52604, 52575, 52559, 52558, 52557, 52560, 52585, 52588],
+            "paragraphs": [
+                ("The only operational cyber item is Defense One’s report "
+                 "({{score:52586}}, {{record:52586}}) that NSANet, the NSA’s classified "
+                 "communications network, is down, with no immediate sign of a cyberattack "
+                 "and a possible link to software upgrades. It scored STANDARD, below the "
+                 "elevated threshold, and rests on people familiar with the matter. It is "
+                 "Lead 5 because it is the one checkable event in this domain."),
+                ("The rest is argument, not incident. Lawfare ({{score:52614}}) treats data "
+                 "corruption as a military strategy as AI targeting spreads, naming the "
+                 "Maven Smart System and its use in the Iran conflict. Cipher Brief runs "
+                 "four AI and drone pieces ({{record:52559}}, {{record:52558}}, "
+                 "{{record:52557}}, {{record:52560}}) that reach the same diagnosis from "
+                 "different sides: U.S. concepts are ahead of acquisition and law. One of "
+                 "them ({{record:52558}}) states that OpenAI disclosed its agents escaped a "
+                 "test sandbox and broke into Hugging Face; that is a striking factual claim "
+                 "that needs its primary source before anyone repeats it."),
+                ("Two information-control items: NK News found North Korea content "
+                 "disappearing from Weibo, Rednote and WeChat since late October "
+                 "({{score:52604}}), and Atlantic Council discusses Russia’s use of "
+                 "one-shot mercenaries, apps and crypto in its shadow war on Europe "
+                 "({{score:52575}})."),
+            ],
+            "trajectory": {
+                "next_48h": "Whether NSANet is restored and whether the cause is confirmed.",
+                "seven_day": ("Any congressional intelligence committee statement on the "
+                              "outage."),
+                "limits": ("Insufficient signal depth: one incident record, single-sourced; "
+                           "no attribution data for any cyber activity; the AI pieces are "
+                           "opinion and analysis."),
+            },
+        },
+        {
+            "name": "Psyop / Narrative Analysis",
+            "rowids": [],
+            "paragraphs": [
+                ("The engine fired one pattern for this run: {{psyop:pattern}} on the topic "
+                 "“{{psyop:topic}}”, pattern confidence {{psyop:pattern_conf}}, "
+                 "{{psyop:supporting}} supporting signals from {{psyop:sources}} sources, "
+                 "psyop score {{psyop:score}}, classification {{psyop:classification}}."),
+                ("Testing the hit against its own evidence: only {{psyop:with_term}} of the "
+                 "{{psyop:supporting}} supporting excerpts contain “{{psyop:topic}}” at "
+                 "all ({{psyop:coverage}}). Where the word does appear, it is "
+                 "“{{psyop:top_phrase}}” {{psyop:top_share}} of the time, and "
+                 "{{psyop:nk_share}} of those excerpts come from {{psyop:top_term_source}}, an "
+                 "outlet whose beat is North Korea. The cluster therefore groups a regional "
+                 "outlet’s normal output with unrelated articles that merely appeared in "
+                 "the same harvest. Test verdict: {{psyop:verdict}}. This is NOISE: topic "
+                 "proximity, not message alignment. No psyop activity assessed."),
+            ],
+            "trajectory": {
+                "limits": ("The test reads excerpt text only. It can rule out a shared "
+                           "message when the topic word is missing or scattered; it cannot "
+                           "prove coordination when a subject is shared."),
+            },
+        },
+    ],
+    "leads": [
+        {
+            "title": "Washington’s 40 equity stakes: what the government owns and on what terms",
+            "rowids": [52612],
+            "question": ("For each of the 40 companies in which the federal government now "
+                         "holds equity, which agency holds the stake, what was paid, what "
+                         "rights (board seats, vetoes, golden shares) came with it, and is "
+                         "there any written exit or divestiture plan?"),
+            "who_to_call": [
+                "Commerce Department press office (CHIPS-related equity agreements)",
+                "Defense Department Office of Strategic Capital",
+                "Treasury Department press office",
+                "Investor relations at three of the companies named in the full Lawfare article",
+                "Senate Banking and House Financial Services committee minority staff",
+            ],
+            "documents": {
+                "foia": [
+                    ("Commerce, Treasury and DoD: the executed equity or warrant agreements and "
+                     "term sheets for each stake, January 2025 to present"),
+                    "Agency legal memos on the statutory authority used for each acquisition",
+                ],
+                "pull_now": [
+                    ("SEC EDGAR: 8-K, 13D/13G and proxy filings disclosing a U.S. government "
+                     "holder at each company"),
+                    "USAspending.gov award records for the same companies",
+                    "The full Lawfare article and the list of 40 companies it relies on",
+                ],
+            },
+            "window": {"value": "2 weeks", "reason": (
+                "Structural story with no hard peg in the pack; the lame-duck session gives "
+                "Congress a reason to ask about exit plans before January.")},
+            "confidence": {"level": "MEDIUM", "reason": (
+                "The top-scored record, but a single analysis piece the model classified "
+                "MONITOR; the count of 40 must be rebuilt from filings before it is used.")},
+            "prompt": {
+                "step1": ("Draft a 3-paragraph background memo on federal equity stakes in "
+                          "private companies since January 2025: which statutes and programs "
+                          "were used, how these stakes differ from the 2008-2009 rescues, "
+                          "and which sectors are covered (the record names chips, critical "
+                          "minerals, quantum computing and nuclear). Cite SEC filings and "
+                          "agency releases, and mark anything taken only from the Lawfare "
+                          "article as unverified."),
+                "step2": ("Write 5 yes/no questions for the Commerce Department press office, "
+                          "each answerable with yes, no or a number. Example: 'Does every "
+                          "equity agreement Commerce has signed since January 2025 include a "
+                          "written divestiture timeline? Yes or no?' Cover board rights, veto "
+                          "rights, the total paid, and whether any stake has been sold."),
+                "step3": ("Write a FOIA request draft to the Commerce Department FOIA office "
+                          "and the Treasury FOIA Division, in formal FOIA language, for: all "
+                          "executed equity, warrant or golden-share agreements between the "
+                          "United States and private companies, all term sheets and approval "
+                          "memoranda for those agreements, and all legal opinions on the "
+                          "authority used, for January 1, 2025 to the present. Ask that any "
+                          "denial cite the specific exemption for each withheld record."),
+                "step4": ("Write a 150-word pitch memo for an editor meeting: the story, the "
+                          "stakes, what you have (the Lawfare count and the filings pulled), "
+                          "and what you still need."),
+            },
+        },
+        {
+            "title": "War-zone contractor injury insurance: who collected, and what the government knew",
+            "rowids": [52615],
+            "question": ("How much has the federal program covering injured or killed "
+                         "contractor employees from Iraq and Afghanistan paid insurers since "
+                         "2001, which insurers received the most, and which official reviews "
+                         "warned of fraud risk?"),
+            "who_to_call": [
+                ("Labor Department, Office of Workers’ Compensation Programs (confirm "
+                 "from the full article that this is the program, likely the Defense Base Act)"),
+                "Defense Department Inspector General public affairs",
+                "Government Accountability Office public affairs",
+                "Injured contractor employees or their attorneys quoted in the ProPublica piece",
+            ],
+            "documents": {
+                "foia": [
+                    ("Labor Department: annual premium, claim and payout totals by insurer "
+                     "for the program, 2001 to present"),
+                    "DoD and State: contract clauses and audits on the program’s insurance costs",
+                ],
+                "pull_now": [
+                    "GAO and inspector general reports on the program’s costs and fraud risk",
+                    "The full ProPublica article and any documents it publishes",
+                    "Insurer annual statements filed with state regulators for the named insurers",
+                ],
+            },
+            "window": {"value": "1 week", "reason": (
+                "ProPublica published this cycle; follow-ups and official responses come "
+                "fast after an investigation like this.")},
+            "confidence": {"level": "MEDIUM", "reason": (
+                "Strong single source with an INVESTIGATE classification; the program name "
+                "and the dollar figures still need the full article.")},
+            "prompt": {
+                "step1": ("Draft a 3-paragraph background memo on the federal program that "
+                          "insures employees of U.S. government contractors injured or killed "
+                          "in Iraq and Afghanistan: how it is funded, who administers it, and "
+                          "what GAO or inspector general reviews have found about cost and "
+                          "fraud. Confirm the program’s name from the full ProPublica "
+                          "article before relying on it."),
+                "step2": ("Write 5 yes/no questions for the Labor Department’s Office of "
+                          "Workers’ Compensation Programs, each answerable with yes, no or "
+                          "a number. Example: 'Has the department referred any insurer under "
+                          "this program for fraud investigation since 2015? Yes or no?' Cover "
+                          "payout totals, insurer concentration, referrals and recoveries."),
+                "step3": ("Write a FOIA request draft to the Labor Department FOIA office and "
+                          "the Defense Department FOIA office, in formal FOIA language, for: "
+                          "annual premiums, claims paid and administrative costs by insurer "
+                          "under the contractor injury insurance program; all audits and "
+                          "fraud-risk assessments of the program; and all referrals to "
+                          "inspectors general, for January 1, 2001 to the present. Ask that "
+                          "any denial cite the specific exemption for each withheld record."),
+                "step4": ("Write a 150-word pitch memo for an editor meeting: the story, the "
+                          "stakes, what you have, and what you still need."),
+            },
+        },
+        {
+            "title": "The $170 billion tariff refunds: which companies, and why the government won’t say",
+            "rowids": [52618],
+            "question": ("Which importers have received refunds of the emergency tariffs "
+                         "overturned in February 2026, in what amounts, and on what legal "
+                         "basis has the administration declined to publish the list?"),
+            "who_to_call": [
+                "U.S. Customs and Border Protection Office of Public Affairs",
+                "Treasury Department press office",
+                "Investor relations at public companies that appear in ProPublica’s database",
+                "Trade lawyers who filed refund claims for clients",
+            ],
+            "documents": {
+                "foia": [
+                    ("CBP: refund totals by importer of record for the overturned tariffs, "
+                     "February 2026 to present, and any guidance on withholding the list"),
+                    "Treasury: records on the decision not to publish refund recipients",
+                ],
+                "pull_now": [
+                    "ProPublica’s published refund database",
+                    ("SEC EDGAR: 10-Q and 8-K filings disclosing tariff refund receivables "
+                     "or gains"),
+                    "The Supreme Court decision that overturned the emergency tariffs",
+                ],
+            },
+            "window": {"value": "48 hours", "reason": (
+                "ProPublica just published the data; the first local and company-level "
+                "follow-ups will run within days.")},
+            "confidence": {"level": "MEDIUM", "reason": (
+                "Concrete public dataset, but the record is classified MONITOR and the "
+                "$170 billion figure comes from one source.")},
+            "prompt": {
+                "step1": ("Draft a 3-paragraph background memo on the emergency tariffs the "
+                          "Supreme Court overturned in February 2026, how refunds are being "
+                          "processed by CBP, and what ProPublica’s database shows about "
+                          "the largest recipients. Cite the decision and the database; mark "
+                          "the $170 billion total as ProPublica’s figure until confirmed."),
+                "step2": ("Write 5 yes/no questions for the CBP Office of Public Affairs, "
+                          "each answerable with yes, no or a number. Example: 'Has CBP paid "
+                          "any single importer more than $1 billion in refunds of these "
+                          "tariffs? Yes or no?' Cover totals paid, the number of importers, "
+                          "interest paid, and the basis for not publishing the list."),
+                "step3": ("Write a FOIA request draft to the CBP FOIA Division, in formal "
+                          "FOIA language, for: refund amounts by importer of record for duties "
+                          "paid under the overturned emergency tariffs, all internal guidance "
+                          "on processing those refunds, and all records on whether to publish "
+                          "recipient names, for February 1, 2026 to the present. Ask that "
+                          "any denial cite the specific exemption for each withheld record."),
+                "step4": ("Write a 150-word pitch memo for an editor meeting: the story, the "
+                          "stakes, what you have, and what you still need."),
+            },
+        },
+        {
+            "title": "Venezuela’s oil revenues: where the money the president described actually went",
+            "rowids": [52561],
+            "question": ("What U.S. legal mechanism, account or license governs revenue from "
+                         "Venezuelan oil since the events the president described, how much "
+                         "has moved through it, and who controls disbursement?"),
+            "who_to_call": [
+                "Treasury Office of Foreign Assets Control press office",
+                "State Department Bureau of Western Hemisphere Affairs press office",
+                "Energy Department press office",
+                "Senate Foreign Relations Committee minority staff",
+            ],
+            "documents": {
+                "foia": [
+                    ("Treasury/OFAC: licenses and correspondence on Venezuelan oil sales and "
+                     "proceeds, January 2025 to present"),
+                    "State: cables and memos on the custody of Venezuelan oil revenue",
+                ],
+                "pull_now": [
+                    "OFAC Venezuela-related general licenses and FAQs",
+                    "The full CBS transcript of the November 8 interview cited by Cipher Brief",
+                    "EIA data on U.S. imports of Venezuelan crude",
+                ],
+            },
+            "window": {"value": "1 week", "reason": (
+                "The interview is recent and the claim is specific; the question goes stale "
+                "if the administration publishes figures first.")},
+            "confidence": {"level": "LOW", "reason": (
+                "The model classified it INVESTIGATE at {{conf:52561}}, but the record is "
+                "one analysis piece built on a presidential statement, and the pack has no "
+                "second source.")},
+            "prompt": {
+                "step1": ("Draft a 3-paragraph background memo on U.S. policy toward "
+                          "Venezuelan oil since January 2025: sanctions and licenses, any "
+                          "change in control of PDVSA or its exports, and what the president "
+                          "said in the November 8 interview. Quote the CBS transcript "
+                          "directly and keep it separate from documented facts."),
+                "step2": ("Write 5 yes/no questions for the OFAC press office, each "
+                          "answerable with yes, no or a number. Example: 'Is revenue from "
+                          "Venezuelan crude sales currently held in an account controlled by "
+                          "the U.S. government? Yes or no?' Cover licenses, amounts, account "
+                          "custody and disbursement authority."),
+                "step3": ("Write a FOIA request draft to the Treasury FOIA Division and the "
+                          "State Department Office of Information Programs and Services, in "
+                          "formal FOIA language, for: all OFAC licenses, license applications "
+                          "and correspondence on the sale of Venezuelan crude and the custody "
+                          "of its proceeds, and all State memoranda on control of those "
+                          "proceeds, for January 1, 2025 to the present. Ask that any denial "
+                          "cite the specific exemption for each withheld record."),
+                "step4": ("Write a 150-word pitch memo for an editor meeting: the story, the "
+                          "stakes, what you have, and what you still need."),
+            },
+        },
+        {
+            "title": "NSANet outage: how long, what failed, and who was told",
+            "rowids": [52586],
+            "question": ("How long was NSANet down, which missions or partners lost "
+                         "access, was the cause a software upgrade as reported, and were the "
+                         "intelligence committees notified?"),
+            "who_to_call": [
+                "NSA Media Relations",
+                "Office of the Director of National Intelligence public affairs",
+                "House and Senate intelligence committee press staff",
+            ],
+            "documents": {
+                "foia": [
+                    ("NSA: unclassified notices or summaries of the NSANet outage and its "
+                     "cause, November 2026 (expect classification exemptions; ask for "
+                     "segregable portions)"),
+                ],
+                "pull_now": [
+                    "The Defense One report and any NSA or ODNI public statement",
+                    "Congressional committee press releases on the outage",
+                ],
+            },
+            "window": {"value": "48 hours", "reason": (
+                "A live outage story; once service is restored the window for "
+                "on-record detail closes.")},
+            "confidence": {"level": "LOW", "reason": (
+                "STANDARD score ({{score:52586}}), anonymous sourcing, and a FOIA target "
+                "that is largely classified; worth a few calls, not a project.")},
+            "prompt": {
+                "step1": ("Draft a 3-paragraph background memo on NSANet: what it is, who "
+                          "depends on it, and any publicly reported past outages. Use only "
+                          "public sources, state plainly what is unknown, and keep the "
+                          "report’s software-upgrade explanation labelled as unconfirmed."),
+                "step2": ("Write 5 yes/no questions for NSA Media Relations, each answerable "
+                          "with yes, no or a number. Example: 'Was NSANet unavailable for "
+                          "more than 24 hours? Yes or no?' Cover duration, cause, partner "
+                          "impact, and congressional notification."),
+                "step3": ("Write a FOIA request draft to the NSA FOIA office, in formal FOIA "
+                          "language, for: all unclassified notices, incident summaries and "
+                          "congressional notifications about the NSANet outage reported in "
+                          "November 2026, for November 1, 2026 to the present. Ask for "
+                          "segregable unclassified portions and that any denial cite the "
+                          "specific exemption for each withheld record."),
+                "step4": ("Write a 150-word pitch memo for an editor meeting: the story, the "
+                          "stakes, what you have, and what you still need."),
+            },
+        },
+    ],
+    "watch": [
+        {"item": "Shenzhen: any written terms or date for the U.S.-China-Russia nuclear-risk dialogue",
+         "rowids": [52609, 52550]},
+        {"item": "IAEA follow-up on the expanded enrichment facility at Yongbyon",
+         "rowids": [52594]},
+        {"item": "NSANet: restoration and a confirmed cause", "rowids": [52586]},
+        {"item": "First company and local follow-ups to ProPublica’s tariff refund database",
+         "rowids": [52618]},
+        {"item": "Lawfare Live on litigation against the administration, November 20",
+         "rowids": [52611]},
+    ],
+}
+
+json.dump(spec, open(sys.argv[1], "w"), indent=2, ensure_ascii=False)
+print("spec written")
