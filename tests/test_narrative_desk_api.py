@@ -341,7 +341,7 @@ def test_status(client):
 @pytest.mark.parametrize("path", ["/desk/narrative", "/desk/narrative/"])
 def test_page_served(client, path):
     r = client.get(path)
-    assert r.status_code == 200 and "SPEC-1 NARRATIVE DESK" in r.text and "EVASTARARCANA LLC" in r.text
+    assert r.status_code == 200 and "SPEC-1 NARRATIVE DESK" in r.text and "Matthew J. Lakamp" in r.text
 
 
 def test_page_is_offline():
