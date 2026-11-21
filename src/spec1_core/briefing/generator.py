@@ -43,7 +43,10 @@ except Exception:
 
 logger = logging.getLogger(__name__)
 
-MODEL = "claude-sonnet-4-6"
+from spec1_core.intelligence.store import spec1_home
+from spec1_core.llm import model_config
+
+MODEL = model_config.DEFAULT_CLAUDE_WRITER_MODEL
 MAX_TOKENS = 4000
 
 # Sources that map to Cyber / Info Ops domain
@@ -432,8 +435,9 @@ def generate_brief(records: list[dict], cycle_stats: dict, mode: str = "standard
         import anthropic  # only needed when Claude is called from here
 
         client = anthropic.Anthropic(api_key=api_key)
+        writer_model = model_config.load(spec1_home()).claude_writer_model
         message = client.messages.create(
-            model=MODEL,
+            model=writer_model,
             max_tokens=MAX_TOKENS,
             system=sys_prompt,
             messages=[{"role": "user", "content": user_prompt}],

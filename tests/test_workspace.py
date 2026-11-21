@@ -493,7 +493,7 @@ def test_researcher_calls_claude_sonnet_4(mock_anthropic):
     # Check that Sonnet 4 model was called
     mock_client.messages.create.assert_called_once()
     call_kwargs = mock_client.messages.create.call_args[1]
-    assert call_kwargs["model"] == "claude-sonnet-4-20250514"
+    assert call_kwargs["model"] == "claude-sonnet-5-5"
     assert call_kwargs["max_tokens"] == 2000
 
 

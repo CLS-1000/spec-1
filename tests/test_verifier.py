@@ -125,7 +125,7 @@ def test_valid_classifications_complete():
 
 
 def test_model_is_haiku():
-    assert MODEL == "claude-haiku-4-5-20251001"
+    assert MODEL == "claude-haiku-5-5"
 
 
 # ─── Integration: successful Claude response → Corroborated ──────────────────
