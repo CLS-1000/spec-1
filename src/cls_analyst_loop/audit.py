@@ -23,7 +23,7 @@ import logging
 from datetime import datetime, timezone
 
 from spec1_core.llm.fallback_client import FallbackLLMClient
-from spec1_labels import LLM_TIER_RULES, LLM_TIER_RULES_ALIASES
+from spec1_labels import LLM_TIER_RULES_ALIASES
 
 from cls_analyst_loop.schemas import AuditResult
 

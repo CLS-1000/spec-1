@@ -11,6 +11,7 @@ import json
 import threading
 from datetime import datetime, timezone
 from pathlib import Path
+from spec1_core.intelligence.store import anchor_to_home
 from typing import Iterator, Optional
 
 from cls_leg_jud.schemas import LegJudBrief
@@ -23,8 +24,8 @@ def _now() -> str:
 class LegJudStore:
     """Thread-safe append-only JSONL store for LegJudBrief records."""
 
-    def __init__(self, path: Path = Path("leg_jud_briefs.jsonl")) -> None:
-        self.path = Path(path)
+    def __init__(self, path: Path | str | None = None) -> None:
+        self.path = Path(path) if path is not None else anchor_to_home("leg_jud_briefs.jsonl")
         self._lock = threading.Lock()
 
     def save(self, brief: LegJudBrief) -> dict:

@@ -15,6 +15,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
+from spec1_core.intelligence.store import anchor_to_home
 from typing import Optional
 
 from cls_osint.adapters import fara as fara_adapter
@@ -75,11 +76,11 @@ class OsintPipeline:
 
     def __init__(
         self,
-        store_path: Path = Path("osint_records.jsonl"),
+        store_path: Path | str | None = None,
         feed_timeout: int = 15,
         run_id: str = "",
     ) -> None:
-        self.store = OsintStore(store_path)
+        self.store = OsintStore(Path(store_path) if store_path is not None else anchor_to_home("osint_records.jsonl"))
         self.feed_timeout = feed_timeout
         self.run_id = run_id or datetime.now(timezone.utc).strftime("run_%Y%m%d_%H%M%S")
 
@@ -205,7 +206,7 @@ class OsintPipeline:
 
 
 def run_pipeline(
-    store_path: Path = Path("osint_records.jsonl"),
+    store_path: Path | str | None = None,
     feed_timeout: int = 15,
 ) -> PipelineStats:
     """Convenience function — run the full pipeline and return stats."""

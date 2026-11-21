@@ -43,6 +43,7 @@ import json
 import logging
 import sys
 from pathlib import Path
+from spec1_core.intelligence.store import anchor_to_home
 
 logger = logging.getLogger(__name__)
 
@@ -228,7 +229,7 @@ def main(argv: list[str] | None = None) -> int:
         format="%(levelname)s %(message)s",
     )
 
-    db_path: Path = args.db_path or Path("spec1.db")
+    db_path: Path = args.db_path or anchor_to_home("spec1.db")
 
     if args.verify:
         result = verify_parity(args.jsonl, db_path, args.table)

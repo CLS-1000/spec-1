@@ -5,6 +5,7 @@ from __future__ import annotations
 import importlib
 import os
 from unittest.mock import patch, MagicMock
+from pathlib import Path
 
 import pytest
 
@@ -24,6 +25,12 @@ def isolate_output_paths(tmp_path, monkeypatch):
     argument is applied after this fixture.
     """
     out = tmp_path / "_spec1_outputs"
+    # Every default store/cache/log path resolves against spec1_home() at call time,
+    # so this one variable keeps defaults out of the real checkout. Tests that need a
+    # specific home set SPEC1_HOME themselves, after this fixture.
+    # mcp_server.main() chdirs into SPEC1_HOME, so the dir must exist.
+    (out / "home").mkdir(parents=True, exist_ok=True)
+    monkeypatch.setenv("SPEC1_HOME", str(out / "home"))
     monkeypatch.setenv("SPEC1_DB_PATH", str(out / "spec1.db"))
     monkeypatch.setenv("SPEC1_LLM_LOG_PATH", str(out / "logs" / "llm_fallback.jsonl"))
 
@@ -115,3 +122,56 @@ def block_real_llm_backends(request, monkeypatch):
     monkeypatch.setattr(ollama_manager, "is_running", lambda *a, **k: False)
     monkeypatch.setattr(LocalTier3Client, "chat", _offline)
     yield
+
+
+# ── Session guard: the suite must not write into the checkout ─────────────────
+#
+# Watches the places a stray relative default lands (repo root files and the
+# runtime data/output dirs). Any file created or modified there during the run
+# fails the session, naming the file. Source dirs are not watched: pytest writes
+# __pycache__ there legitimately.
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+_WATCHED_DIRS = ("data", "briefs", "generated", "logs", "cache", "research", "analyst_loop", "memory")
+_IGNORED_NAMES = {".coverage", ".pytest_cache", "__pycache__", ".ruff_cache", ".mypy_cache"}
+# Test-tool output the runner itself writes at the root, by design: CI runs
+# `pytest --cov --cov-report=xml`, and coverage's parallel mode writes `.coverage.<host>.<pid>`.
+_TOOL_OUTPUT = {"coverage.xml", "coverage.json", "junit.xml"}
+
+
+def _is_tool_output(name: str) -> bool:
+    return name in _TOOL_OUTPUT or name.startswith(".coverage")
+
+
+def _checkout_state() -> dict[str, tuple[int, int]]:
+    state: dict[str, tuple[int, int]] = {}
+    for entry in _REPO_ROOT.iterdir():
+        if entry.is_file() and entry.name not in _IGNORED_NAMES and not _is_tool_output(entry.name):
+            st = entry.stat()
+            state[entry.name] = (st.st_mtime_ns, st.st_size)
+    for name in _WATCHED_DIRS:
+        base = _REPO_ROOT / name
+        if not base.is_dir():
+            continue
+        for path in base.rglob("*"):
+            if path.is_file() and not (_IGNORED_NAMES & set(path.parts)):
+                st = path.stat()
+                state[str(path.relative_to(_REPO_ROOT))] = (st.st_mtime_ns, st.st_size)
+    return state
+
+
+def pytest_sessionstart(session):
+    session.config._spec1_checkout_state = _checkout_state()
+
+
+def pytest_sessionfinish(session, exitstatus):
+    before = getattr(session.config, "_spec1_checkout_state", None)
+    if before is None:
+        return
+    after = _checkout_state()
+    touched = sorted(k for k, v in after.items() if before.get(k) != v)
+    if touched:
+        listing = "\n  ".join(touched[:20])
+        session.config.get_terminal_writer().line(
+            f"\nTests wrote into the checkout ({len(touched)} files):\n  {listing}", red=True
+        )
+        session.exitstatus = pytest.ExitCode.TESTS_FAILED

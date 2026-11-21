@@ -29,7 +29,9 @@ from spec1_labels import (
 
 logger = logging.getLogger(__name__)
 
-MODEL = "claude-haiku-4-5-20251001"
+from spec1_core.llm import model_config
+
+MODEL = model_config.DEFAULT_CLAUDE_MODEL
 VALID_CLASSIFICATIONS = {
     VERIF_CORROBORATED, "ESCALATE", "INVESTIGATE", "MONITOR", VERIF_CONFLICTED, "ARCHIVE"
 }

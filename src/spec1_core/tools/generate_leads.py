@@ -24,6 +24,7 @@ import json
 import os
 import sys
 from pathlib import Path
+from spec1_core.intelligence.store import anchor_to_home
 
 from spec1_core.intelligence.store import resolve_store_path
 
@@ -57,7 +58,7 @@ def build_argparser() -> argparse.ArgumentParser:
     )
     p.add_argument(
         "--out",
-        default=os.environ.get("SPEC1_LEADS_PATH", "generated/leads.jsonl"),
+        default=str(anchor_to_home(os.environ.get("SPEC1_LEADS_PATH", "generated/leads.jsonl"))),
         help="Path to write Lead JSONL",
     )
     p.add_argument(

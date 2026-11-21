@@ -25,6 +25,7 @@ import logging
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
+from spec1_core.intelligence.store import anchor_to_home
 from typing import Optional, Union
 
 import requests
@@ -112,7 +113,7 @@ class OrestarAdapter(BaseAdapter):
     ) -> None:
         self._csv_path = Path(csv_path) if csv_path else None
         self._year = year or _current_year()
-        self._cache_dir = cache_dir or Path("cache/pdx1")
+        self._cache_dir = cache_dir or anchor_to_home("cache/pdx1")
 
     def _cache_path(self) -> Path:
         return self._cache_dir / f"orestar_{self._year}.csv"

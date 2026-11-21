@@ -9,8 +9,9 @@
 from __future__ import annotations
 
 import os
-from pathlib import Path
 from typing import Optional
+
+from spec1_core.intelligence.store import anchor_to_home
 
 from fastapi import APIRouter, Query
 
@@ -22,7 +23,7 @@ router = APIRouter(prefix="/leg_jud", tags=["legislative_judicial"])
 @router.get("/brief")
 def get_leg_jud_brief() -> dict:
     """Return the latest Legislative & Judicial Desk brief."""
-    store_path = Path(os.environ.get("SPEC1_LEG_JUD_PATH", "leg_jud_briefs.jsonl"))
+    store_path = anchor_to_home(os.environ.get("SPEC1_LEG_JUD_PATH", "leg_jud_briefs.jsonl"))
     if not store_path.is_file():
         return {"brief": None, "message": "No brief generated yet"}
     from cls_leg_jud.store import LegJudStore
@@ -34,7 +35,7 @@ def get_leg_jud_brief() -> dict:
 @router.get("/brief/history")
 def list_leg_jud_briefs(limit: int = Query(10, ge=1, le=100)) -> dict:
     """Return recent Legislative & Judicial Desk briefs."""
-    store_path = Path(os.environ.get("SPEC1_LEG_JUD_PATH", "leg_jud_briefs.jsonl"))
+    store_path = anchor_to_home(os.environ.get("SPEC1_LEG_JUD_PATH", "leg_jud_briefs.jsonl"))
     if not store_path.is_file():
         return {"total": 0, "items": []}
     from cls_leg_jud.store import LegJudStore
