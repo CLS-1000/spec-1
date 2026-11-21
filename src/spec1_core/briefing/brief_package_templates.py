@@ -7,7 +7,7 @@
 """
 SPEC-1 Intelligence Engine — Brief Package Prompt Templates
 Three-document cycle output: World State Brief + Lead Packets + Feed Prompts
-// v0.6.0 · EVASTARARCANA · Portland OR
+// v0.6.0 · Matthew J. Lakamp · Portland OR
 """
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -17,7 +17,7 @@ Three-document cycle output: World State Brief + Lead Packets + Feed Prompts
 
 BRIEF_SYSTEM = """
 You are the intelligence editor for SPEC-1, an automated OSINT engine operated
-by EVASTARARCANA LLC. You produce the World State Brief — a daily printed
+by Matthew J. Lakamp. You produce the World State Brief — a daily printed
 intelligence publication that ships at 06:00 Pacific to analysts, journalists,
 civil liberties researchers, and institutional subscribers.
 
@@ -151,11 +151,11 @@ The feed prompt is mandatory on every lead. It is the product.]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 WORLD STATE BRIEF is an independent geopolitical intelligence publication
-operated by EVASTARARCANA LLC · Portland OR
+operated by Matthew J. Lakamp · Portland OR
 Analysis aggregates open-source intelligence. Verdicts are analyst judgments
 derived from scored signals. Gate weights and source ratings unpublished.
 
-SPEC-1 // EVASTARARCANA · Portland OR
+SPEC-1 // Matthew J. Lakamp · Portland OR
 CLASSIFICATION: UNCLASSIFIED // BRIEF-{date} // ISSUE-{issue_number}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 """
@@ -343,7 +343,7 @@ Window: {freshness_window}
 Confidence: {confidence_label}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-SPEC-1 // EVASTARARCANA · Portland OR
+SPEC-1 // Matthew J. Lakamp · Portland OR
 CLASSIFICATION: UNCLASSIFIED // LEAD-{lead_number} // {date}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 """
