@@ -579,13 +579,17 @@ PRINT_CSS = """
   .prompt p { text-align: left; }
   footer { border-top: 1px solid var(--rule); padding-top: 18px; text-align: center; font-size: 10px;
     letter-spacing: 0.12em; line-height: 1.9; }
-  @media print { body { padding: 0; }
+  @media print {
+    body { padding: 0; }
+    .page { max-width: 100%; padding: 0; }
+    p { orphans: 3; widows: 3; }
     /* Short blocks stay whole, as in the April 28 layout; long blocks
        (domain briefings, leads, the elevated list) may break across pages. */
-    .item.keep, .watch, .field, .trajectory { break-inside: avoid; }
+    .item.keep, .watch, .field, .trajectory, .prompt, footer { break-inside: avoid; }
     .item { break-inside: auto; }
     .section-title, .region, .item h2, .box h3 { break-after: avoid; }
-    .item h2, .field { break-inside: avoid; } }
+    .item h2, .field { break-inside: avoid; }
+  }
 """
 
 
