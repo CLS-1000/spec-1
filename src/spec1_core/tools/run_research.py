@@ -28,6 +28,7 @@ import argparse
 import os
 import sys
 from pathlib import Path
+from spec1_core.intelligence.store import anchor_to_home
 
 from cls_research.pipeline import run_research
 from cls_research.store import DossierStore
@@ -42,7 +43,7 @@ def build_argparser() -> argparse.ArgumentParser:
     )
     p.add_argument(
         "--dossiers-dir",
-        default=os.environ.get("SPEC1_RESEARCH_DOSSIERS_DIR", "research/dossiers"),
+        default=str(anchor_to_home(os.environ.get("SPEC1_RESEARCH_DOSSIERS_DIR", "research/dossiers"))),
         help="Directory for the dossier JSONL store + Markdown output (default research/dossiers)",
     )
     p.add_argument(

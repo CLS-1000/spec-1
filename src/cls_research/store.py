@@ -24,6 +24,7 @@ from __future__ import annotations
 import json
 import threading
 from pathlib import Path
+from spec1_core.intelligence.store import anchor_to_home
 from typing import Iterator, Optional
 
 from cls_research.schemas import ResearchArtifact
@@ -34,8 +35,8 @@ DEFAULT_DOSSIERS_DIR = Path("research/dossiers")
 class DossierStore:
     """Thread-safe JSONL store for ResearchArtifact versions, one file per topic."""
 
-    def __init__(self, base_dir: Path = DEFAULT_DOSSIERS_DIR) -> None:
-        self.base_dir = Path(base_dir)
+    def __init__(self, base_dir: Path | str | None = None) -> None:
+        self.base_dir = Path(base_dir) if base_dir is not None else anchor_to_home(DEFAULT_DOSSIERS_DIR)
         self._lock = threading.Lock()
 
     def _path_for(self, topic_id: str) -> Path:

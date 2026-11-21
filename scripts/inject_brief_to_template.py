@@ -499,7 +499,7 @@ def _standalone_block_reason(brief_path: Path) -> str | None:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--brief", default="briefs/spec1_brief_latest.md",
+    parser.add_argument("--brief", default=str(Path(__file__).resolve().parents[1] / "briefs" / "spec1_brief_latest.md"),
                         help="Path to SPEC-1 brief Markdown file (default: briefs/spec1_brief_latest.md)")
     parser.add_argument("--template", required=True,
                         help="Path to Notitia Civica print template HTML")

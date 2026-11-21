@@ -34,6 +34,7 @@ import re
 import time
 import uuid
 from pathlib import Path
+from spec1_core.intelligence.store import anchor_to_home
 from typing import Any
 
 import httpx
@@ -120,7 +121,7 @@ class FallbackLLMClient:
             or env("OLLAMA_MODEL")
             or ollama_manager.preferred_model()
         )
-        self._log_path = log_path or Path(env("SPEC1_LLM_LOG_PATH", str(_DEFAULT_LOG_PATH)))
+        self._log_path = log_path or anchor_to_home(env("SPEC1_LLM_LOG_PATH", str(_DEFAULT_LOG_PATH)))
         self._dev_mode = env("SPEC1_DEV_MODE", "").lower() == "true"
         self._active_tier = "claude"
         self._active_model: str | None = None

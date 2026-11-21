@@ -12,6 +12,7 @@ import json
 import threading
 from datetime import datetime, timezone
 from pathlib import Path
+from spec1_core.intelligence.store import anchor_to_home
 from typing import Iterator, Optional
 
 from cls_world_brief.formatter import to_markdown
@@ -34,12 +35,12 @@ class BriefStore:
 
     def __init__(
         self,
-        jsonl_path: Path = Path("world_briefs.jsonl"),
-        briefs_dir: Path = Path("briefs"),
+        jsonl_path: Path | str | None = None,
+        briefs_dir: Path | str | None = None,
         db: Optional["Database"] = None,  # noqa: F821
     ) -> None:
-        self.jsonl_path = Path(jsonl_path)
-        self.briefs_dir = Path(briefs_dir)
+        self.jsonl_path = Path(jsonl_path) if jsonl_path is not None else anchor_to_home("world_briefs.jsonl")
+        self.briefs_dir = Path(briefs_dir) if briefs_dir is not None else anchor_to_home("briefs")
         self._lock = threading.Lock()
         self._dual_writer = None
         if db is not None:

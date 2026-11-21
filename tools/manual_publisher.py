@@ -47,6 +47,7 @@ import sys
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
+from spec1_core.intelligence.store import anchor_to_home
 
 
 # ---------------------------------------------------------------------------
@@ -251,7 +252,7 @@ def build_argparser() -> argparse.ArgumentParser:
     src.add_argument(
         "--intel",
         metavar="PATH",
-        default=os.environ.get("SPEC1_STORE_PATH", "spec1_intelligence.jsonl"),
+        default=str(anchor_to_home(os.environ.get("SPEC1_STORE_PATH", "spec1_intelligence.jsonl"))),
         help=(
             "Path to the intelligence JSONL store used when --brief is not given "
             "(default: %(default)s)."
@@ -277,7 +278,7 @@ def build_argparser() -> argparse.ArgumentParser:
     p.add_argument(
         "--out-dir",
         metavar="DIR",
-        default=os.environ.get("SPEC1_BRIEFS_DIR", "generated/briefs"),
+        default=str(anchor_to_home(os.environ.get("SPEC1_BRIEFS_DIR", "generated/briefs"))),
         help="Directory to write outputs into (default: %(default)s).",
     )
     p.add_argument(

@@ -16,10 +16,11 @@ from spec1_core.llm.triage_stamper import evaluate_and_stamp_record
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("spec1.tier3_backfill")
 
-DB_FILE = Path("spec1.db")
+_REPO_ROOT = Path(__file__).resolve().parents[1]  # defaults mean the same file whatever the cwd
+DB_FILE = _REPO_ROOT / "spec1.db"
 # Fields the backfill writes to a row and mirrors into the JSONL store.
 STAMP_FIELDS = ("analysis_tier", "tier_used", "model", "llm_session", "stamped_by")
-JSONL_FILE = Path("data/spec1_intelligence.jsonl")
+JSONL_FILE = _REPO_ROOT / "data" / "spec1_intelligence.jsonl"
 
 
 def backfill_high_priority(conn: sqlite3.Connection, limit: int = 25,
