@@ -1,0 +1,40 @@
+{
+  "stem": "world-state-brief_2026-11-20_run-5043af20d6b1_95427c7b",
+  "rendered_at": "2026-11-19T17:52:15.308917-08:00",
+  "pack_sha256": "95427c7b1481f102caabbdc5c469f27aeeb56cd2fbb93d979794a459eac600a2",
+  "runs": [
+    "run-5043af20d6b1"
+  ],
+  "counts": {
+    "by_priority": {
+      "ELEVATED": 34,
+      "MONITOR": 5,
+      "STANDARD": 46
+    },
+    "by_source": {
+      "38_north": 2,
+      "atlantic_council": 14,
+      "cipher_brief": 8,
+      "defense_one": 2,
+      "just_security": 9,
+      "lawfare": 4,
+      "nk_news": 20,
+      "politico": 6,
+      "propublica": 11,
+      "war_on_the_rocks": 7,
+      "yonhap": 2
+    },
+    "by_tier": {
+      "ollama": 83,
+      "rules": 2
+    },
+    "by_tier_source": {
+      "log_match": 85
+    },
+    "records": 85,
+    "usable_for_analysis": 83
+  },
+  "leads": 5,
+  "writer": "Claude Code (hand-written from the record pack; no model wrote this brief)",
+  "published": false
+}

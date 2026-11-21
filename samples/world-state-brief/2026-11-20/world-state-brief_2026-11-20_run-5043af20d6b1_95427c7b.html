@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WORLD STATE BRIEF | Friday, November 20, 2026</title>
+<style>
+  :root { --ink:#111; --muted:#777; --rule:#111; }
+  @page { size: Letter; margin: 0.6in; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 0; background: #fff; color: var(--ink);
+    font-family: "IBM Plex Mono", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12.5px; line-height: 1.75;
+  }
+  .page { max-width: 760px; margin: 0 auto; padding: 0 28px; }
+  .masthead { border: 2px solid var(--rule); padding: 44px 40px 28px; text-align: center; margin-bottom: 60px; }
+  .masthead h1 { margin: 0; font-size: 36px; font-weight: 700; letter-spacing: 0.22em; }
+  .masthead .kicker { margin: 18px 0 30px; font-size: 10px; letter-spacing: 0.35em; text-transform: uppercase; }
+  .masthead .dateline { display: flex; justify-content: space-between; border-top: 1px solid var(--rule);
+    padding-top: 18px; font-size: 10px; letter-spacing: 0.3em; text-transform: uppercase; }
+  .section-title { font-size: 11px; font-weight: 700; letter-spacing: 0.4em; text-transform: uppercase;
+    border-bottom: 2px solid var(--rule); padding-bottom: 12px; margin: 0 0 26px; }
+  section { margin-bottom: 70px; }
+  .item { border-left: 2px solid var(--rule); padding-left: 20px; margin-bottom: 36px; }
+  .region { font-size: 10px; font-weight: 700; letter-spacing: 0.35em; text-transform: uppercase; margin: 0 0 6px; }
+  .item h2 { font-size: 16px; font-weight: 700; margin: 0 0 6px; letter-spacing: 0.02em; }
+  .domains { font-size: 9.5px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin: 0 0 14px; }
+  .item p { margin: 0 0 14px; text-align: justify; }
+  .box { border: 1px solid var(--rule); padding: 16px 18px; margin: 22px 0 6px; font-size: 11.5px; line-height: 1.7; }
+  .box h3 { margin: 0 0 8px; font-size: 9.5px; font-weight: 700; letter-spacing: 0.3em; text-transform: uppercase; }
+  .box p { margin: 0 0 8px; text-align: left; }
+  .box p:last-child { margin-bottom: 0; }
+  .watch { border: 2px solid var(--rule); padding: 26px 30px; margin: 10px 0 60px; }
+  .watch h3 { margin: 0 0 18px; font-size: 11px; font-weight: 700; letter-spacing: 0.35em; text-transform: uppercase; }
+  .watch ul { list-style: none; margin: 0; padding: 0; font-size: 11.5px; }
+  .watch li { margin: 0 0 10px; }
+  .watch li::before { content: "▸ "; }
+  .field { margin: 0 0 10px; text-align: left; }
+  .field b { font-size: 9.5px; letter-spacing: 0.25em; text-transform: uppercase; }
+  .ids { font-size: 9.5px; color: var(--muted); letter-spacing: 0.04em; margin: 0 0 14px; word-break: break-word; }
+  .prompt p { text-align: left; }
+  footer { border-top: 1px solid var(--rule); padding-top: 18px; text-align: center; font-size: 10px;
+    letter-spacing: 0.12em; line-height: 1.9; }
+  @media print { body { padding: 0; }
+    /* Short blocks stay whole, as in the April 28 layout; long blocks
+       (domain briefings, leads, the elevated list) may break across pages. */
+    .item.keep, .watch, .field, .trajectory { break-inside: avoid; }
+    .item { break-inside: auto; }
+    .section-title, .region, .item h2, .box h3 { break-after: avoid; }
+    .item h2, .field { break-inside: avoid; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="masthead">
+    <h1>WORLD STATE BRIEF</h1>
+    <div class="kicker">Open-Source Intelligence · Daily Analysis</div>
+    <div class="dateline"><span>Friday, November 20, 2026</span><span>85 records · 83 model-tier</span></div>
+  </header>
+  <section>
+    <div class="section-title">Executive Summary</div>
+    <article class="item">
+      <p>The record pack holds 85 stored records from one cycle (run-5043af20d6b1, written 2026-11-19 22:48 to 2026-11-20 00:55 UTC) across 11 sources. 83 were classified by the local model (Ollama) and are used for analysis below; 2 fell back to the rules tier after a model timeout and are counted but not analysed. The pack does not record how many signals the cycle harvested, only what it stored. The top score is 0.961, from lawfare on Washington’s equity stakes in 40 companies (rec-e445d1bdb834). 33 model-tier records crossed the elevated threshold of 0.75. That count overstates urgency: the score measures source credibility, length, recency and keyword novelty, not how new or verified the facts are, and the model classified the top record MONITOR. The pool is wide and shallow. It is strong on U.S. institutional accountability (ProPublica, Just Security, Lawfare), on the Shenzhen APEC week, and on the Korean Peninsula, where NK News alone contributes 20 records. It is thin on cyber operations. The engine’s one psyop hit, a NARRATIVE_CLUSTER on the word “north”, tests as topic proximity and is NOISE.</p>
+      <div class="ids">Runs: run-5043af20d6b1 · pack sha256 95427c7b1481 · 2 rules-tier and 0 tier-unknown records counted, not analysed</div>
+    </article>
+  </section>
+  <section>
+    <div class="section-title">Elevated Signals</div>
+    <article class="item keep"><p>33 model-tier records scored at or above 0.75. Elevated here means the gates scored the source and article highly; it is not a verification grade. Most of these records are analysis, opinion or newsletter items, and the local model classified them INVESTIGATE or MONITOR. Five carry notes; the rest are listed with their ids. One more record scored above the threshold (Cipher Brief on Nvidia’s future) but came from the rules tier, so it is listed under records counted, not analysed.</p></article>
+    <article class="item keep">
+      <div class="region">lawfare · score 0.961</div>
+      <h2>Washington now owns equity stakes in 40 companies</h2>
+      <div class="domains">Gates: credibility + volume + velocity + novelty · MONITOR 0.756 · ollama, matched to llm_fallback.jsonl</div>
+      <p>Top score in the pack. Lawfare argues the stakes are bids for control without an exit strategy; the model classified it MONITOR at 0.756. Lead 1.</p>
+      <div class="ids">record rec-e445d1bdb834 · signal 6ad1ed3814b0a684 · rowid 52612</div>
+    </article>
+    <article class="item keep">
+      <div class="region">propublica · score 0.905</div>
+      <h2>The U.S. paid insurers billions to cover civilians harmed in war</h2>
+      <div class="domains">Gates: credibility + volume + velocity + novelty · INVESTIGATE 0.768 · ollama, matched to llm_fallback.jsonl</div>
+      <p>ProPublica: a federal program for injured contractor employees has made a few insurers its biggest winners, and the government itself calls it ripe for fraud. Lead 2.</p>
+      <div class="ids">record rec-158f796db60f · signal c7bf986f107e65d2 · rowid 52615</div>
+    </article>
+    <article class="item keep">
+      <div class="region">cipher_brief · score 0.846</div>
+      <h2>Where did the billions from Venezuela’s oil go</h2>
+      <div class="domains">Gates: credibility + volume + velocity + novelty · INVESTIGATE 0.801 · ollama, matched to llm_fallback.jsonl</div>
+      <p>Cipher Brief tests a presidential claim that “billions and billions” have been taken out of Venezuela. Lead 4.</p>
+      <div class="ids">record rec-c0893c82c915 · signal 7a2e7becfd77e2ff · rowid 52561</div>
+    </article>
+    <article class="item keep">
+      <div class="region">38_north · score 0.831</div>
+      <h2>North Korea shows off an AI chatbot</h2>
+      <div class="domains">Gates: credibility + volume + velocity + novelty · ESCALATE 0.914 · ollama, matched to llm_fallback.jsonl</div>
+      <p>The only ESCALATE classification in the pack (0.914). The excerpt describes a university chatbot shown at an IT exhibition; read it as a capability marker, not a threat report.</p>
+      <div class="ids">record rec-d7b726b8ed09 · signal ad973b0bd29f3d31 · rowid 52588</div>
+    </article>
+    <article class="item keep">
+      <div class="region">propublica · score 0.800</div>
+      <h2>ProPublica publishes the tariff refunds the government withheld</h2>
+      <div class="domains">Gates: credibility + volume + velocity + novelty · MONITOR 0.700 · ollama, matched to llm_fallback.jsonl</div>
+      <p>ProPublica says it is publishing what the government would not: which importers are receiving roughly $170 billion in refunds after the Supreme Court struck down the emergency tariffs in February 2026. Lead 3.</p>
+      <div class="ids">record rec-10098398d947 · signal dc3804c23fa5f112 · rowid 52618</div>
+    </article>
+    <article class="item">
+      <div class="region">Also elevated</div>
+      <p class="field">lawfare · score 0.952 · Rational Security podcast: the “Bird Dogs” edition<br><span class="ids">INVESTIGATE 0.720 · record rec-620d0e4120b4 · signal aee8e58f1c07d81a · ollama, matched to llm_fallback.jsonl</span></p>
+      <p class="field">cipher_brief · score 0.914 · Nvidia spy allegations loom over Trump’s meeting with Xi<br><span class="ids">MONITOR 0.759 · record rec-4a784b45f074 · signal 33997ef9a65de045 · ollama, matched to llm_fallback.jsonl</span></p>
+      <p class="field">cipher_brief · score 0.914 · The OSS is back in name; the authorities are the hard part<br><span class="ids">INVESTIGATE 0.726 · record rec-7df64c0b2dd3 · signal 93041c32866741ec · ollama, matched to llm_fallback.jsonl</span></p>
+      <p class="field">lawfare · score 0.911 · The data is the target: data corruption as a military strategy<br><span class="ids">INVESTIGATE 0.772 · record rec-cb70452a663a · signal 12a16f7b70dc8c61 · ollama, matched to llm_fallback.jsonl</span></p>
+      <p class="field">just_security · score 0.905 · Bukele’s troops in Haiti and the U.N. guardrails<br><span class="ids">INVESTIGATE 0.766 · record rec-c9480e486552 · signal 940f3ecc1f491b74 · ollama, matched to llm_fallback.jsonl</span></p>
+      <p class="field">just_security · score 0.905 · Just Security Early Edition, November 19, 2026<br><span class="ids">MONITOR 0.627 · record rec-3d84d29a12ea · signal 798036d1115eada1 · ollama, matched to llm_fallback.jsonl</span></p>
+      <p class="field">just_security · score 0.905 · Guantanamo: USS Cole trial recesses with first 8 jurors chosen<br><span class="ids">MONITOR 0.602 · record rec-4d1b17c4759d · signal 9bfbc454c3f12970 · ollama, matched to llm_fallback.jsonl</span></p>
+      <p class="field">just_security · score 0.887 · Judge Kimberly Prost on international legal institutions<br><span class="ids">INVESTIGATE 0.716 · record rec-0e5dd589b2a7 · signal 821cd3132b12c211 · ollama, matched to llm_fallback.jsonl</span></p>
+      <p class="field">just_security · score 0.869 · Afghanistan’s 80 years at the U.N.<br><span class="ids">MONITOR 0.651 · record rec-9603882d079e · signal 8f11485867739d4d · ollama, matched to llm_fallback.jsonl</span></p>
+      <p class="field">propublica · score 0.869 · California teachers charged with abuse kept their licenses<br><span class="ids">MONITOR 0.697 · record rec-faf0d655121d · signal da42bb2054fbd5f3 · ollama, matched to llm_fallback.jsonl</span></p>
+      <p class="field">cipher_brief · score 0.864 · What’s holding back America’s drone revolution<br><span class="ids">MONITOR 0.710 · record rec-1c3ee3cc2b82 · signal 96a3193ca4c5d5de · ollama, matched to llm_fallback.jsonl</span></p>
+      <p class="field">cipher_brief · score 0.864 · The Pentagon has an AI strategy; it needs a field guide<br><span class="ids">INVESTIGATE 0.774 · record rec-0a279f087b2b · signal 3a28a8097842dba5 · ollama, matched to llm_fallback.jsonl</span></p>
+      <p class="field">cipher_brief · score 0.864 · America invented the drone war; why is it falling behind<br><span class="ids">INVESTIGATE 0.799 · record rec-1d10d4ffe820 · signal 9f431fb46e59359a · ollama, matched to llm_fallback.jsonl</span></p>
+      <p class="field">cipher_brief · score 0.855 · AI is not the danger; the congressional vacuum is<br><span class="ids">INVESTIGATE 0.722 · record rec-e497cd98d749 · signal 48b833dea4646c06 · ollama, matched to llm_fallback.jsonl</span></p>
+      <p class="field">38_north · score 0.849 · The two Koreas need a ‘good divorce’<br><span class="ids">MONITOR 0.712 · record rec-4f81de1f93a6 · signal 56e5979c7800cff2 · ollama, matched to llm_fallback.jsonl</span></p>
+      <p class="field">propublica · score 0.837 · Six Flags roller coaster brain injuries blamed on riders<br><span class="ids">INVESTIGATE 0.791 · record rec-5bbe83af90ff · signal 3320dcfcc04b5f43 · ollama, matched to llm_fallback.jsonl</span></p>
+      <p class="field">propublica · score 0.837 · Abuse continued after a federal women’s prison was shut<br><span class="ids">INVESTIGATE 0.764 · record rec-abf840c2a4a6 · signal 0621d3bba938fec7 · ollama, matched to llm_fallback.jsonl</span></p>
+      <p class="field">propublica · score 0.837 · Washington Democrats move to ban data centers on public lands<br><span class="ids">INVESTIGATE 0.763 · record rec-aa6e8f5461b0 · signal affb0ae778c11fee · ollama, matched to llm_fallback.jsonl</span></p>
+      <p class="field">politico · score 0.834 · Cornyn links the Nvidia scandal to perceived corruption<br><span class="ids">INVESTIGATE 0.699 · record rec-ee8394f2ac86 · signal 262862aea30a457e · ollama, matched to llm_fallback.jsonl</span></p>
+      <p class="field">war_on_the_rocks · score 0.819 · The Adversarial: handshakes without headway<br><span class="ids">MONITOR 0.651 · record rec-56e8600802ce · signal 1643a82c4cd83a5b · ollama, matched to llm_fallback.jsonl</span></p>
+      <p class="field">propublica · score 0.810 · New bar admits are now federal prosecutors<br><span class="ids">INVESTIGATE 0.719 · record rec-0441bff1924d · signal b1a35b80817bf002 · ollama, matched to llm_fallback.jsonl</span></p>
+      <p class="field">just_security · score 0.800 · Just Security litigation tracker: status key<br><span class="ids">MONITOR 0.649 · record rec-0fd457cf556c · signal f3a2d19a784de9f9 · ollama, matched to llm_fallback.jsonl</span></p>
+      <p class="field">just_security · score 0.800 · ICJ finds Myanmar committed genocide against the Rohingya<br><span class="ids">MONITOR 0.777 · record rec-12e9bb25a4a1 · signal 5669882304aae4d3 · ollama, matched to llm_fallback.jsonl</span></p>
+      <p class="field">propublica · score 0.800 · DOJ intervened in a payout to a Trump golf pro<br><span class="ids">INVESTIGATE 0.666 · record rec-ed3eecf5418b · signal ab48bf6bcb9772ed · ollama, matched to llm_fallback.jsonl</span></p>
+      <p class="field">politico · score 0.754 · Beshear defends DGA spending in Texas<br><span class="ids">INVESTIGATE 0.747 · record rec-c9ea605fa014 · signal 0925b9ccd0f8cfc6 · ollama, matched to llm_fallback.jsonl</span></p>
+      <p class="field">just_security · score 0.750 · 1,000 cases filed against Trump administration policies<br><span class="ids">INVESTIGATE 0.666 · record rec-cd7551ec8696 · signal 306413ae5fced281 · ollama, matched to llm_fallback.jsonl</span></p>
+      <p class="field">just_security · score 0.750 · ABILA International Law Weekend 2026 series<br><span class="ids">MONITOR 0.526 · record rec-7bc230bdc95a · signal 6c0e9dcbc1d38cfa · ollama, matched to llm_fallback.jsonl</span></p>
+      <p class="field">propublica · score 0.750 · Chicago City Council orders an independent finance review<br><span class="ids">INVESTIGATE 0.743 · record rec-90f4a8b541bc · signal c6224c94d6412c37 · ollama, matched to llm_fallback.jsonl</span></p>
+    </article>
+  </section>
+  <section>
+    <div class="section-title">Domain Briefings</div>
+    <article class="item">
+      <div class="region">Geopolitics</div>
+      <div class="domains">Records: cipher_brief 0.914 · politico 0.834 · war_on_the_rocks 0.650 · yonhap 0.651 · yonhap 0.651 · atlantic_council 0.526 · nk_news 0.535 · nk_news 0.610 · nk_news 0.660 · nk_news 0.660 · cipher_brief 0.846 · just_security 0.905 · just_security 0.800 · atlantic_council 0.710 · atlantic_council 0.701 · atlantic_council 0.601 · atlantic_council 0.626</div>
+      <p>The Shenzhen APEC week is the densest thread. Yonhap’s running summit story (0.651, rec-a5960d29451d) reports that Trump, Xi and Putin agreed to hold a dialogue on nuclear risks, and its earlier write-through (rec-0033819ad405) says the joint declaration made no mention of North Korea’s nuclear weapons. War on the Rocks (0.650) frames the summit as the first U.S.-Chinese-Russian leaders’ meeting and a possible opening for trilateral arms control, while noting that for Beijing the symbolism matters most. NK News reports Xi backing Seoul’s push for U.S.-North Korea talks (rec-5f38c84fecea) and a Kremlin line that Putin would “of course” meet Kim if Kim attended (rec-26924c8f95e2). These records connect: the declaration’s silence on North Korean weapons sits next to IAEA confirmation, reported by NK News (0.660), that North Korea expanded an older enrichment facility at Yongbyon.</p>
+      <p>The Nvidia thread links the summit to Washington. Cipher Brief (0.914) reports allegations that a Singapore-based Nvidia cloud partner executive was a Ministry of State Security agent and expects the matter to come up between Trump and Xi; Politico (0.834) has outgoing Senator Cornyn tying the Nvidia scandal and lax chip export controls to the midterm losses. Both are allegation-level: neither excerpt cites a charging document or an official finding.</p>
+      <p>Elsewhere the pool has single-source items without corroboration in the pack: Venezuela oil revenues (Cipher Brief, 0.846), Salvadoran troops in Haiti (Just Security, 0.905), the ICJ genocide finding against Myanmar (Just Security, 0.800), the November 17 Crimean Bridge strike (Atlantic Council, 0.710) and a Bahrain dispatch on Iran (Atlantic Council, 0.626). The U.S. decision to withhold support from the U.N. resolution on North Korean human rights for the first time in 21 years (NK News, 0.660) is a concrete, checkable policy change and is not yet reflected in any other source in the pack.</p>
+      <div class="box trajectory">
+        <h3>Trajectory Assessment</h3>
+        <p>Next 48 hours: Readouts and follow-ups from Shenzhen; watch for any written terms for the nuclear-risk dialogue.<br>
+        7-day outlook: Whether the dialogue gets a date, a venue or a working level; whether North Korea is added.<br>
+        Limits: Insufficient signal depth to assess the summit outcome itself: the two Yonhap records are truncated leads, and no record carries the joint declaration text. Venezuela, Haiti and Bahrain rest on one record each.</p>
+      </div>
+      <div class="ids">rec-4a784b45f074 · rec-ee8394f2ac86 · rec-17567a98f74a · rec-a5960d29451d · rec-0033819ad405 · rec-03b737f09ed6 · rec-5f38c84fecea · rec-26924c8f95e2 · rec-671ceb5ef26a · rec-123cae1def65 · rec-c0893c82c915 · rec-c9480e486552 · rec-12e9bb25a4a1 · rec-99effd11e4ba · rec-f202d002dfdb · rec-f9c886ab4062 · rec-f88de7500ead</div>
+    </article>
+    <article class="item">
+      <div class="region">Cyber / Info Ops</div>
+      <div class="domains">Records: defense_one 0.604 · lawfare 0.911 · nk_news 0.610 · atlantic_council 0.626 · cipher_brief 0.864 · cipher_brief 0.855 · cipher_brief 0.864 · cipher_brief 0.864 · defense_one 0.704 · 38_north 0.831</div>
+      <p>The only operational cyber item is Defense One’s report (0.604, rec-8b67e67d4492) that NSANet, the NSA’s classified communications network, is down, with no immediate sign of a cyberattack and a possible link to software upgrades. It scored STANDARD, below the elevated threshold, and rests on people familiar with the matter. It is Lead 5 because it is the one checkable event in this domain.</p>
+      <p>The rest is argument, not incident. Lawfare (0.911) treats data corruption as a military strategy as AI targeting spreads, naming the Maven Smart System and its use in the Iran conflict. Cipher Brief runs four AI and drone pieces (rec-0a279f087b2b, rec-e497cd98d749, rec-1c3ee3cc2b82, rec-1d10d4ffe820) that reach the same diagnosis from different sides: U.S. concepts are ahead of acquisition and law. One of them (rec-e497cd98d749) states that OpenAI disclosed its agents escaped a test sandbox and broke into Hugging Face; that is a striking factual claim that needs its primary source before anyone repeats it.</p>
+      <p>Two information-control items: NK News found North Korea content disappearing from Weibo, Rednote and WeChat since late October (0.610), and Atlantic Council discusses Russia’s use of one-shot mercenaries, apps and crypto in its shadow war on Europe (0.626).</p>
+      <div class="box trajectory">
+        <h3>Trajectory Assessment</h3>
+        <p>Next 48 hours: Whether NSANet is restored and whether the cause is confirmed.<br>
+        7-day outlook: Any congressional intelligence committee statement on the outage.<br>
+        Limits: Insufficient signal depth: one incident record, single-sourced; no attribution data for any cyber activity; the AI pieces are opinion and analysis.</p>
+      </div>
+      <div class="ids">rec-8b67e67d4492 · rec-cb70452a663a · rec-0ec06e0bbcd9 · rec-cd61c20c211d · rec-0a279f087b2b · rec-e497cd98d749 · rec-1c3ee3cc2b82 · rec-1d10d4ffe820 · rec-84b671c7dab5 · rec-d7b726b8ed09</div>
+    </article>
+    <article class="item">
+      <div class="region">Psyop / Narrative Analysis</div>
+      <p>The engine fired one pattern for this run: NARRATIVE_CLUSTER on the topic “north”, pattern confidence 0.950, 758 supporting signals from 13 sources, psyop score 2, classification NOISE.</p>
+      <p>Testing the hit against its own evidence: only 318 of the 758 supporting excerpts contain “north” at all (42%). Where the word does appear, it is “north korea” 98% of the time, and 91% of those excerpts come from nk_news, an outlet whose beat is North Korea. The cluster therefore groups a regional outlet’s normal output with unrelated articles that merely appeared in the same harvest. Test verdict: topic_proximity. This is NOISE: topic proximity, not message alignment. No psyop activity assessed.</p>
+      <div class="box trajectory">
+        <h3>Trajectory Assessment</h3>
+        <p>Limits: The test reads excerpt text only. It can rule out a shared message when the topic word is missing or scattered; it cannot prove coordination when a subject is shared.</p>
+      </div>
+    </article>
+  </section>
+  <section>
+    <div class="section-title">Story Leads</div>
+    <article class="item lead">
+      <div class="region">Lead 1 · lawfare · score 0.961</div>
+      <h2>Washington’s 40 equity stakes: what the government owns and on what terms</h2>
+      <div class="domains">Gates: credibility + volume + velocity + novelty · ollama, matched to llm_fallback.jsonl</div>
+      <div class="ids">Signal: lawfare · score 0.961 · ELEVATED · gates: credibility + volume + velocity + novelty · MONITOR 0.756 · record rec-e445d1bdb834 · signal 6ad1ed3814b0a684 · rowid 52612 · ollama, matched to llm_fallback.jsonl</div>
+      <p class="field"><b>The question</b><br>For each of the 40 companies in which the federal government now holds equity, which agency holds the stake, what was paid, what rights (board seats, vetoes, golden shares) came with it, and is there any written exit or divestiture plan?</p>
+      <p class="field"><b>Who to call</b><br>Commerce Department press office (CHIPS-related equity agreements)<br>Defense Department Office of Strategic Capital<br>Treasury Department press office<br>Investor relations at three of the companies named in the full Lawfare article<br>Senate Banking and House Financial Services committee minority staff</p>
+      <p class="field"><b>Documents to request (FOIA)</b><br>Commerce, Treasury and DoD: the executed equity or warrant agreements and term sheets for each stake, January 2025 to present<br>Agency legal memos on the statutory authority used for each acquisition</p>
+      <p class="field"><b>Public records to pull now</b><br>SEC EDGAR: 8-K, 13D/13G and proxy filings disclosing a U.S. government holder at each company<br>USAspending.gov award records for the same companies<br>The full Lawfare article and the list of 40 companies it relies on</p>
+      <p class="field"><b>Window</b><br>2 weeks — Structural story with no hard peg in the pack; the lame-duck session gives Congress a reason to ask about exit plans before January.</p>
+      <p class="field"><b>Confidence</b><br>MEDIUM — The top-scored record, but a single analysis piece the model classified MONITOR; the count of 40 must be rebuilt from filings before it is used.</p>
+      <div class="box prompt">
+        <h3>Claude Prompt</h3>
+        <p>You are an investigative journalist working this lead: Washington’s 40 equity stakes: what the government owns and on what terms.</p>
+        <p>The signal: lawfare, score 0.961, gates: credibility + volume + velocity + novelty; record rec-e445d1bdb834, signal 6ad1ed3814b0a684. Treat the record as a pointer to a published article, not as a verified fact.</p>
+        <p>The core question: For each of the 40 companies in which the federal government now holds equity, which agency holds the stake, what was paid, what rights (board seats, vetoes, golden shares) came with it, and is there any written exit or divestiture plan?</p>
+        <p>Step 1 — Draft a 3-paragraph background memo on federal equity stakes in private companies since January 2025: which statutes and programs were used, how these stakes differ from the 2008-2009 rescues, and which sectors are covered (the record names chips, critical minerals, quantum computing and nuclear). Cite SEC filings and agency releases, and mark anything taken only from the Lawfare article as unverified.</p>
+        <p>Step 2 — Write 5 yes/no questions for the Commerce Department press office, each answerable with yes, no or a number. Example: 'Does every equity agreement Commerce has signed since January 2025 include a written divestiture timeline? Yes or no?' Cover board rights, veto rights, the total paid, and whether any stake has been sold.</p>
+        <p>Step 3 — Write a FOIA request draft to the Commerce Department FOIA office and the Treasury FOIA Division, in formal FOIA language, for: all executed equity, warrant or golden-share agreements between the United States and private companies, all term sheets and approval memoranda for those agreements, and all legal opinions on the authority used, for January 1, 2025 to the present. Ask that any denial cite the specific exemption for each withheld record.</p>
+        <p>Step 4 — Write a 150-word pitch memo for an editor meeting: the story, the stakes, what you have (the Lawfare count and the filings pulled), and what you still need.</p>
+      </div>
+    </article>
+    <article class="item lead">
+      <div class="region">Lead 2 · propublica · score 0.905</div>
+      <h2>War-zone contractor injury insurance: who collected, and what the government knew</h2>
+      <div class="domains">Gates: credibility + volume + velocity + novelty · ollama, matched to llm_fallback.jsonl</div>
+      <div class="ids">Signal: propublica · score 0.905 · ELEVATED · gates: credibility + volume + velocity + novelty · INVESTIGATE 0.768 · record rec-158f796db60f · signal c7bf986f107e65d2 · rowid 52615 · ollama, matched to llm_fallback.jsonl</div>
+      <p class="field"><b>The question</b><br>How much has the federal program covering injured or killed contractor employees from Iraq and Afghanistan paid insurers since 2001, which insurers received the most, and which official reviews warned of fraud risk?</p>
+      <p class="field"><b>Who to call</b><br>Labor Department, Office of Workers’ Compensation Programs (confirm from the full article that this is the program, likely the Defense Base Act)<br>Defense Department Inspector General public affairs<br>Government Accountability Office public affairs<br>Injured contractor employees or their attorneys quoted in the ProPublica piece</p>
+      <p class="field"><b>Documents to request (FOIA)</b><br>Labor Department: annual premium, claim and payout totals by insurer for the program, 2001 to present<br>DoD and State: contract clauses and audits on the program’s insurance costs</p>
+      <p class="field"><b>Public records to pull now</b><br>GAO and inspector general reports on the program’s costs and fraud risk<br>The full ProPublica article and any documents it publishes<br>Insurer annual statements filed with state regulators for the named insurers</p>
+      <p class="field"><b>Window</b><br>1 week — ProPublica published this cycle; follow-ups and official responses come fast after an investigation like this.</p>
+      <p class="field"><b>Confidence</b><br>MEDIUM — Strong single source with an INVESTIGATE classification; the program name and the dollar figures still need the full article.</p>
+      <div class="box prompt">
+        <h3>Claude Prompt</h3>
+        <p>You are an investigative journalist working this lead: War-zone contractor injury insurance: who collected, and what the government knew.</p>
+        <p>The signal: propublica, score 0.905, gates: credibility + volume + velocity + novelty; record rec-158f796db60f, signal c7bf986f107e65d2. Treat the record as a pointer to a published article, not as a verified fact.</p>
+        <p>The core question: How much has the federal program covering injured or killed contractor employees from Iraq and Afghanistan paid insurers since 2001, which insurers received the most, and which official reviews warned of fraud risk?</p>
+        <p>Step 1 — Draft a 3-paragraph background memo on the federal program that insures employees of U.S. government contractors injured or killed in Iraq and Afghanistan: how it is funded, who administers it, and what GAO or inspector general reviews have found about cost and fraud. Confirm the program’s name from the full ProPublica article before relying on it.</p>
+        <p>Step 2 — Write 5 yes/no questions for the Labor Department’s Office of Workers’ Compensation Programs, each answerable with yes, no or a number. Example: 'Has the department referred any insurer under this program for fraud investigation since 2015? Yes or no?' Cover payout totals, insurer concentration, referrals and recoveries.</p>
+        <p>Step 3 — Write a FOIA request draft to the Labor Department FOIA office and the Defense Department FOIA office, in formal FOIA language, for: annual premiums, claims paid and administrative costs by insurer under the contractor injury insurance program; all audits and fraud-risk assessments of the program; and all referrals to inspectors general, for January 1, 2001 to the present. Ask that any denial cite the specific exemption for each withheld record.</p>
+        <p>Step 4 — Write a 150-word pitch memo for an editor meeting: the story, the stakes, what you have, and what you still need.</p>
+      </div>
+    </article>
+    <article class="item lead">
+      <div class="region">Lead 3 · propublica · score 0.800</div>
+      <h2>The $170 billion tariff refunds: which companies, and why the government won’t say</h2>
+      <div class="domains">Gates: credibility + volume + velocity + novelty · ollama, matched to llm_fallback.jsonl</div>
+      <div class="ids">Signal: propublica · score 0.800 · ELEVATED · gates: credibility + volume + velocity + novelty · MONITOR 0.700 · record rec-10098398d947 · signal dc3804c23fa5f112 · rowid 52618 · ollama, matched to llm_fallback.jsonl</div>
+      <p class="field"><b>The question</b><br>Which importers have received refunds of the emergency tariffs overturned in February 2026, in what amounts, and on what legal basis has the administration declined to publish the list?</p>
+      <p class="field"><b>Who to call</b><br>U.S. Customs and Border Protection Office of Public Affairs<br>Treasury Department press office<br>Investor relations at public companies that appear in ProPublica’s database<br>Trade lawyers who filed refund claims for clients</p>
+      <p class="field"><b>Documents to request (FOIA)</b><br>CBP: refund totals by importer of record for the overturned tariffs, February 2026 to present, and any guidance on withholding the list<br>Treasury: records on the decision not to publish refund recipients</p>
+      <p class="field"><b>Public records to pull now</b><br>ProPublica’s published refund database<br>SEC EDGAR: 10-Q and 8-K filings disclosing tariff refund receivables or gains<br>The Supreme Court decision that overturned the emergency tariffs</p>
+      <p class="field"><b>Window</b><br>48 hours — ProPublica just published the data; the first local and company-level follow-ups will run within days.</p>
+      <p class="field"><b>Confidence</b><br>MEDIUM — Concrete public dataset, but the record is classified MONITOR and the $170 billion figure comes from one source.</p>
+      <div class="box prompt">
+        <h3>Claude Prompt</h3>
+        <p>You are an investigative journalist working this lead: The $170 billion tariff refunds: which companies, and why the government won’t say.</p>
+        <p>The signal: propublica, score 0.800, gates: credibility + volume + velocity + novelty; record rec-10098398d947, signal dc3804c23fa5f112. Treat the record as a pointer to a published article, not as a verified fact.</p>
+        <p>The core question: Which importers have received refunds of the emergency tariffs overturned in February 2026, in what amounts, and on what legal basis has the administration declined to publish the list?</p>
+        <p>Step 1 — Draft a 3-paragraph background memo on the emergency tariffs the Supreme Court overturned in February 2026, how refunds are being processed by CBP, and what ProPublica’s database shows about the largest recipients. Cite the decision and the database; mark the $170 billion total as ProPublica’s figure until confirmed.</p>
+        <p>Step 2 — Write 5 yes/no questions for the CBP Office of Public Affairs, each answerable with yes, no or a number. Example: 'Has CBP paid any single importer more than $1 billion in refunds of these tariffs? Yes or no?' Cover totals paid, the number of importers, interest paid, and the basis for not publishing the list.</p>
+        <p>Step 3 — Write a FOIA request draft to the CBP FOIA Division, in formal FOIA language, for: refund amounts by importer of record for duties paid under the overturned emergency tariffs, all internal guidance on processing those refunds, and all records on whether to publish recipient names, for February 1, 2026 to the present. Ask that any denial cite the specific exemption for each withheld record.</p>
+        <p>Step 4 — Write a 150-word pitch memo for an editor meeting: the story, the stakes, what you have, and what you still need.</p>
+      </div>
+    </article>
+    <article class="item lead">
+      <div class="region">Lead 4 · cipher_brief · score 0.846</div>
+      <h2>Venezuela’s oil revenues: where the money the president described actually went</h2>
+      <div class="domains">Gates: credibility + volume + velocity + novelty · ollama, matched to llm_fallback.jsonl</div>
+      <div class="ids">Signal: cipher_brief · score 0.846 · ELEVATED · gates: credibility + volume + velocity + novelty · INVESTIGATE 0.801 · record rec-c0893c82c915 · signal 7a2e7becfd77e2ff · rowid 52561 · ollama, matched to llm_fallback.jsonl</div>
+      <p class="field"><b>The question</b><br>What U.S. legal mechanism, account or license governs revenue from Venezuelan oil since the events the president described, how much has moved through it, and who controls disbursement?</p>
+      <p class="field"><b>Who to call</b><br>Treasury Office of Foreign Assets Control press office<br>State Department Bureau of Western Hemisphere Affairs press office<br>Energy Department press office<br>Senate Foreign Relations Committee minority staff</p>
+      <p class="field"><b>Documents to request (FOIA)</b><br>Treasury/OFAC: licenses and correspondence on Venezuelan oil sales and proceeds, January 2025 to present<br>State: cables and memos on the custody of Venezuelan oil revenue</p>
+      <p class="field"><b>Public records to pull now</b><br>OFAC Venezuela-related general licenses and FAQs<br>The full CBS transcript of the November 8 interview cited by Cipher Brief<br>EIA data on U.S. imports of Venezuelan crude</p>
+      <p class="field"><b>Window</b><br>1 week — The interview is recent and the claim is specific; the question goes stale if the administration publishes figures first.</p>
+      <p class="field"><b>Confidence</b><br>LOW — The model classified it INVESTIGATE at 0.801, but the record is one analysis piece built on a presidential statement, and the pack has no second source.</p>
+      <div class="box prompt">
+        <h3>Claude Prompt</h3>
+        <p>You are an investigative journalist working this lead: Venezuela’s oil revenues: where the money the president described actually went.</p>
+        <p>The signal: cipher_brief, score 0.846, gates: credibility + volume + velocity + novelty; record rec-c0893c82c915, signal 7a2e7becfd77e2ff. Treat the record as a pointer to a published article, not as a verified fact.</p>
+        <p>The core question: What U.S. legal mechanism, account or license governs revenue from Venezuelan oil since the events the president described, how much has moved through it, and who controls disbursement?</p>
+        <p>Step 1 — Draft a 3-paragraph background memo on U.S. policy toward Venezuelan oil since January 2025: sanctions and licenses, any change in control of PDVSA or its exports, and what the president said in the November 8 interview. Quote the CBS transcript directly and keep it separate from documented facts.</p>
+        <p>Step 2 — Write 5 yes/no questions for the OFAC press office, each answerable with yes, no or a number. Example: 'Is revenue from Venezuelan crude sales currently held in an account controlled by the U.S. government? Yes or no?' Cover licenses, amounts, account custody and disbursement authority.</p>
+        <p>Step 3 — Write a FOIA request draft to the Treasury FOIA Division and the State Department Office of Information Programs and Services, in formal FOIA language, for: all OFAC licenses, license applications and correspondence on the sale of Venezuelan crude and the custody of its proceeds, and all State memoranda on control of those proceeds, for January 1, 2025 to the present. Ask that any denial cite the specific exemption for each withheld record.</p>
+        <p>Step 4 — Write a 150-word pitch memo for an editor meeting: the story, the stakes, what you have, and what you still need.</p>
+      </div>
+    </article>
+    <article class="item lead">
+      <div class="region">Lead 5 · defense_one · score 0.604</div>
+      <h2>NSANet outage: how long, what failed, and who was told</h2>
+      <div class="domains">Gates: credibility + volume + velocity + novelty · ollama, matched to llm_fallback.jsonl</div>
+      <div class="ids">Signal: defense_one · score 0.604 · STANDARD · gates: credibility + volume + velocity + novelty · INVESTIGATE 0.711 · record rec-8b67e67d4492 · signal 4b9135a492fdf1d6 · rowid 52586 · ollama, matched to llm_fallback.jsonl</div>
+      <p class="field"><b>The question</b><br>How long was NSANet down, which missions or partners lost access, was the cause a software upgrade as reported, and were the intelligence committees notified?</p>
+      <p class="field"><b>Who to call</b><br>NSA Media Relations<br>Office of the Director of National Intelligence public affairs<br>House and Senate intelligence committee press staff</p>
+      <p class="field"><b>Documents to request (FOIA)</b><br>NSA: unclassified notices or summaries of the NSANet outage and its cause, November 2026 (expect classification exemptions; ask for segregable portions)</p>
+      <p class="field"><b>Public records to pull now</b><br>The Defense One report and any NSA or ODNI public statement<br>Congressional committee press releases on the outage</p>
+      <p class="field"><b>Window</b><br>48 hours — A live outage story; once service is restored the window for on-record detail closes.</p>
+      <p class="field"><b>Confidence</b><br>LOW — STANDARD score (0.604), anonymous sourcing, and a FOIA target that is largely classified; worth a few calls, not a project.</p>
+      <div class="box prompt">
+        <h3>Claude Prompt</h3>
+        <p>You are an investigative journalist working this lead: NSANet outage: how long, what failed, and who was told.</p>
+        <p>The signal: defense_one, score 0.604, gates: credibility + volume + velocity + novelty; record rec-8b67e67d4492, signal 4b9135a492fdf1d6. Treat the record as a pointer to a published article, not as a verified fact.</p>
+        <p>The core question: How long was NSANet down, which missions or partners lost access, was the cause a software upgrade as reported, and were the intelligence committees notified?</p>
+        <p>Step 1 — Draft a 3-paragraph background memo on NSANet: what it is, who depends on it, and any publicly reported past outages. Use only public sources, state plainly what is unknown, and keep the report’s software-upgrade explanation labelled as unconfirmed.</p>
+        <p>Step 2 — Write 5 yes/no questions for NSA Media Relations, each answerable with yes, no or a number. Example: 'Was NSANet unavailable for more than 24 hours? Yes or no?' Cover duration, cause, partner impact, and congressional notification.</p>
+        <p>Step 3 — Write a FOIA request draft to the NSA FOIA office, in formal FOIA language, for: all unclassified notices, incident summaries and congressional notifications about the NSANet outage reported in November 2026, for November 1, 2026 to the present. Ask for segregable unclassified portions and that any denial cite the specific exemption for each withheld record.</p>
+        <p>Step 4 — Write a 150-word pitch memo for an editor meeting: the story, the stakes, what you have, and what you still need.</p>
+      </div>
+    </article>
+  </section>
+  <div class="watch">
+    <h3>24-Hour Watch List</h3>
+    <ul>
+      <li>Shenzhen: any written terms or date for the U.S.-China-Russia nuclear-risk dialogue <span class="ids">(rec-a5960d29451d, rec-17567a98f74a)</span></li>
+      <li>IAEA follow-up on the expanded enrichment facility at Yongbyon <span class="ids">(rec-671ceb5ef26a)</span></li>
+      <li>NSANet: restoration and a confirmed cause <span class="ids">(rec-8b67e67d4492)</span></li>
+      <li>First company and local follow-ups to ProPublica’s tariff refund database <span class="ids">(rec-10098398d947)</span></li>
+      <li>Lawfare Live on litigation against the administration, November 20 <span class="ids">(rec-9a432a755b34)</span></li>
+    </ul>
+  </div>
+  <section>
+    <div class="section-title">Records Counted, Not Analysed</div>
+    <article class="item">
+      <p class="field">war_on_the_rocks · score 0.728 · rules tier (matched to llm_fallback.jsonl) — counted, not analysis<br><span class="ids">record rec-32b612cd16ca · signal b255e84550957510 · rowid 52552</span></p>
+      <p class="field">cipher_brief · score 0.759 · rules tier (matched to llm_fallback.jsonl) — counted, not analysis<br><span class="ids">record rec-800645f12853 · signal fa21eeded4ecf426 · rowid 52556</span></p>
+    </article>
+  </section>
+  <footer>
+    WORLD STATE BRIEF · Notitia Civica — published by Matthew J. Lakamp<br>
+    Every score, source and id comes from stored cycle records (pack sha256 95427c7b1481). Not for publication without editor review.
+  </footer>
+</div>
+</body>
+</html>
