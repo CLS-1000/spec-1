@@ -99,7 +99,7 @@ def test_page_is_served(client, path):
     assert r.status_code == 200
     assert "text/html" in r.headers["content-type"]
     assert "SPEC-1 LEGISLATIVE DESK" in r.text
-    assert "EVASTARARCANA LLC" in r.text
+    assert "Matthew J. Lakamp" in r.text
 
 
 def test_page_is_offline_no_external_assets():

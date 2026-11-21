@@ -52,7 +52,7 @@ def test_root_returns_html(client):
 def test_root_serves_triage_desk(client):
     r = client.get("/")
     assert "SPEC-1 TRIAGE DESK" in r.text
-    assert "EVASTARARCANA LLC" in r.text
+    assert "Matthew J. Lakamp" in r.text
 
 
 def test_ui_directory_served_at_root(client):

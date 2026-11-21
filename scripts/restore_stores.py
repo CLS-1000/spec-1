@@ -21,8 +21,9 @@ from pathlib import Path
 
 PURGE_COMMIT = "6ee0d39"
 EXPORT_PATH = "spec1_intelligence_export.json"
-JSONL_PATH = Path("spec1_intelligence.jsonl")
-DB_PATH = Path("spec1.db")
+_REPO_ROOT = Path(__file__).resolve().parents[1]  # defaults mean the same file whatever the cwd
+JSONL_PATH = _REPO_ROOT / "spec1_intelligence.jsonl"
+DB_PATH = _REPO_ROOT / "spec1.db"
 
 INTEL_COLS = {
     "record_id", "pattern", "classification", "confidence",

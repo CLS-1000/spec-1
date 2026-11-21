@@ -22,6 +22,7 @@ import os
 import re
 from collections import Counter
 from pathlib import Path
+from spec1_core.intelligence.store import anchor_to_home
 from typing import Literal, Optional
 
 from fastapi import APIRouter, HTTPException, Query
@@ -35,11 +36,11 @@ _KINDS = ("measure", "interim_committee", "bill")
 
 
 def _store_path() -> Path:
-    return Path(os.environ.get("SPEC1_LEGISLATIVE_STORE", "spec1_legislative.jsonl"))
+    return anchor_to_home(os.environ.get("SPEC1_LEGISLATIVE_STORE", "spec1_legislative.jsonl"))
 
 
 def _briefs_dir() -> Path:
-    return Path(os.environ.get("SPEC1_BRIEFS_DIR", "briefs"))
+    return anchor_to_home(os.environ.get("SPEC1_BRIEFS_DIR", "briefs"))
 
 
 def _read_records() -> list[dict]:
@@ -119,10 +120,11 @@ def _row(rec: dict) -> dict:
 def desk_status() -> dict:
     """Desk configuration as the next run would use it, and whether Ollama answers."""
     from cls_leg_jud.bridge import DEFAULT_LIMIT, DEFAULT_LOOKAHEAD_DAYS, DEFAULT_SINCE_DAYS
-    from spec1_core.llm import ollama_manager
-    from spec1_core.llm.fallback_client import CHAT_MODEL
+    from spec1_core.intelligence.store import spec1_home
+    from spec1_core.llm import model_config, ollama_manager
 
-    url = os.environ.get("SPEC1_OLLAMA_URL", ollama_manager.DEFAULT_URL)
+    cfg = model_config.load(spec1_home())
+    url = cfg.ollama_url
     try:
         reachable = bool(ollama_manager.is_running(url))
     except Exception:
@@ -132,7 +134,7 @@ def desk_status() -> dict:
         "lookback_days": DEFAULT_SINCE_DAYS,
         "lookahead_days": DEFAULT_LOOKAHEAD_DAYS,
         "max_per_run": DEFAULT_LIMIT,
-        "engine_model": os.environ.get("OLLAMA_MODEL") or CHAT_MODEL,
+        "engine_model": cfg.ollama_chat_model,
         "engine_url": url,
         "engine_reachable": reachable,
         "store_path": str(store),

@@ -39,7 +39,8 @@ from typing import Any
 import httpx
 from pydantic import ValidationError
 
-from spec1_core.llm import ollama_manager, tier3_rules
+from spec1_core.intelligence.store import anchor_to_home, spec1_home
+from spec1_core.llm import model_config, ollama_manager, tier3_rules
 from spec1_core.schemas.models import Tier3TriageVerdict
 from spec1_labels import (
     LLM_TIER_RULES,
@@ -54,8 +55,8 @@ logger = logging.getLogger(__name__)
 
 # ── Configuration ─────────────────────────────────────────────────────────────
 
-_DEFAULT_CLAUDE_MODEL = "claude-haiku-4-5-20251001"
-_DEFAULT_OLLAMA_URL = "http://localhost:11434"
+_DEFAULT_CLAUDE_MODEL = model_config.DEFAULT_CLAUDE_MODEL
+_DEFAULT_OLLAMA_URL = model_config.DEFAULT_OLLAMA_URL
 _DEFAULT_OPENAI_COMPAT_URL = "http://localhost:5272/v1"   # Foundry Local / AI Toolkit
 _VALID_BACKENDS = ("claude", "local", LLM_TIER_RULES)
 _BACKEND_ALIASES = {"ollama": "local", "mock": LLM_TIER_RULES, "tier3": LLM_TIER_RULES}
@@ -83,7 +84,9 @@ def resolve_route(task: str = "default", dev_mode: bool = False) -> list[str]:
         route = ["local"] if dev_mode else ["claude", "local"]
     route = [b for b in route if b != LLM_TIER_RULES] + [LLM_TIER_RULES]
     return route
-_DEFAULT_LOG_PATH = Path("logs/llm_fallback.jsonl")
+
+
+_DEFAULT_LOG_PATH = Path(model_config.DEFAULT_LLM_LOG_RELPATH)
 
 # Rough cost per 1 K tokens (Haiku pricing)
 _INPUT_COST_PER_1K = 0.00025
@@ -99,8 +102,8 @@ _CLASSIFICATION_TO_VERDICT: dict[str, str] = {
     "ARCHIVE": "CLEAR",
 }
 
-# ── Client ────────────────────────────────────────────────────────────────────
 
+# ── Client ────────────────────────────────────────────────────────────────────
 
 class FallbackLLMClient:
     """Unified LLM client with automatic tier fallback."""
@@ -113,14 +116,25 @@ class FallbackLLMClient:
         task: str = "default",
     ) -> None:
         env = os.environ.get
+        cfg = model_config.load(spec1_home())
+        self._cfg = cfg
         self._task = task
-        self._ollama_url = ollama_url or env("SPEC1_OLLAMA_URL", _DEFAULT_OLLAMA_URL)
-        self._ollama_model = (
-            ollama_model
-            or env("OLLAMA_MODEL")
-            or ollama_manager.preferred_model()
+        self._ollama_url = (
+            model_config.normalize_ollama_url(ollama_url)
+            if ollama_url
+            else cfg.ollama_url
         )
-        self._log_path = log_path or Path(env("SPEC1_LLM_LOG_PATH", str(_DEFAULT_LOG_PATH)))
+        self._ollama_model = ollama_model or cfg.ollama_model
+        if not model_config.is_model_allowed(self._ollama_model):
+            raise ValueError(f"Model {self._ollama_model!r} is excluded by licensing policy.")
+
+        if log_path is not None:
+            self._log_path = log_path
+        elif cfg.llm_log_path != (cfg.home / model_config.DEFAULT_LLM_LOG_RELPATH):
+            self._log_path = anchor_to_home(str(cfg.llm_log_path))
+        else:
+            self._log_path = anchor_to_home(str(_DEFAULT_LOG_PATH))
+
         self._dev_mode = env("SPEC1_DEV_MODE", "").lower() == "true"
         self._active_tier = "claude"
         self._active_model: str | None = None
@@ -150,7 +164,13 @@ class FallbackLLMClient:
                 text = self._backend_complete(backend, prompt, system)
                 self._active_tier = self._tier_name(backend)
                 self._active_model = self._model_name(backend)
-                self._record(self._active_tier, t0, len(prompt + text), success=True)
+                self._record(
+                    self._active_tier,
+                    t0,
+                    len(prompt + text),
+                    success=True,
+                    model=self._active_model,
+                )
                 return text
             except Exception as exc:
                 self._record_failure(backend, t0, exc)
@@ -159,7 +179,7 @@ class FallbackLLMClient:
         text = tier3_rules.to_verifier_json(prompt)
         self._active_tier = LLM_TIER_RULES
         self._active_model = None
-        self._record(LLM_TIER_RULES, t0, len(text), success=True)
+        self._record(LLM_TIER_RULES, t0, len(text), success=True, model=None)
         return text
 
     def analyze(self, prompt: str, system: str = "") -> dict[str, Any]:
@@ -178,7 +198,13 @@ class FallbackLLMClient:
                 cost = self._estimate_cost(prompt, raw) if backend == "claude" else 0.0
                 self._session_cost += cost
                 result.update(latency_ms=latency_ms, cost_estimate_usd=cost)
-                self._record(tier, t0, len(prompt + raw), success=True)
+                self._record(
+                    tier,
+                    t0,
+                    len(prompt + raw),
+                    success=True,
+                    model=self._active_model,
+                )
                 return result
             except Exception as exc:
                 self._record_failure(backend, t0, exc)
@@ -189,7 +215,7 @@ class FallbackLLMClient:
         latency_ms = int((time.monotonic() - t0) * 1000)
         self._active_tier = LLM_TIER_RULES
         self._active_model = None
-        self._record(LLM_TIER_RULES, t0, len(prompt), success=True)
+        self._record(LLM_TIER_RULES, t0, len(prompt), success=True, model=None)
         return {
             "verdict": verdict,
             "confidence": confidence,
@@ -233,13 +259,13 @@ class FallbackLLMClient:
     # ── Tier implementations ──────────────────────────────────────────────────
 
     def _claude_complete(self, prompt: str, system: str) -> str:
-        api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip().lstrip("﻿")
+        api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip().lstrip("\ufeff")
         if not api_key:
             raise RuntimeError("ANTHROPIC_API_KEY not set")
 
         import anthropic  # lazy — optional dependency
 
-        model = os.environ.get("SPEC1_LLM_CLAUDE_MODEL", _DEFAULT_CLAUDE_MODEL)
+        model = self._model_name("claude") or model_config.DEFAULT_CLAUDE_MODEL
         client = anthropic.Anthropic(api_key=api_key)
         message = client.messages.create(
             model=model,
@@ -253,7 +279,7 @@ class FallbackLLMClient:
     def _model_name(self, backend: str) -> str | None:
         """The model a backend uses, as configured for this client."""
         if backend == "claude":
-            return os.environ.get("SPEC1_LLM_CLAUDE_MODEL", _DEFAULT_CLAUDE_MODEL)
+            return model_config.load(spec1_home()).claude_model
         if backend == "local":
             return self._ollama_model if self._local_backend == "ollama" else (self._local_model or None)
         return None
@@ -290,12 +316,16 @@ class FallbackLLMClient:
             headers["Authorization"] = f"Bearer {key}"
         resp = requests.post(
             self._local_url.rstrip("/") + "/chat/completions",
-            json={"model": self._local_model, "messages": messages,
-                  "temperature": 0.0, "max_tokens": 512,
-                  # Ask reasoning models to answer directly (ignored by others).
-                  "chat_template_kwargs": {"enable_thinking": False}},
+            json={
+                "model": self._local_model,
+                "messages": messages,
+                "temperature": 0.0,
+                "max_tokens": 512,
+                # Ask reasoning models to answer directly (ignored by others).
+                "chat_template_kwargs": {"enable_thinking": False},
+            },
             headers=headers,
-            timeout=float(os.environ.get("SPEC1_LOCAL_TIMEOUT", "120")),
+            timeout=self._cfg.call_timeout,
         )
         resp.raise_for_status()
         text = resp.json()["choices"][0]["message"]["content"] or ""
@@ -314,7 +344,11 @@ class FallbackLLMClient:
 
         ollama_manager.ensure_model(self._ollama_model, self._ollama_url)
         text = ollama_manager.chat(
-            prompt, system, self._ollama_model, self._ollama_url
+            prompt,
+            system,
+            self._ollama_model,
+            self._ollama_url,
+            timeout=self._cfg.call_timeout,
         )
         self._active_tier = "ollama"
         return text
@@ -388,18 +422,34 @@ class FallbackLLMClient:
     def _record_failure(self, backend: str, t0: float, exc: Exception) -> None:
         """Log one failed backend attempt as its own success:false entry."""
         logger.warning("%s backend failed for task %s: %s", backend, self._task, exc)
-        self._record(self._tier_name(backend), t0, 0, success=False, error=_error_kind(exc))
+        self._record(
+            self._tier_name(backend),
+            t0,
+            0,
+            success=False,
+            error=_error_kind(exc),
+            model=self._model_name(backend),
+        )
 
-    def _record(self, tier: str, t0: float, char_count: int, *, success: bool,
-                error: str | None = None) -> None:
+    def _record(
+        self,
+        tier: str,
+        t0: float,
+        char_count: int,
+        *,
+        success: bool,
+        error: str | None = None,
+        model: str | None = None,
+    ) -> None:
         latency_ms = int((time.monotonic() - t0) * 1000)
         try:
             self._log_path.parent.mkdir(parents=True, exist_ok=True)
-            fields = {
+            fields: dict[str, Any] = {
                 "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                 "session": self._session_id,
                 "task": self._task,
                 "tier": tier,
+                "model": model,
                 "latency_ms": latency_ms,
                 "char_count": char_count,
                 "success": success,
@@ -432,13 +482,12 @@ def _error_kind(exc: Exception) -> str:
     return type(exc).__name__
 
 
-# ── Local Tier-3 client (Qwen 2.5 via Ollama) ─────────────────────────────────
+# ── Local Tier-3 client (Ollama via model_config) ─────────────────────────────
 
-OLLAMA_BASE_URL = "http://127.0.0.1:11434"
-DEFAULT_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.2:triage")       # constrained-JSON triage verification
-CHAT_MODEL = "qwen2.5:3b"          # unconstrained markdown chat (briefs); 7B needs >4.5 GiB free
-# A full brief on a CPU-bound local model can take several minutes.
-CHAT_TIMEOUT = float(os.environ.get("SPEC1_LOCAL_CHAT_TIMEOUT", "600"))
+OLLAMA_BASE_URL = model_config.DEFAULT_OLLAMA_URL
+DEFAULT_MODEL = model_config.DEFAULT_OLLAMA_MODEL
+CHAT_MODEL = model_config.DEFAULT_OLLAMA_CHAT_MODEL
+CHAT_TIMEOUT = model_config.DEFAULT_CHAT_TIMEOUT
 
 
 class LocalTier3Client:
@@ -446,21 +495,26 @@ class LocalTier3Client:
 
     After each ``verify_triage_record`` call, ``last_tier`` says which backend
     produced the answer: ``"ollama"`` when the model answered, ``"rules"`` when
-    it did not (unreachable, timed out, or invalid output). The verdict never
-    carries an analysis tier; callers derive it from ``last_tier``.
+    it did not (unreachable, timed out, oversized prompt, or invalid output).
     """
 
-    def __init__(self, base_url: str = OLLAMA_BASE_URL, model: str = DEFAULT_MODEL):
-        self.base_url = base_url.rstrip("/")
-        self.model = model
-        # Per-call timeout (SPEC1_OLLAMA_TIMEOUT, default 180s); also covers
-        # cold-start model weight allocation.
-        self.client = httpx.Client(base_url=self.base_url, timeout=ollama_manager.call_timeout())
+    def __init__(self, base_url: str | None = None, model: str | None = None):
+        cfg = model_config.load(spec1_home())
+        self._cfg = cfg
+        self.base_url = model_config.normalize_ollama_url(base_url or cfg.ollama_url)
+        self.model = model or cfg.ollama_model
+        if not model_config.is_model_allowed(self.model):
+            raise ValueError(f"Model {self.model!r} is excluded by licensing policy.")
+        self.client = httpx.Client(base_url=self.base_url, timeout=cfg.call_timeout)
         self.session_id = uuid.uuid4().hex[:8]
         self.last_tier: str = LLM_TIER_RULES
 
     def verify_triage_record(self, record: dict[str, Any]) -> Tier3TriageVerdict | None:
-        """Runs candidate triage record through Qwen 2.5 with constrained JSON schema."""
+        """Runs candidate triage record through Ollama with constrained JSON schema."""
+        system_prompt = (
+            "You are an OSINT intelligence verifier. Output strictly valid JSON matching "
+            "the requested schema. Do not add markdown backticks or preamble."
+        )
         prompt = (
             f"You are the SPEC-1 Tier-3 verification engine. Audit this candidate triage record:\n"
             f"Record ID: {record.get('record_id')}\n"
@@ -472,71 +526,88 @@ class LocalTier3Client:
             f"Assess the record on its content. Flag the payload if it is corrupt, spam or test noise."
         )
 
-        payload = {
-            "model": self.model,
-            "messages": [
-                {
-                    "role": "system",
-                    "content": (
-                        "You are an OSINT intelligence verifier. Output strictly valid JSON matching "
-                        "the requested schema. Do not add markdown backticks or preamble."
-                    ),
-                },
-                {"role": "user", "content": prompt},
-            ],
-            "format": Tier3TriageVerdict.model_json_schema(),
-            "options": {
-                "temperature": 0.0,
-                "top_p": 0.2,
-                "num_ctx": 4096,
-            },
-            "stream": False,
-        }
-
         self.last_tier = LLM_TIER_RULES
         try:
+            num_ctx = ollama_manager.resolve_num_ctx(
+                len(system_prompt) + len(prompt),
+                self.model,
+                self.base_url,
+            )
+            payload = {
+                "model": self.model,
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": prompt},
+                ],
+                "format": Tier3TriageVerdict.model_json_schema(),
+                "options": {
+                    "temperature": 0.0,
+                    "top_p": 0.2,
+                    "num_ctx": num_ctx,
+                },
+                "stream": False,
+            }
             res = self.client.post("/api/chat", json=payload)
             res.raise_for_status()
-            raw_content = res.json()["message"]["content"]
+            body = res.json()
+            ollama_manager.verify_not_truncated(body, num_ctx, self.model)
+            raw_content = body["message"]["content"]
             verdict = Tier3TriageVerdict.model_validate_json(raw_content)
             self.last_tier = "ollama"
             logger.info("Model verified record %s (model=%s)", verdict.record_id, self.model)
             return verdict
 
+        except model_config.PromptTooLong:
+            return None
         except httpx.ConnectError:
             logger.error("Ollama service unreachable on %s. Ensure 'ollama serve' is active.", self.base_url)
             return None
         except httpx.TimeoutException:
-            logger.error("Ollama request timed out after %ss. Check system resource allocation.",
-                         self.client.timeout.read)
+            logger.error(
+                "Ollama request timed out after %ss. Check system resource allocation.",
+                self.client.timeout.read,
+            )
             return None
         except (ValidationError, KeyError, json.JSONDecodeError) as e:
             logger.error("Schema validation failed for record %s: %s", record.get("record_id"), e)
             return None
 
     def chat(self, user_prompt: str, system_prompt: str = "", temperature: float = 0.2) -> str:
-        """Free-form markdown chat against the local Ollama model.
+        """Free-form markdown chat against the local Ollama model (brief writer).
 
-        Unlike ``verify_triage_record`` this raises on connection, HTTP or
-        empty-response failures so callers can fall through to another tier.
+        Refuses oversized prompts with :class:`PromptTooLong` and raises on
+        connection, HTTP, truncation, or empty-response failures.
         """
+        cfg = model_config.load(spec1_home())
+        chat_model = cfg.ollama_chat_model
+        if not model_config.is_model_allowed(chat_model):
+            raise ValueError(f"Chat model {chat_model!r} is excluded by licensing policy.")
+
+        num_ctx = ollama_manager.resolve_num_ctx(
+            len(system_prompt) + len(user_prompt),
+            chat_model,
+            self.base_url,
+            response_reserve=2048,
+        )
         messages = []
         if system_prompt:
             messages.append({"role": "system", "content": system_prompt})
         messages.append({"role": "user", "content": user_prompt})
 
         payload = {
-            "model": os.environ.get("OLLAMA_MODEL") or CHAT_MODEL,
+            "model": chat_model,
             "messages": messages,
             "options": {
                 "temperature": temperature,
-                "num_ctx": 8192,
+                "num_ctx": num_ctx,
             },
             "stream": False,
         }
-        res = self.client.post("/api/chat", json=payload, timeout=CHAT_TIMEOUT)
+        res = self.client.post("/api/chat", json=payload, timeout=cfg.chat_timeout)
         res.raise_for_status()
-        text = strip_reasoning(res.json().get("message", {}).get("content", ""))
+        body = res.json()
+        ollama_manager.verify_not_truncated(body, num_ctx, chat_model)
+        text = strip_reasoning(body.get("message", {}).get("content", ""))
         if not text:
-            raise RuntimeError(f"Ollama returned an empty chat response ({payload['model']})")
+            raise RuntimeError(f"Ollama returned an empty chat response ({chat_model})")
         return text

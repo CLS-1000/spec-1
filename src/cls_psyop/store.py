@@ -12,6 +12,7 @@ import json
 import threading
 from datetime import datetime, timezone
 from pathlib import Path
+from spec1_core.intelligence.store import anchor_to_home
 from typing import Iterator, Optional
 
 from cls_psyop.schemas import PsyopScore
@@ -33,10 +34,10 @@ class PsyopStore:
 
     def __init__(
         self,
-        path: Path = Path("psyop_scores.jsonl"),
+        path: Path | str | None = None,
         db: Optional["Database"] = None,  # noqa: F821
     ) -> None:
-        self.path = Path(path)
+        self.path = Path(path) if path is not None else anchor_to_home("psyop_scores.jsonl")
         self._lock = threading.Lock()
         self._dual_writer = None
         if db is not None:

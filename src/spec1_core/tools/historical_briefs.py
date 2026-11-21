@@ -16,6 +16,7 @@ import json
 import time
 from collections import defaultdict
 from pathlib import Path
+from spec1_core.intelligence.store import anchor_to_home
 
 try:
     from dotenv import load_dotenv
@@ -101,7 +102,7 @@ def run() -> None:
     from spec1_core.briefing.generator import generate_brief
     from spec1_core.briefing.writer import write_brief
 
-    groups = _load_and_group(JSONL_PATH)
+    groups = _load_and_group(anchor_to_home(JSONL_PATH))
     total_run_ids = len(groups)
 
     if total_run_ids == 0:
@@ -113,7 +114,7 @@ def run() -> None:
         print("Failed:                       0")
         return
 
-    existing_dates = _existing_brief_dates(BRIEFS_DIR)
+    existing_dates = _existing_brief_dates(anchor_to_home(BRIEFS_DIR))
     already_had = 0
     generated = 0
     failed = 0

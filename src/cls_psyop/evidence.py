@@ -13,6 +13,7 @@ import threading
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
+from spec1_core.intelligence.store import anchor_to_home
 
 
 @dataclass
@@ -46,8 +47,8 @@ class EvidenceChain:
 class EvidenceStore:
     """Thread-safe append-only JSONL store for EvidenceChain records."""
 
-    def __init__(self, path: Path = Path("spec1_psyop_evidence.jsonl")) -> None:
-        self.path = Path(path)
+    def __init__(self, path: Path | str | None = None) -> None:
+        self.path = Path(path) if path is not None else anchor_to_home("spec1_psyop_evidence.jsonl")
         self._lock = threading.Lock()
 
     def append(self, chain: EvidenceChain, run_id: str = "") -> dict:

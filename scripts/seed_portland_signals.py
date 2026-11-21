@@ -1,5 +1,7 @@
 
-import json, sys, asyncio
+import asyncio
+import json
+import sys
 sys.path.insert(0, "/home/mjlak/spec-1")
 from spec1_api.db.signals import insert_signal
 

@@ -400,7 +400,9 @@ def test_run_cycle_dispatches_legislative_desk(monkeypatch):
 
     monkeypatch.setattr(legislative_desk, "run_legislative_desk", spy)
     cycle.run_cycle(desk="legislative", since_days=90, max_signals=5, verbose=False)
-    assert seen["store_path"] == cycle.LEGISLATIVE_STORE_PATH
+    # Resolved per call (SPEC1_HOME applies), not the import-time constant.
+    from spec1_core.intelligence.store import resolve_store_path
+    assert seen["store_path"] == resolve_store_path(filename="spec1_legislative.jsonl")
     assert seen["since_days"] == 90 and seen["max_signals"] == 5
 
 

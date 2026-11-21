@@ -13,6 +13,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
+from spec1_core.intelligence.store import anchor_to_home
 from threading import Lock
 from typing import Iterator, Optional, Protocol, Sequence, Union
 
@@ -111,7 +112,7 @@ class ProgressCallback(Protocol):
 @dataclass
 class PipelineConfig:
     """Configuration for the psyop pipeline."""
-    store_path: Path = Path("psyop_scores.jsonl")
+    store_path: Path = field(default_factory=lambda: anchor_to_home("psyop_scores.jsonl"))
     run_id: str = ""
     min_classification: str = PSYOP_LOW_RISK
     chunk_size: int = 1000
@@ -487,7 +488,7 @@ def run_pipeline(
         >>> print(f"Found {stats.risky_detected} risky messages")
     """
     config = PipelineConfig(
-        store_path=store_path or Path("psyop_scores.jsonl"),
+        store_path=store_path or anchor_to_home("psyop_scores.jsonl"),
         min_classification=min_classification,
         chunk_size=chunk_size,
     )

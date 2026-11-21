@@ -28,6 +28,7 @@ import json
 import os
 from datetime import datetime, timezone
 from pathlib import Path
+from spec1_core.intelligence.store import anchor_to_home
 from typing import Optional
 
 from cls_leg_jud.bridge import DEFAULT_LIMIT, DEFAULT_SINCE_DAYS, collect_candidates
@@ -206,7 +207,7 @@ def run_legislative_desk(
     # ── Rule-based desk view ──────────────────────────────────────────────────
     try:
         from cls_leg_jud import LegJudStore, produce_brief
-        leg_store = LegJudStore(Path(os.environ.get("SPEC1_LEG_JUD_PATH", "leg_jud_briefs.jsonl")))
+        leg_store = LegJudStore(anchor_to_home(os.environ.get("SPEC1_LEG_JUD_PATH", "leg_jud_briefs.jsonl")))
         leg_store.save(produce_brief(stored_records, run_id=run_id))
         stats["leg_jud_store_path"] = str(leg_store.path)
     except Exception as exc:

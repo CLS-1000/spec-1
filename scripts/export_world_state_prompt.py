@@ -10,8 +10,9 @@ import sqlite3
 import sys
 from pathlib import Path
 
-DEFAULT_DB = Path("spec1.db")
-DEFAULT_OUT_DIR = Path("briefs/prompts")
+_REPO_ROOT = Path(__file__).resolve().parents[1]  # defaults mean the same file whatever the cwd
+DEFAULT_DB = _REPO_ROOT / "spec1.db"
+DEFAULT_OUT_DIR = _REPO_ROOT / "briefs" / "prompts"
 PUBLISHABLE_TIER = "llm_verified"
 DEFAULT_EXCLUDED_SOURCES = ("rand",)
 

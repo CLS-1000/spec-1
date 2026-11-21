@@ -22,6 +22,7 @@ import logging
 import re
 from datetime import date, datetime, timezone
 from pathlib import Path
+from spec1_core.intelligence.store import anchor_to_home
 from typing import Any, Optional
 from zoneinfo import ZoneInfo
 
@@ -192,7 +193,7 @@ class OlisAdapter(BaseAdapter):
     ) -> None:
         self._bill_data = bill_data
         self._session_key = session_key or _current_session_key()
-        self._cache_dir = cache_dir or Path("cache/pdx1")
+        self._cache_dir = cache_dir or anchor_to_home("cache/pdx1")
 
     def _cache_path(self) -> Path:
         return self._cache_dir / f"olis_{self._session_key}.json"
