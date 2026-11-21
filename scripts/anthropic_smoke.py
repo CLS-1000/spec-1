@@ -13,8 +13,11 @@ load_dotenv()
 api_key = os.getenv("ANTHROPIC_API_KEY")
 client = Anthropic(api_key=api_key)
 
+from spec1_core.intelligence.store import spec1_home
+from spec1_core.llm import model_config
+
 response = client.messages.create(
-    model="claude-opus-4-6",
+    model=model_config.load(spec1_home()).claude_model,
     max_tokens=1024,
     messages=[
         {"role": "user", "content": "What is SPEC-1?"}

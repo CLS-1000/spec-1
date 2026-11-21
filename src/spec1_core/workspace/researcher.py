@@ -80,9 +80,12 @@ def run_research(case: CaseFile, new_signals: list[Signal]) -> str:
             f"- Confidence assessment: HIGH / MEDIUM / LOW and why"
         )
 
+        from spec1_core.intelligence.store import spec1_home
+        from spec1_core.llm import model_config
+
         # Call Claude Sonnet
         response = client.messages.create(
-            model="claude-sonnet-4-20250514",
+            model=model_config.load(spec1_home()).claude_writer_model,
             max_tokens=2000,
             system=system_prompt,
             messages=[

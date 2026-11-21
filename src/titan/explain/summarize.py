@@ -45,8 +45,11 @@ def _llm_summarize(text: str, context: str) -> Optional[str]:
         import anthropic  # type: ignore
 
         client = anthropic.Anthropic(api_key=api_key)
+        from spec1_core.intelligence.store import spec1_home
+        from spec1_core.llm import model_config
+
         response = client.messages.create(
-            model="claude-sonnet-4-6",
+            model=model_config.load(spec1_home()).claude_writer_model,
             max_tokens=256,
             system=_SYSTEM_PROMPT,
             messages=[{"role": "user", "content": f"{context}\n\n{text}"}],

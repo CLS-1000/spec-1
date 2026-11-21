@@ -27,7 +27,6 @@ Notitia Civica workflow still publishes, behind its own guard.
 
 from __future__ import annotations
 
-import os
 import threading
 import time
 import uuid
@@ -112,8 +111,9 @@ def _job_view(job: dict) -> dict:
 
 
 def _engine_model() -> str:
-    from spec1_core.llm.fallback_client import CHAT_MODEL
-    return os.environ.get("OLLAMA_MODEL") or CHAT_MODEL
+    from spec1_core.intelligence.store import spec1_home
+    from spec1_core.llm import model_config
+    return model_config.load(spec1_home()).ollama_chat_model
 
 
 def _cycle_stats(run_id: str, records: list[dict]) -> dict:
@@ -158,8 +158,9 @@ def _generate(job_id: str) -> None:
 
 @router.get("/status")
 def narrative_status() -> dict:
-    from spec1_core.llm import ollama_manager
-    url = os.environ.get("SPEC1_OLLAMA_URL", ollama_manager.DEFAULT_URL)
+    from spec1_core.intelligence.store import spec1_home
+    from spec1_core.llm import model_config, ollama_manager
+    url = model_config.load(spec1_home()).ollama_url
     try:
         reachable = bool(ollama_manager.is_running(url))
     except Exception:

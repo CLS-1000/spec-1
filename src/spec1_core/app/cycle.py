@@ -239,6 +239,9 @@ def run_cycle(
     stamped ``analysis_tier = rule_based``.
     """
     run_id = run_id or new_run_id()
+    from spec1_core.intelligence.store import spec1_home as _spec1_home
+    from spec1_core.llm import model_config as _model_config
+    logger.info(_model_config.load(_spec1_home()).format_cycle_summary())
     if desk == DESK_LEGISLATIVE:
         from spec1_core.app.legislative_desk import run_legislative_desk
         leg_store = (
